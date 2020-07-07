@@ -2,7 +2,8 @@
 
 Web Editor Proof of Concept
 
-- Bidirectional VDOM Sync
+- VDOM with several modes: DOM -> vDOM, vDOM -> DOM
 - Diff / Patch through MutationObserver
-- Undo / Redo Queue
+- Undo / Redo History
 - support: hx, b, i, multi-level lists, TABS
+

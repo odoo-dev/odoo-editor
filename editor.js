@@ -1,26 +1,26 @@
 "use strict";
 
-
 class Editor {
-    constructor(dom) {
+    constructor(vdom, dom) {
         this.count = 0;
-        this.mode = "dom";                    // dom, vdom, both
+        this.vdom = vdom;
         this.dom = dom;
-        this.vdom = dom.cloneNode(true);
-        this.idSet(dom, this.vdom);
-        this.dom_observer = new MutationObserver(records => {
-            if (this.mode=="dom")
-                this.mutationApply(this.dom, this.vdom, records);
-        }).observe(dom, {
+        this.history = [];
+        this.undo = false;
+        this.toDom();
+        this.observer = new MutationObserver(records => {
+            this.mutationApply(this.vdom, this.dom, records);
+        }).observe(vdom, {
             childList: true,
             subtree: true,
             attributes: true,
             characterData: true,
+            characterDataOldValue: true,
         });
-        this.dom.addEventListener('keydown', this.keyDown.bind(this));
+        this.vdom.addEventListener('keydown', this.keyDown.bind(this));
     }
     //
-    // DOM Handling
+    // DOM Handling: li
     //
 
     getLi(sel) {
@@ -116,15 +116,14 @@ class Editor {
 
     keyDown(event) {
         let sel = event.target.ownerDocument.defaultView.getSelection();
+        // debugger;
         if (event.keyCode === 13) {                   // enter key
-
-            // Enter in LI
             if ((sel.anchorNode.tagName == 'LI') && (! sel.anchorNode.innerText.replace('\n', ''))) {
                 event.preventDefault();
                 let li = this.listOutdent(sel);
             }
         }
-        if (event.keyCode === 9) {                    // tab key
+        else if (event.keyCode === 9) {                    // tab key
             event.preventDefault();  // this will prevent us from tabbing out of the editor
             if (this.getLi(sel)) {
                 if (event.shiftKey) {
@@ -133,6 +132,14 @@ class Editor {
                     let li = this.listIndent(sel);
                 }
             }
+        }
+        else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
+            event.preventDefault();
+            this.historyPop();
+        }
+        else if ((event.key == 'y') && event.ctrlKey) {                    // Ctrl y: Undo
+            event.preventDefault();
+            alert('redo not implemented');
         }
 
         console.log('Key Down' + this + event + " "+event.target);
@@ -169,19 +176,66 @@ class Editor {
         }
     }
     toDom() {
-        this.dom.parentNode.replaceChild(this.vdom.cloneNode(true), this.dom);
+        let olddom = this.dom;
+        this.dom = this.vdom.cloneNode(true);
+        olddom.parentNode.replaceChild(this.dom, olddom);
+        this.idSet(this.vdom, this.dom);
     }
-    fromDom() {
+    historyPop(undo=true) {
+        if (! this.history.length)
+            return false;
+        let action = this.history.pop();
+        this.undo = true;
+        switch (action.type) {
+            case "characterData": 
+                this.idFind(this.vdom, action.id).textContent = action.oldValue;
+                break;
+            case "remove": 
+                if (action.nextId) {
+                    this.idFind(this.vdom, action.nextId).before(action.node);
+                }
+                else {
+                    this.idFind(this.vdom, action.parentId).append(action.node);
+                }
+                break;
+            case "add": 
+                let el = this.idFind(this.vdom, action.id);
+                if (el) el.remove();
+        }
 
+        we group changes made together
+        if (this.history.length && (action.time-this.history[this.history.length - 1].time) < 50) {
+            this.history.pop(false)
+        }
+
+        // shitty hack to wait for mutation observer to finish: use take_records?
+        if (undo) setTimeout( () => this.undo = false, 70);
     }
     mutationApply(srcel, destel, records) {
         for (let record of records) {
             switch (record.type) {
                 case "characterData": 
+                    if (! this.undo)
+                        this.history.push({
+                            'type': "characterData",
+                            'id': record.target.count,
+                            "text": record.target.textContent,
+                            'time': Date.now(),
+                            "oldValue": record.oldValue
+                        });
                     this.idFind(destel, record.target.count).textContent = record.target.textContent;
                     break
                 case "childList":
                     record.removedNodes.forEach( (removed, index) => {
+                        if (! this.undo)
+                            this.history.push({
+                                'type': "remove",
+                                'id': removed.count,
+                                'parentId': record.target.count,
+                                'time': Date.now(),
+                                'node': removed,
+                                'nextId': record.nextSibling ? record.nextSibling.count : undefined,
+                            });
                         let toremove = this.idFind(destel, removed.count, record.target.count);
                         if (toremove)
                             toremove.remove()
@@ -195,11 +249,22 @@ class Editor {
                         }
                         let newnode = added.cloneNode(1);
                         this.idSet(added, newnode);
+                        let action = {
+                            'type': "add",
+                            'id': added.count,
+                            'time': Date.now(),
+                            'node': newnode,
+                        }
                         if (! record.nextSibling) {
                             this.idFind(destel, record.target.count).append(newnode);
+                            action['append'] = record.target.count;
                         } else {
                             this.idFind(destel, record.nextSibling.count).before(newnode);
+                            action['before'] = record.nextSibling.count;
                         }
+                        action['node'] = newnode;
+                        if (! this.undo)
+                            this.history.push(action);
                     });
                     break;
                 default:
@@ -207,37 +272,27 @@ class Editor {
             }
         }
         if (srcel.innerHTML!=destel.innerHTML) {
-            debugger;
-        } else
-            console.log('HTML Equal');
-    }
-
-
-    switchMode(newmode) {
-        if (newMode=="dom") {
-            this.toDom();
-        } else if (newmode=="vdom") {
-            this.fromDom();
+            console.log('DOM & vDOM differs');
         }
     }
 
 }
 
-let editor = new Editor(document.querySelector("[contentEditable=true]"));
-document.getElementById('vdom-col').append(editor.vdom);
-/*
-setTimeout(() => {
-    let li = document.getElementById('dom-col').querySelector('li');
-    let newnode = li.cloneNode(true)
-    newnode.append(document.createElement('b'));
-    li.after(newnode);
-}, 2000);
+let editor = new Editor(document.querySelector("[contentEditable=true]"), document.getElementById('dom'));
+document.getElementById('dom-col').append(editor.dom);
 
-setTimeout(() => {
-    let li = document.getElementById('dom-col').querySelector('li');
-    let newnode = li.cloneNode(true)
-    li.after(newnode);
-}, 2000);
-*/
+document.getElementById('domAdd').addEventListener("click", (event) => {
+    let newEl = document.createElement('div');
+    newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
+    editor.dom.querySelector('div,p,li').after(newEl);
+});
 
+document.getElementById('domChange').addEventListener("click", (event) => {
+    let li = editor.dom.querySelector('li');
+    li.firstChild.nodeValue="Changed in DOM!";
+});
+
+document.getElementById('domReset').addEventListener("click", (event) => {
+    editor.toDom();
+});
 

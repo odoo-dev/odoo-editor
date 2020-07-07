@@ -13,9 +13,11 @@
         </style>
     </head>
     <body>
-        <div id="dom-col">
-            <h1>DOM</h1>
-            <div contentEditable="true">
+        <div id="vdom-col">
+            <h1>vDOM</h1>
+            <button id="domReset">Reset DOM</button>
+            <hr/>
+            <div contentEditable="true" style="min-height:400px">
                 <h1>
                     Title H1
                 </h1>
@@ -36,10 +38,17 @@
                     </li>
                     <li>seven</li>
                 </ul>
+                <p>
+                    Final paragaph.
+                </p>
             </div>
         </div>
-        <div id="vdom-col">
-            <h1>VDOM</h1>
+        <div id="dom-col">
+            <h1>DOM</h1>
+            <button id="domAdd">Add Stuff in DOM</button>
+            <button id="domChange">Change Text</button>
+            <hr/>
+            <div id="dom"/>
         </div>
         <script src="editor.js"></script>
     </body>
