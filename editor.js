@@ -36,8 +36,6 @@ class Editor {
         }
         if (node.nodeType==3)
             node = node.parentNode;
-        if (! node.closest('li') )
-            debugger;
         return node.closest('li');
     }
 
@@ -50,33 +48,50 @@ class Editor {
         li.before(lip);
         ul.append(li);
         this.listSanitize(lip.closest("ul"));
+
+        let range = new Range();
+        range.setStart(li,0);
+        range.setEnd(li,0);
+        sel.removeAllRanges();
+        sel.addRange(range);
         return li;
     }
 
     listOutdent(sel) {
         let li = this.getLi(sel);
-        let lip;
-        let toremove;
-
-        if (li.parentNode.parentNode.tagName != 'LI')
-            return;
-
         if (li.nextElementSibling) {
-            lip = document.createElement("li");
             let ul = document.createElement("ul");
-            lip.append(ul);
-            lip.style.listStyle = "none";
             while (li.nextSibling)
                 ul.append(li.nextSibling);
+            if (li.parentNode.parentNode.tagName == 'LI') {
+                let lip = document.createElement("li");
+                lip.append(ul);
+                lip.style.listStyle = "none";
+                li.parentNode.parentNode.after(lip);
+            } else
+                li.parentNode.after(ul);
         }
 
-        if (! li.previousElementSibling) toremove = li.parentNode.parentNode;
-        li.parentNode.parentNode.after(li);
-        if (toremove) toremove.remove();
+        if (li.parentNode.parentNode.tagName == 'LI') {
+            let toremove = (! li.previousElementSibling)?li.parentNode.parentNode:null;
+            li.parentNode.parentNode.after(li);
+            if (toremove) toremove.remove();
+        } else {
+            let ul = li.parentNode;
+            while (li.firstChild)
+                li.parentNode.after(li.firstChild);
+            li.remove();
+            if (! ul.firstElementChild) ul.remove();
+        }
 
-        if (lip)
-            li.after(lip);
         this.listSanitize(li.closest("ul"));
+
+        // duplicate code to remove
+        let range = new Range();
+        range.setStart(li,0);
+        range.setEnd(li,0);
+        sel.removeAllRanges();
+        sel.addRange(range);
         return li;
     }
 
@@ -100,25 +115,23 @@ class Editor {
     //
 
     keyDown(event) {
+        let sel = event.target.ownerDocument.defaultView.getSelection();
+        if (event.keyCode === 13) {                   // enter key
+
+            // Enter in LI
+            if ((sel.anchorNode.tagName == 'LI') && (! sel.anchorNode.innerText.replace('\n', ''))) {
+                event.preventDefault();
+                let li = this.listOutdent(sel);
+            }
+        }
         if (event.keyCode === 9) {                    // tab key
             event.preventDefault();  // this will prevent us from tabbing out of the editor
-            let sel = event.target.ownerDocument.defaultView.getSelection();
-            if (event.shiftKey) {
-                let li = this.listOutdent(sel);
-                let range = new Range();
-                range.setStart(li,0);
-                range.setEnd(li,0);
-                sel.removeAllRanges();
-                sel.addRange(range);
-
-
-            } else {
-                let li = this.listIndent(sel);
-                let range = new Range();
-                range.setStart(li,0);
-                range.setEnd(li,0);
-                sel.removeAllRanges();
-                sel.addRange(range);
+            if (this.getLi(sel)) {
+                if (event.shiftKey) {
+                    let li = this.listOutdent(sel);
+                } else {
+                    let li = this.listIndent(sel);
+                }
             }
         }
 
