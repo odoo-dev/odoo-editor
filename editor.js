@@ -100,11 +100,6 @@ class Editor {
     //
 
     keyDown(event) {
-        if (event.keyCode === 13) {
-            event.preventDefault();
-            let sel = event.target.ownerDocument.defaultView.getSelection();
-            let range = sel.getRangeAt(0);
-        }
         if (event.keyCode === 9) {                    // tab key
             event.preventDefault();  // this will prevent us from tabbing out of the editor
             let sel = event.target.ownerDocument.defaultView.getSelection();
