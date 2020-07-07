@@ -1,5 +1,6 @@
 "use strict";
 
+
 class Editor {
 	constructor(dom) {
 		this.count = 0;
@@ -16,9 +17,102 @@ class Editor {
 			attributes: true,
 			characterData: true,
 		});
+		this.dom.addEventListener('keydown', this.keyDown.bind(this));
+	}
+	//
+	// DOM Handling
+	// 
+
+	listIndent(sel) {
+		let li = sel.anchorNode.parentNode.closest('li');    // to improve
+		let lip = document.createElement("li")
+		let ul = document.createElement("ul");
+		lip.append(ul);
+		lip.style.listStyle = "none";
+		li.before(lip);
+		ul.append(li);
+		this.listSanitize(lip.closest("ul"));
 	}
 
-	// Assign IDs to DOM and VDOM elements to do an easy matching
+	listOutdent(sel) {
+		let li = sel.anchorNode.parentNode.closest('li');     // to improve
+		let lip;
+		let toremove;
+
+		if (li.nextElementSibling) {
+			lip = document.createElement("li");
+			let ul = document.createElement("ul");
+			lip.append(ul);
+			lip.style.listStyle = "none";
+			while (li.nextSibling)
+				ul.append(li.nextSibling);
+		}
+
+		if (! li.previousElementSibling) toremove = li.parentNode.parentNode;
+		li.parentNode.parentNode.after(li);
+		if (toremove) toremove.remove();
+
+		if (lip)
+			li.after(lip);
+		this.listSanitize(li.closest("ul"));
+	}
+
+	// merge same level siblings
+	listSanitize(ul) {
+		let li = ul.firstElementChild;
+		while (li) {
+			if ((li.style.listStyle=="none") && (li.nextElementSibling.style.listStyle=="none")) {
+				let curul = li.firstElementChild;
+				let oldul = li.nextElementSibling.firstElementChild;
+				while (oldul.firstChild)
+					curul.append(oldul.firstChild);
+				li.nextElementSibling.remove();
+			}
+			li = li.nextElementSibling;
+		}
+	}
+
+	//
+	// keyboard handling
+	//
+
+	keyDown(event) {
+		if (event.keyCode === 9) {                    // tab key
+			event.preventDefault();  // this will prevent us from tabbing out of the editor
+		    let sel = event.target.ownerDocument.defaultView.getSelection();
+			if (event.shiftKey) {
+				this.listOutdent(sel);
+
+
+			} else {
+				this.listIndent(sel);
+
+		        // <li>
+		        // if (sel.isCollapsed) {                                              // only implement one node, for no
+	        	/*
+	        	{
+	        		let tabContent = document.createTextNode("\u00a0\u00a0\u00a0\u00a0");
+	        		range.insertNode(tabContent);
+	        		range.setStartAfter(tabNode);
+			        range.setEndAfter(tabNode); 
+			        // sel.removeAllRanges();
+			        // sel.addRange(range);
+	        	}
+	        	*/
+        }
+				
+
+	        
+
+    	}
+
+		console.log('Key Down' + this + event + " "+event.target);
+
+	}
+
+	//
+	// VDOM Processing
+	//
 	idSet(src, dest) {
 		console.log("src: "+src.count+", dest:"+dest.count+" - "+(this.count+1));
 		if (src.count) {
@@ -26,10 +120,6 @@ class Editor {
 		} else {
 			src.count = dest.count = ++this.count;
 		}
-		if (src.nodeType == 3)
-			console.log('Assigning '+(src.count)+' to '+src.textContent);
-		else
-			console.log('Assigning '+(src.count)+' to '+src.tagName);
 		let childsrc = src.firstChild;
 		let childdest = dest.firstChild;
 		while (childsrc) {
@@ -56,17 +146,11 @@ class Editor {
 	fromDom() {
 
 	}
-	log(dom) {
-		console.log(dom.firstChild);
-		console.log(dom.firstChild);
-	}
 	mutationApply(srcel, destel, records) {
 		for (let record of records) {
 			console.log(record);
 			switch (record.type) {
 				case "characterData": 
-					if (! record.target.count)
-						debugger;
 					this.idFind(destel, record.target.count).textContent = record.target.textContent;
 					break
 				case "childList":
@@ -80,7 +164,7 @@ class Editor {
 						if (added.count && this.idFind(destel, added.count)) {
 							if (record.target.count == this.idFind(destel, added.count).parentNode.count) {
 								console.log('    already!');
-								return True;
+								return;
 							}
 						}
 						let newnode = added.cloneNode(1);
@@ -103,6 +187,8 @@ class Editor {
 		} else
 			console.log('HTML Equal');
 	}
+
+
 	switchMode(newmode) {
 		if (newMode=="dom") {
 			this.toDom();

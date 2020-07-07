@@ -1,1 +1,3 @@
-# odoo-editor-pox
+# odoo-editor-poc
+
+Learning Javascript
