@@ -203,7 +203,7 @@ class Editor {
                 if (el) el.remove();
         }
 
-        we group changes made together
+        // group changes made together
         if (this.history.length && (action.time-this.history[this.history.length - 1].time) < 50) {
             this.history.pop(false)
         }
