@@ -1,6 +1,7 @@
 "use strict";
 
 import {Sanitize} from "./sanitize.js";
+import {commonParentGet} from "./utils.js";
 
 class Editor {
     constructor(dom) {
@@ -8,7 +9,6 @@ class Editor {
         this.dom = dom;
         this.history = [];
         this.last_sanitize = 0;
-        this.undo = false;
 
         let s = new Sanitize(dom);
         this.vdom = this.newDom(this.dom);
@@ -26,20 +26,21 @@ class Editor {
         for (let record in this.history.slice(this.last_sanitize)) {
             if (record===null) continue;
             let node = this.idFind(this.dom, record.parentId || record.id);
-            if (ca) {
-                ca = ca.parents.has(node).first();
-            } else
-                ca = node;
+            ca = commonParentGet(ca, node)
         }
 
         // sanitize and mark current position as sanitized
         this.last_sanitize = this.history.length;
         new Sanitize(ca || this.dom);
+
     }
 
     // Observer
     observerUnactive() {
         this.observer.disconnect();
+        this.observerFlush();
+    }
+    observerFlush() {
         let records = this.observer.takeRecords();
         this.observerApply(this.dom, this.vdom, records);
     }
@@ -61,57 +62,61 @@ class Editor {
             console.log('    doing mutation' + record.type);
             switch (record.type) {
                 case "characterData": 
-                    if (! this.undo)
+                    let node = this.idFind(destel, record.target.count)
+                    if (node) {
                         this.history.push({
                             'type': "characterData",
                             'id': record.target.count,
                             "text": record.target.textContent,
                             'time': Date.now(),
-                            "oldValue": record.oldValue
+                            "oldValue": node.textContent
                         });
-                    let node = this.idFind(destel, record.target.count)
-                    if (node)
                         node.textContent = record.target.textContent;
+                    }
                     break
                 case "childList":
                     record.removedNodes.forEach( (removed, index) => {
-                        if (! this.undo)
-                            this.history.push({
-                                'type': "remove",
-                                'id': removed.count,
-                                'parentId': record.target.count,
-                                'time': Date.now(),
-                                'node': removed,
-                                'nextId': record.nextSibling ? record.nextSibling.count : undefined,
-                            });
+                        this.history.push({
+                            'type': "remove",
+                            'id': removed.count,
+                            'parentId': record.target.count,
+                            'time': Date.now(),
+                            'node': removed,
+                            'nextId': record.nextSibling ? record.nextSibling.count : undefined,
+                            'previousId': record.previousSibling ? record.previousSibling.count : undefined,
+                        });
                         let toremove = this.idFind(destel, removed.count, record.target.count);
                         if (toremove)
                             toremove.remove()
                     });
                     record.addedNodes.forEach( (added, index) => {
+                        if (! record.target.count) return false;
                         if (added.count && this.idFind(destel, added.count)) {
                             if (record.target.count == this.idFind(destel, added.count).parentNode.count) {
-                                return;
+                                return false;
                             }
                         }
                         let newnode = added.cloneNode(1);
-                        this.idSet(added, newnode);
                         let action = {
                             'type': "add",
-                            'id': added.count,
                             'time': Date.now(),
                             'node': newnode,
                         }
                         if (! record.nextSibling) {
                             this.idFind(destel, record.target.count).append(newnode);
                             action['append'] = record.target.count;
-                        } else {
+                        } else if (record.nextSibling.count) {
                             this.idFind(destel, record.nextSibling.count).before(newnode);
                             action['before'] = record.nextSibling.count;
-                        }
+                        } else if (record.previousSibling.count) {
+                            this.idFind(destel, record.previousSibling.count).after(newnode);
+                            action['after'] = record.previousSibling.count;
+                        } else
+                            return false;
+                        this.idSet(added, newnode);
+                        action['id'] = added.count;
                         action['node'] = newnode;
-                        if (! this.undo)
-                            this.history.push(action);
+                        this.history.push(action);
                     });
                     break;
                 default:
@@ -221,8 +226,7 @@ class Editor {
 
     keyDown(event) {
         console.log('Key Down start ' + this.count + " " + this.observer + " "+ event + " "+event.target);
-        if (this.history.length && this.history[this.history.length-1])
-            this.history.push(null);
+        this.historyStep();
 
         let sel = event.target.ownerDocument.defaultView.getSelection();
         // debugger;
@@ -246,14 +250,14 @@ class Editor {
             event.preventDefault();
             this.historyPop();
         }
-        else if ((event.key == 'y') && event.ctrlKey) {                    // Ctrl y: Undo
+        else if ((event.key == 'y') && event.ctrlKey) {                    // Ctrl y: redo
             event.preventDefault();
             alert('redo not implemented');
         } 
 
         setTimeout(() => {
             this.sanitize();
-            this.history.push(null);
+            this.historyStep();
         }, 0);
 
     }
@@ -292,35 +296,45 @@ class Editor {
         this.idSet(domsrc, domdest);
         return domdest;
     }
-    historyPop(undo=true) {
-        if (! this.history.length)
-            return false;
-        let action = this.history.pop();
-        this.undo = true;
-        switch (action.type) {
-            case "characterData": 
-                this.idFind(this.vdom, action.id).textContent = action.oldValue;
-                break;
-            case "remove": 
-                if (action.nextId) {
-                    this.idFind(this.vdom, action.nextId).before(action.node);
-                }
-                else {
-                    this.idFind(this.vdom, action.parentId).append(action.node);
-                }
-                break;
-            case "add": 
-                let el = this.idFind(this.vdom, action.id);
-                if (el) el.remove();
-        }
 
-        // group changes made together
-        if (this.history.length && (action.time-this.history[this.history.length - 1].time) < 50) {
-            this.history.pop(false)
-        }
 
-        // shitty hack to wait for mutation observer to finish: use take_records?
-        if (undo) setTimeout( () => this.undo = false, 70);
+    // History
+    historyStep() {
+        if (this.history.length && this.history[this.history.length-1])
+            this.history.push(null);
+    }
+
+    historyPop() {
+        debugger;
+        while (this.history.length && !this.history[this.history.length-1])
+            this.history.pop();
+
+        let pos = this.history.length;
+        while (this.history.length) {
+            let action = this.history.pop();
+            if (!action) break;
+            switch (action.type) {
+                case "characterData": 
+                    this.idFind(this.dom, action.id).textContent = action.oldValue;
+                    break;
+                case "remove": 
+                    if (action.nextId && this.idFind(this.dom, action.nextId)) {
+                        this.idFind(this.dom, action.nextId).before(action.node);
+                    } else if (action.previousId && this.idFind(this.dom, action.previousId)) {
+                        this.idFind(this.dom, action.previousId).after(action.node);
+                    } else {
+                        this.idFind(this.dom, action.parentId).append(action.node);
+                    }
+                    break;
+                case "add": 
+                    let el = this.idFind(this.dom, action.id);
+                    if (el) el.remove();
+            }
+        };
+
+        this.observerFlush();
+        while (this.history.length > pos)
+            this.history.pop();
     }
 }
 
@@ -338,8 +352,10 @@ document.getElementById('domAdd').addEventListener("click", (event) => {
 });
 
 document.getElementById('domChange').addEventListener("click", (event) => {
+    editor.observerUnactive();
     let li = editor.dom.querySelector('li');
     li.firstChild.nodeValue="Changed in DOM!";
+    editor.observerActive();
 });
 
 document.getElementById('domReset').addEventListener("click", (event) => {
