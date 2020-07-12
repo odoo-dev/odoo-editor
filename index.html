@@ -5,6 +5,7 @@
             #dom-col {
                 width: 45%;
                 float: left;
+                margin-right: 20px;
             }
             #vdom-col {
                 width: 45%;
@@ -13,17 +14,18 @@
         </style>
     </head>
     <body>
-        <div id="vdom-col">
-            <h1>Edit Left</h1>
-            <button id="domReset">DOM</button>
-            <hr/>
+        <div id="dom-col">
+            <h1>DOM
+            <button id="domAdd">Add Stuff in DOM</button>
+            <button id="domChange">Change Text</button>
+            <button id="domReset">Reset DOM</button>
+        </h1>
+        <hr/>
             <div contentEditable="true" style="min-height:400px">
                 <h1>
                     Title H1
                 </h1>
-                <p>
-                    Paragraph 1.
-                </p>
+                <p>Paragraph 1.<br/></br/></p>
                 <div>
                     div 1.
                 </div>
@@ -43,13 +45,11 @@
                 </p>
             </div>
         </div>
-        <div id="dom-col">
+        <div id="vdom-col">
             <h1>vDOM</h1>
-            <button id="domAdd">Add Stuff in DOM</button>
-            <button id="domChange">Change Text</button>
             <hr/>
-            <div id="dom"/>
+            <div id="vdom"/>
         </div>
-        <script src="editor.js"></script>
+        <script src="editor.js" type="module"></script>
     </body>
 </html>

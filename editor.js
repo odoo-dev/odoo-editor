@@ -1,24 +1,129 @@
 "use strict";
 
+import {Sanitize} from "./sanitize.js";
+
 class Editor {
-    constructor(vdom, dom) {
+    constructor(dom) {
         this.count = 0;
-        this.vdom = vdom;
         this.dom = dom;
         this.history = [];
+        this.last_sanitize = 0;
         this.undo = false;
-        this.toDom();
+
+        let s = new Sanitize(dom);
+        this.vdom = this.newDom(this.dom);
+
+        this.observer_mode = undefined;
+        this.observerActive(['characterData']);
+        this.dom.addEventListener('keydown', this.keyDown.bind(this));
+    }
+
+    sanitize() {
+        console.log('sanitizing');
+
+        // find common ancestror in this.history[this.last_sanitize:]
+        let ca;
+        for (let record in this.history.slice(this.last_sanitize)) {
+            if (record===null) continue;
+            let node = this.idFind(this.dom, record.parentId || record.id);
+            if (ca) {
+                ca = ca.parents.has(node).first();
+            } else
+                ca = node;
+        }
+
+        // sanitize and mark current position as sanitized
+        this.last_sanitize = this.history.length;
+        new Sanitize(ca || this.dom);
+    }
+
+    // Observer
+    observerUnactive() {
+        this.observer.disconnect();
+        let records = this.observer.takeRecords();
+        this.observerApply(this.dom, this.vdom, records);
+    }
+    observerActive(mode) {
+        this.observer_mode = mode || ['characterData', 'childList'];
         this.observer = new MutationObserver(records => {
-            this.mutationApply(this.vdom, this.dom, records);
-        }).observe(vdom, {
+            this.observerApply(this.dom, this.vdom, records);
+        });
+        this.observer.observe(this.dom, {
             childList: true,
             subtree: true,
             attributes: true,
             characterData: true,
             characterDataOldValue: true,
         });
-        this.vdom.addEventListener('keydown', this.keyDown.bind(this));
     }
+    observerApply(srcel, destel, records) {
+        for (let record of records) {
+            console.log('    doing mutation' + record.type);
+            switch (record.type) {
+                case "characterData": 
+                    if (! this.undo)
+                        this.history.push({
+                            'type': "characterData",
+                            'id': record.target.count,
+                            "text": record.target.textContent,
+                            'time': Date.now(),
+                            "oldValue": record.oldValue
+                        });
+                    let node = this.idFind(destel, record.target.count)
+                    if (node)
+                        node.textContent = record.target.textContent;
+                    break
+                case "childList":
+                    record.removedNodes.forEach( (removed, index) => {
+                        if (! this.undo)
+                            this.history.push({
+                                'type': "remove",
+                                'id': removed.count,
+                                'parentId': record.target.count,
+                                'time': Date.now(),
+                                'node': removed,
+                                'nextId': record.nextSibling ? record.nextSibling.count : undefined,
+                            });
+                        let toremove = this.idFind(destel, removed.count, record.target.count);
+                        if (toremove)
+                            toremove.remove()
+                    });
+                    record.addedNodes.forEach( (added, index) => {
+                        if (added.count && this.idFind(destel, added.count)) {
+                            if (record.target.count == this.idFind(destel, added.count).parentNode.count) {
+                                return;
+                            }
+                        }
+                        let newnode = added.cloneNode(1);
+                        this.idSet(added, newnode);
+                        let action = {
+                            'type': "add",
+                            'id': added.count,
+                            'time': Date.now(),
+                            'node': newnode,
+                        }
+                        if (! record.nextSibling) {
+                            this.idFind(destel, record.target.count).append(newnode);
+                            action['append'] = record.target.count;
+                        } else {
+                            this.idFind(destel, record.nextSibling.count).before(newnode);
+                            action['before'] = record.nextSibling.count;
+                        }
+                        action['node'] = newnode;
+                        if (! this.undo)
+                            this.history.push(action);
+                    });
+                    break;
+                default:
+                    console.log('Unknown mutation type: '+record.type)
+            }
+        }
+        if (srcel.innerHTML!=destel.innerHTML) {
+            console.log('DOM & vDOM differs');
+        }
+    }
+
+
     //
     // DOM Handling: li
     //
@@ -115,6 +220,10 @@ class Editor {
     //
 
     keyDown(event) {
+        console.log('Key Down start ' + this.count + " " + this.observer + " "+ event + " "+event.target);
+        if (this.history.length && this.history[this.history.length-1])
+            this.history.push(null);
+
         let sel = event.target.ownerDocument.defaultView.getSelection();
         // debugger;
         if (event.keyCode === 13) {                   // enter key
@@ -140,9 +249,12 @@ class Editor {
         else if ((event.key == 'y') && event.ctrlKey) {                    // Ctrl y: Undo
             event.preventDefault();
             alert('redo not implemented');
-        }
+        } 
 
-        console.log('Key Down' + this + event + " "+event.target);
+        setTimeout(() => {
+            this.sanitize();
+            this.history.push(null);
+        }, 0);
 
     }
 
@@ -175,11 +287,10 @@ class Editor {
             cur = cur.nextSibling;
         }
     }
-    toDom() {
-        let olddom = this.dom;
-        this.dom = this.vdom.cloneNode(true);
-        olddom.parentNode.replaceChild(this.dom, olddom);
-        this.idSet(this.vdom, this.dom);
+    newDom(domsrc) {
+        let domdest = domsrc.cloneNode(true);
+        this.idSet(domsrc, domdest);
+        return domdest;
     }
     historyPop(undo=true) {
         if (! this.history.length)
@@ -211,80 +322,19 @@ class Editor {
         // shitty hack to wait for mutation observer to finish: use take_records?
         if (undo) setTimeout( () => this.undo = false, 70);
     }
-    mutationApply(srcel, destel, records) {
-        for (let record of records) {
-            switch (record.type) {
-                case "characterData": 
-                    if (! this.undo)
-                        this.history.push({
-                            'type': "characterData",
-                            'id': record.target.count,
-                            "text": record.target.textContent,
-                            'time': Date.now(),
-                            "oldValue": record.oldValue
-                        });
-                    this.idFind(destel, record.target.count).textContent = record.target.textContent;
-                    break
-                case "childList":
-                    record.removedNodes.forEach( (removed, index) => {
-                        if (! this.undo)
-                            this.history.push({
-                                'type': "remove",
-                                'id': removed.count,
-                                'parentId': record.target.count,
-                                'time': Date.now(),
-                                'node': removed,
-                                'nextId': record.nextSibling ? record.nextSibling.count : undefined,
-                            });
-                        let toremove = this.idFind(destel, removed.count, record.target.count);
-                        if (toremove)
-                            toremove.remove()
-                    });
-                    record.addedNodes.forEach( (added, index) => {
-                        if (added.count && this.idFind(destel, added.count)) {
-                            if (record.target.count == this.idFind(destel, added.count).parentNode.count) {
-                                console.log('    already!');
-                                return;
-                            }
-                        }
-                        let newnode = added.cloneNode(1);
-                        this.idSet(added, newnode);
-                        let action = {
-                            'type': "add",
-                            'id': added.count,
-                            'time': Date.now(),
-                            'node': newnode,
-                        }
-                        if (! record.nextSibling) {
-                            this.idFind(destel, record.target.count).append(newnode);
-                            action['append'] = record.target.count;
-                        } else {
-                            this.idFind(destel, record.nextSibling.count).before(newnode);
-                            action['before'] = record.nextSibling.count;
-                        }
-                        action['node'] = newnode;
-                        if (! this.undo)
-                            this.history.push(action);
-                    });
-                    break;
-                default:
-                    console.log('Unknown mutation type: '+record.type)
-            }
-        }
-        if (srcel.innerHTML!=destel.innerHTML) {
-            console.log('DOM & vDOM differs');
-        }
-    }
-
 }
 
-let editor = new Editor(document.querySelector("[contentEditable=true]"), document.getElementById('dom'));
-document.getElementById('dom-col').append(editor.dom);
+
+let editor = new Editor(document.querySelector("[contentEditable=true]"));
+
+document.getElementById('vdom').append(editor.vdom)
 
 document.getElementById('domAdd').addEventListener("click", (event) => {
     let newEl = document.createElement('div');
     newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
+    editor.observerUnactive();
     editor.dom.querySelector('div,p,li').after(newEl);
+    editor.observerActive();
 });
 
 document.getElementById('domChange').addEventListener("click", (event) => {
@@ -293,6 +343,10 @@ document.getElementById('domChange').addEventListener("click", (event) => {
 });
 
 document.getElementById('domReset').addEventListener("click", (event) => {
-    editor.toDom();
+    editor.observerUnactive();
+    let dom = editor.newDom(editor.vdom);
+    editor.dom.parentNode.replaceChild(dom, editor.dom);
+    editor.dom = dom;
+    editor.observerActive();
 });
 
