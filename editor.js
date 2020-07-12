@@ -3,7 +3,7 @@
 import {Sanitize} from "./sanitize.js";
 import {commonParentGet} from "./utils.js";
 
-class Editor {
+export class Editor {
     constructor(dom) {
         this.count = 0;
         this.dom = dom;
@@ -12,6 +12,7 @@ class Editor {
 
         let s = new Sanitize(dom);
         this.vdom = this.newDom(this.dom);
+        dom.setAttribute("contentEditable", true);
 
         this.observer_mode = undefined;
         this.observerActive(['characterData']);
@@ -237,7 +238,7 @@ class Editor {
             }
         }
         else if (event.keyCode === 9) {                    // tab key
-            event.preventDefault();  // this will prevent us from tabbing out of the editor
+            event.preventDefault();
             if (this.getLi(sel)) {
                 if (event.shiftKey) {
                     let li = this.listOutdent(sel);
@@ -246,7 +247,12 @@ class Editor {
                 }
             }
         }
-        else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
+        else if (event.keyCode === 9) {                    // tab key
+            event.preventDefault();
+            document.execCommand('forwardDelete')
+
+
+        } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
             event.preventDefault();
             this.historyPop();
         }
@@ -254,6 +260,7 @@ class Editor {
             event.preventDefault();
             alert('redo not implemented');
         } 
+        console.log("Keyboard Event "+ event.keyCode);
 
         setTimeout(() => {
             this.sanitize();
@@ -281,10 +288,12 @@ class Editor {
         }
     }
     idFind(dom, id, parentid) {                        // todo: bissect optim to not traverse the whole tree
+        if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+            return dom;
         let cur = dom.firstChild;
         while (cur) {
-            if (cur.count==id && ((!parentid) || cur.parentNode.count==parentid))
-                return cur;
+            if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+                return dom;
             let result = this.idFind(cur, id, parentid);
             if (result)
                 return result;
@@ -343,30 +352,30 @@ class Editor {
 }
 
 
-let editor = new Editor(document.querySelector("[contentEditable=true]"));
-
-document.getElementById('vdom').append(editor.vdom)
-
-document.getElementById('domAdd').addEventListener("click", (event) => {
-    let newEl = document.createElement('div');
-    newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
-    editor.observerUnactive();
-    editor.dom.querySelector('div,p,li').after(newEl);
-    editor.observerActive();
-});
-
-document.getElementById('domChange').addEventListener("click", (event) => {
-    editor.observerUnactive();
-    let li = editor.dom.querySelector('li');
-    li.firstChild.nodeValue="Changed in DOM!";
-    editor.observerActive();
-});
-
-document.getElementById('domReset').addEventListener("click", (event) => {
-    editor.observerUnactive();
-    let dom = editor.newDom(editor.vdom);
-    editor.dom.parentNode.replaceChild(dom, editor.dom);
-    editor.dom = dom;
-    editor.observerActive();
-});
-
+// let editor = new Editor(document.getElementById("dom"));
+// 
+// document.getElementById('vdom').append(editor.vdom)
+// 
+// document.getElementById('domAdd').addEventListener("click", (event) => {
+//     let newEl = document.createElement('div');
+//     newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
+//     editor.observerUnactive();
+//     editor.dom.querySelector('div,p,li').after(newEl);
+//     editor.observerActive();
+// });
+// 
+// document.getElementById('domChange').addEventListener("click", (event) => {
+//     editor.observerUnactive();
+//     let li = editor.dom.querySelector('li');
+//     li.firstChild.nodeValue="Changed in DOM!";
+//     editor.observerActive();
+// });
+// 
+// document.getElementById('domReset').addEventListener("click", (event) => {
+//     editor.observerUnactive();
+//     let dom = editor.newDom(editor.vdom);
+//     editor.dom.parentNode.replaceChild(dom, editor.dom);
+//     editor.dom = dom;
+//     editor.observerActive();
+// });
+// 

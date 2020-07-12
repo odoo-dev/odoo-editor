@@ -1,7 +1,9 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <style>
+            body { padding:5px; }
             #dom-col {
                 width: 45%;
                 float: left;
@@ -12,16 +14,28 @@
                 float: left;
             }
         </style>
+
+        <!-- add mocha -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/3.2.0/mocha.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/3.2.0/mocha.js"></script>
+        <script>
+            mocha.setup('bdd');
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/3.5.0/chai.js"></script>
+        <script>
+            let assert = chai.assert;
+        </script>
     </head>
     <body>
+        <!--
         <div id="dom-col">
             <h1>DOM
-            <button id="domAdd">Add Stuff in DOM</button>
-            <button id="domChange">Change Text</button>
-            <button id="domReset">Reset DOM</button>
-        </h1>
-        <hr/>
-            <div contentEditable="true" style="min-height:400px">
+                <button id="domAdd">Add Stuff in DOM</button>
+                <button id="domChange">Change Text</button>
+                <button id="domReset">Reset DOM</button>
+            </h1>
+            <hr/>
+            <div style="min-height:300px" id="dom">
                 <h1>
                     Title H1
                 </h1>
@@ -48,8 +62,13 @@
         <div id="vdom-col">
             <h1>vDOM</h1>
             <hr/>
-            <div id="vdom"/>
+            <div id="vdom"></div>
         </div>
+
+        <div style="clear: both"></div>
+        -->
+        <div id="mocha"/>
         <script src="editor.js" type="module"></script>
+        <script src="test/simple.test.js" type="module"></script>
     </body>
 </html>
