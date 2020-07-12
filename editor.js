@@ -305,13 +305,16 @@ class Editor {
     }
 
     historyPop() {
-        debugger;
         while (this.history.length && !this.history[this.history.length-1])
             this.history.pop();
 
         let pos = this.history.length;
-        while (this.history.length) {
-            let action = this.history.pop();
+        while (pos && this.history[pos-1])
+            pos -= 1;
+        let todo = this.history.slice(pos);
+
+        while (todo.length) {
+            let action = todo.pop();
             if (!action) break;
             switch (action.type) {
                 case "characterData": 
@@ -333,6 +336,7 @@ class Editor {
         };
 
         this.observerFlush();
+
         while (this.history.length > pos)
             this.history.pop();
     }
