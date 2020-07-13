@@ -226,10 +226,10 @@ export class Editor {
     //
 
     keyDown(event) {
-        console.log('Key Down start ' + this.count + " " + this.observer + " "+ event + " "+event.target);
+        console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
 
-        let sel = event.target.ownerDocument.defaultView.getSelection();
+        let sel = document.defaultView.getSelection();
         // debugger;
         if (event.keyCode === 13) {                   // enter key
             if ((sel.anchorNode.tagName == 'LI') && (! sel.anchorNode.innerText.replace('\n', ''))) {
@@ -247,11 +247,9 @@ export class Editor {
                 }
             }
         }
-        else if (event.keyCode === 9) {                    // tab key
+        else if (event.keyCode === 46) {                    // delete
             event.preventDefault();
             document.execCommand('forwardDelete')
-
-
         } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
             event.preventDefault();
             this.historyPop();
@@ -260,12 +258,15 @@ export class Editor {
             event.preventDefault();
             alert('redo not implemented');
         } 
-        console.log("Keyboard Event "+ event.keyCode);
 
-        setTimeout(() => {
-            this.sanitize();
-            this.historyStep();
-        }, 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                this.sanitize();
+                this.historyStep();
+                resolve(this);
+            }, 0);
+        });
 
     }
 

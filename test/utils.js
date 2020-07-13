@@ -188,6 +188,7 @@ export function testEditor(spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
     const editor = new Editor(testNode);
+    let prom;
 
     console.log('ici');
     testNode.innerHTML = spec.contentBefore;
@@ -199,17 +200,19 @@ export function testEditor(spec) {
     }
 
     if (spec.stepFunction)
-        spec.stepFunction(editor);
+        prom = spec.stepFunction(editor);
 
     if (spec.contentAfter) {
-         renderTextualSelection();
-         const value = editor.dom.innerHTML;
-         assert.equal(value, spec.contentAfter);
+        prom.then(() => {
+            renderTextualSelection();
+            const value = editor.dom.innerHTML;
+            assert.equal(value, spec.contentAfter);
+        })
     }
-    testNode.remove()
+    // testNode.remove()
 }
 
-export let deleteForward = (editor) => {
-    editor.dom.dispatchEvent(new KeyboardEvent('keydown',{'keyCode':46}));
-    document.execCommand('forwardDelete')
+export let deleteForward = async (editor) => {
+    let event = new KeyboardEvent('keydown', {'keyCode':46});
+    await editor.keyDown(event);
 };
