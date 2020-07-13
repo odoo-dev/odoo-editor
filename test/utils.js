@@ -1,3 +1,5 @@
+"use strict";
+
 import {Editor} from "../editor.js"
 
 let Direction = {
@@ -184,11 +186,10 @@ export function renderTextualSelection() {
 }
 
 
-export function testEditor(spec) {
+export async function testEditor(spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
     const editor = new Editor(testNode);
-    let prom;
 
     console.log('ici');
     testNode.innerHTML = spec.contentBefore;
@@ -200,14 +201,12 @@ export function testEditor(spec) {
     }
 
     if (spec.stepFunction)
-        prom = spec.stepFunction(editor);
+        await spec.stepFunction(editor);
 
     if (spec.contentAfter) {
-        prom.then(() => {
-            renderTextualSelection();
-            const value = editor.dom.innerHTML;
-            assert.equal(value, spec.contentAfter);
-        })
+        renderTextualSelection();
+        const value = editor.dom.innerHTML;
+        assert.equal(value, spec.contentAfter);
     }
     // testNode.remove()
 }
