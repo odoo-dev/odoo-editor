@@ -1,7 +1,7 @@
 "use strict";
 
 import {Sanitize} from "./sanitize.js";
-import {commonParentGet} from "./utils.js";
+import {commonParentGet} from "./utils/utils.js";
 
 export class Editor {
     constructor(dom) {
@@ -10,7 +10,7 @@ export class Editor {
         this.history = [];
         this.last_sanitize = 0;
 
-        let s = new Sanitize(dom);
+        let s = new Sanitize(dom, true);
         this.vdom = this.newDom(this.dom);
         dom.setAttribute("contentEditable", true);
 
@@ -23,8 +23,8 @@ export class Editor {
         console.log('sanitizing');
 
         // find common ancestror in this.history[this.last_sanitize:]
-        let ca;
-        for (let record in this.history.slice(this.last_sanitize)) {
+        let ca, record;
+        for (record of this.history.slice(this.last_sanitize)) {
             if (record===null) continue;
             let node = this.idFind(this.dom, record.parentId || record.id);
             ca = commonParentGet(ca, node)
@@ -353,9 +353,8 @@ export class Editor {
 }
 
 
-// let editor = new Editor(document.getElementById("dom"));
-// 
-// document.getElementById('vdom').append(editor.vdom)
+let editor = new Editor(document.getElementById("dom"));
+document.getElementById('vdom').append(editor.vdom)
 // 
 // document.getElementById('domAdd').addEventListener("click", (event) => {
 //     let newEl = document.createElement('div');

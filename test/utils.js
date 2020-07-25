@@ -158,6 +158,17 @@ export function targetDeepest(container, offset) {
     return [container, offset];
 }
 
+export function nodeLength(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node.nodeValue.length;
+    } else if (node instanceof Element && node.shadowRoot) {
+        return node.shadowRoot.childNodes.length;
+    } else {
+        return node.childNodes.length;
+    }
+}
+
+
 /**
  * Insert in the DOM:
  * - `SELECTION_ANCHOR_CHAR` in place for the selection start
@@ -208,7 +219,7 @@ export async function testEditor(spec) {
         const value = editor.dom.innerHTML;
         assert.equal(value, spec.contentAfter);
     }
-    // testNode.remove()
+    testNode.remove()
 }
 
 export let deleteForward = async (editor) => {
