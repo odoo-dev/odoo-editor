@@ -1,7 +1,7 @@
 "use strict";
 
 import {Sanitize} from "./sanitize.js";
-import {commonParentGet} from "./utils/utils.js";
+import {commonParentGet, hasContentAfter} from "./utils/utils.js";
 
 export class Editor {
     constructor(dom) {
@@ -225,12 +225,29 @@ export class Editor {
     // keyboard handling
     //
 
+
+    // replace trailing space by &nbsp;
+    deletePreProcess(event, sel) {
+        let node = sel.anchorNode;
+        if (! node) return () => {};
+        if ((node.nodeType == node.TEXT_NODE) && sel.anchorOffset && " \t".includes(node.nodeValue[sel.anchorOffset-1])) {
+            let oldlen = node.nodeValue.length;
+            return () => {
+                if ((sel.anchorOffset >= node.nodeValue.length) && !hasContentAfter(node)) {
+                    node.nodeValue =  node.nodeValue.replace(/[ \t]+$/, "\u00A0");
+                    sel.setPosition(node, node.nodeValue.length);
+                }
+            }
+        }
+        return () => {};
+    }
+
+
     keyDown(event) {
         console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
 
         let sel = document.defaultView.getSelection();
-        // debugger;
         if (event.keyCode === 13) {                   // enter key
             if ((sel.anchorNode.tagName == 'LI') && (! sel.anchorNode.innerText.replace('\n', ''))) {
                 event.preventDefault();
@@ -247,14 +264,18 @@ export class Editor {
                 }
             }
         }
-        else if (event.keyCode === 46) {                    // delete
+        else if (event.keyCode === 46) {                                     // delete
+            let cb = this.deletePreProcess(event, sel);
             event.preventDefault();
             document.execCommand('forwardDelete')
+            cb();
+
+
         } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
             event.preventDefault();
             this.historyPop();
         }
-        else if ((event.key == 'y') && event.ctrlKey) {                    // Ctrl y: redo
+        else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
             event.preventDefault();
             alert('redo not implemented');
         } 
@@ -355,27 +376,27 @@ export class Editor {
 
 let editor = new Editor(document.getElementById("dom"));
 document.getElementById('vdom').append(editor.vdom)
-// 
-// document.getElementById('domAdd').addEventListener("click", (event) => {
-//     let newEl = document.createElement('div');
-//     newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
-//     editor.observerUnactive();
-//     editor.dom.querySelector('div,p,li').after(newEl);
-//     editor.observerActive();
-// });
-// 
-// document.getElementById('domChange').addEventListener("click", (event) => {
-//     editor.observerUnactive();
-//     let li = editor.dom.querySelector('li');
-//     li.firstChild.nodeValue="Changed in DOM!";
-//     editor.observerActive();
-// });
-// 
-// document.getElementById('domReset').addEventListener("click", (event) => {
-//     editor.observerUnactive();
-//     let dom = editor.newDom(editor.vdom);
-//     editor.dom.parentNode.replaceChild(dom, editor.dom);
-//     editor.dom = dom;
-//     editor.observerActive();
-// });
-// 
+
+document.getElementById('domAdd').addEventListener("click", (event) => {
+    let newEl = document.createElement('div');
+    newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
+    editor.observerUnactive();
+    editor.dom.querySelector('div,p,li').after(newEl);
+    editor.observerActive();
+});
+
+document.getElementById('domChange').addEventListener("click", (event) => {
+    editor.observerUnactive();
+    let li = editor.dom.querySelector('li');
+    li.firstChild.nodeValue="Changed in DOM!";
+    editor.observerActive();
+});
+
+document.getElementById('domReset').addEventListener("click", (event) => {
+    editor.observerUnactive();
+    let dom = editor.newDom(editor.vdom);
+    editor.dom.parentNode.replaceChild(dom, editor.dom);
+    editor.dom = dom;
+    editor.observerActive();
+});
+

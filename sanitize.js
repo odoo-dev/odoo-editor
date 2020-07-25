@@ -1,6 +1,7 @@
 "use strict";
 
 import {isBlock} from "./utils/isBlock.js";
+import {isSimilarNode} from "./utils/utils.js";
 
 export class Sanitize {
     constructor(root) {
@@ -17,11 +18,32 @@ export class Sanitize {
 
     _parse(node, cleanup=false) {
         if (!node) return;
-        if (node.nodeType == 1) {
-            this._parse(node.firstChild, cleanup);
+        if (node.nodeType == node.ELEMENT_NODE) {
             if (node.tagName in this.tags)
                 this.tags[node.tagName](node, cleanup);
         }
+
+        // merge identitcal nodes
+        if (isSimilarNode(node, node.nextSibling) && !isBlock(node)) {
+            if ((node.nodeType == node.ELEMENT_NODE)
+              && !getComputedStyle(node, ':before').getPropertyValue('content')
+              && !getComputedStyle(node, ':after').getPropertyValue('content'))
+            {
+                let sel = document.defaultView.getSelection();
+                while (node.nextSibling.firstChild)
+                    node.append(node.nextSibling.firstChild);
+
+                // move slection anchor if needed
+                if (sel.anchorNode == node.nextSibling) {
+                    debugger;
+                }
+
+                node.nextSibling.remove();
+            }
+        }
+
+        if (node.nodeType == node.ELEMENT_NODE)
+            this._parse(node.firstChild, cleanup);
         this._parse(node.nextSibling, cleanup);
     }
 
