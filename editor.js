@@ -1,42 +1,74 @@
 "use strict";
 
-import {Sanitize} from "./sanitize.js";
+import {sanitize} from "./sanitize.js";
 import {commonParentGet, hasContentAfter} from "./utils/utils.js";
+import {} from "./dom/dom.js";
 
 export class Editor {
     constructor(dom) {
         this.count = 0;
-        this.dom = dom;
+        this.dom = sanitize(dom);
         this.history = [];
         this.last_sanitize = 0;
 
-        let s = new Sanitize(dom, true);
-        this.vdom = this.newDom(this.dom);
-        dom.setAttribute("contentEditable", true);
+        this.vdom = dom.cloneNode(true);
+        this.idSet(dom, this.vdom);
 
-        this.observer_mode = undefined;
+        dom.setAttribute("contentEditable", true);
         this.observerActive(['characterData']);
         this.dom.addEventListener('keydown', this.keyDown.bind(this));
     }
 
     sanitize() {
-        console.log('sanitizing');
-
         // find common ancestror in this.history[this.last_sanitize:]
         let ca, record;
         for (record of this.history.slice(this.last_sanitize)) {
             if (record===null) continue;
-            let node = this.idFind(this.dom, record.parentId || record.id);
-            ca = commonParentGet(ca, node)
+            let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
+            ca = ca?commonParentGet(ca, node, this.dom):node;
         }
+        if (! ca) return false;
+
+        console.log('sanitizing');
 
         // sanitize and mark current position as sanitized
         this.last_sanitize = this.history.length;
-        new Sanitize(ca || this.dom);
-
+        sanitize(ca);
     }
 
-    // Observer
+    //
+    // VDOM Processing
+    //
+    idSet(src, dest) {
+        if (src.count) {
+            dest.count = src.count;
+        } else {
+            src.count = dest.count = ++this.count;
+        }
+        let childsrc = src.firstChild;
+        let childdest = dest.firstChild;
+        while (childsrc) {
+            this.idSet(childsrc, childdest);
+            childsrc = childsrc.nextSibling;
+            childdest = childdest.nextSibling;
+        }
+    }
+    idFind(dom, id, parentid) {                        // todo: bissect optim to not traverse the whole tree
+        if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+            return dom;
+        let cur = dom.firstChild;
+        while (cur) {
+            if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+                return dom;
+            let result = this.idFind(cur, id, parentid);
+            if (result)
+                return result;
+            cur = cur.nextSibling;
+        }
+    }
+
+
+    // Observer that syncs doms
     observerUnactive() {
         this.observer.disconnect();
         this.observerFlush();
@@ -46,7 +78,6 @@ export class Editor {
         this.observerApply(this.dom, this.vdom, records);
     }
     observerActive(mode) {
-        this.observer_mode = mode || ['characterData', 'childList'];
         this.observer = new MutationObserver(records => {
             this.observerApply(this.dom, this.vdom, records);
         });
@@ -131,100 +162,8 @@ export class Editor {
 
 
     //
-    // DOM Handling: li
-    //
-
-    getLi(sel) {
-        let node = sel.anchorNode;
-        if (sel.rangeCount) {
-            let range = sel.getRangeAt(0);
-            if ((range.startContainer.nodeType == 1) && (node.tagName=='UL')) {
-                node = range.startContainer.firstChild
-                for (let i=0; i<range.startOffset; ++i)
-                    if (node.nextSibling)
-                        node = node.nextSibling;
-            }
-        }
-        if (node.nodeType==3)
-            node = node.parentNode;
-        return node.closest('li');
-    }
-
-    listIndent(sel) {
-        let li = this.getLi(sel);
-        let lip = document.createElement("li")
-        let ul = document.createElement("ul");
-        lip.append(ul);
-        lip.style.listStyle = "none";
-        li.before(lip);
-        ul.append(li);
-        this.listSanitize(lip.closest("ul"));
-
-        let range = new Range();
-        range.setStart(li,0);
-        range.setEnd(li,0);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        return li;
-    }
-
-    listOutdent(sel) {
-        let li = this.getLi(sel);
-        if (li.nextElementSibling) {
-            let ul = document.createElement("ul");
-            while (li.nextSibling)
-                ul.append(li.nextSibling);
-            if (li.parentNode.parentNode.tagName == 'LI') {
-                let lip = document.createElement("li");
-                lip.append(ul);
-                lip.style.listStyle = "none";
-                li.parentNode.parentNode.after(lip);
-            } else
-                li.parentNode.after(ul);
-        }
-
-        if (li.parentNode.parentNode.tagName == 'LI') {
-            let toremove = (! li.previousElementSibling)?li.parentNode.parentNode:null;
-            li.parentNode.parentNode.after(li);
-            if (toremove) toremove.remove();
-        } else {
-            let ul = li.parentNode;
-            while (li.firstChild)
-                li.parentNode.after(li.firstChild);
-            li.remove();
-            if (! ul.firstElementChild) ul.remove();
-        }
-
-        this.listSanitize(li.closest("ul"));
-
-        // duplicate code to remove
-        let range = new Range();
-        range.setStart(li,0);
-        range.setEnd(li,0);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        return li;
-    }
-
-    // merge same level siblings
-    listSanitize(ul) {
-        let li = ul.firstElementChild;
-        while (li) {
-            if ((li.style.listStyle=="none") && li.nextElementSibling && (li.nextElementSibling.style.listStyle=="none")) {
-                let curul = li.firstElementChild;
-                let oldul = li.nextElementSibling.firstElementChild;
-                while (oldul.firstChild)
-                    curul.append(oldul.firstChild);
-                li.nextElementSibling.remove();
-            }
-            li = li.nextElementSibling;
-        }
-    }
-
-    //
     // keyboard handling
     //
-
 
     // replace trailing space by &nbsp;
     deletePreProcess(event, sel) {
@@ -233,7 +172,7 @@ export class Editor {
         if ((node.nodeType == node.TEXT_NODE) && sel.anchorOffset && " \t".includes(node.nodeValue[sel.anchorOffset-1])) {
             let oldlen = node.nodeValue.length;
             return () => {
-                if ((sel.anchorOffset >= node.nodeValue.length) && !hasContentAfter(node)) {
+                if ((sel.anchorOffset >= node.nodeValue.length) && !hasContentAfter(node.nextSibling)) {
                     node.nodeValue =  node.nodeValue.replace(/[ \t]+$/, "\u00A0");
                     sel.setPosition(node, node.nodeValue.length);
                 }
@@ -247,29 +186,28 @@ export class Editor {
         console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
 
+        let cb = () => {};
         let sel = document.defaultView.getSelection();
-        if (event.keyCode === 13) {                   // enter key
-            if ((sel.anchorNode.tagName == 'LI') && (! sel.anchorNode.innerText.replace('\n', ''))) {
+        if (event.keyCode === 13) {                                          // enter key
+            if (! event.shiftKey) {
+                sel.anchorNode.oEnter( sel.anchorOffset )
                 event.preventDefault();
-                let li = this.listOutdent(sel);
             }
         }
-        else if (event.keyCode === 9) {                    // tab key
+        else if (event.keyCode === 8) {                                      // backspace
+            sel.anchorNode.oDelete( sel.anchorOffset )
             event.preventDefault();
-            if (this.getLi(sel)) {
-                if (event.shiftKey) {
-                    let li = this.listOutdent(sel);
-                } else {
-                    let li = this.listIndent(sel);
-                }
-            }
+        }
+        else if (event.keyCode === 9 && event.shiftKey) {                    // tab key
+            sel.anchorNode.oShiftTab(sel.anchorOffset) && event.preventDefault();
+        }
+        else if (event.keyCode === 9 && !event.shiftKey) {                    // tab key
+            sel.anchorNode.oTab(sel.anchorOffset) && event.preventDefault();
         }
         else if (event.keyCode === 46) {                                     // delete
-            let cb = this.deletePreProcess(event, sel);
+            cb = this.deletePreProcess(event, sel);
             event.preventDefault();
             document.execCommand('forwardDelete')
-            cb();
-
 
         } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
             event.preventDefault();
@@ -284,6 +222,7 @@ export class Editor {
         return new Promise((resolve) => {
             setTimeout(() => {
                 this.sanitize();
+                cb();
                 this.historyStep();
                 resolve(this);
             }, 0);
@@ -292,44 +231,8 @@ export class Editor {
     }
 
     //
-    // VDOM Processing
-    //
-    idSet(src, dest) {
-        console.log("src: "+src.count+", dest:"+dest.count+" - "+(this.count+1));
-        if (src.count) {
-            dest.count = src.count;
-        } else {
-            src.count = dest.count = ++this.count;
-        }
-        let childsrc = src.firstChild;
-        let childdest = dest.firstChild;
-        while (childsrc) {
-            this.idSet(childsrc, childdest);
-            childsrc = childsrc.nextSibling;
-            childdest = childdest.nextSibling;
-        }
-    }
-    idFind(dom, id, parentid) {                        // todo: bissect optim to not traverse the whole tree
-        if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
-            return dom;
-        let cur = dom.firstChild;
-        while (cur) {
-            if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
-                return dom;
-            let result = this.idFind(cur, id, parentid);
-            if (result)
-                return result;
-            cur = cur.nextSibling;
-        }
-    }
-    newDom(domsrc) {
-        let domdest = domsrc.cloneNode(true);
-        this.idSet(domsrc, domdest);
-        return domdest;
-    }
-
-
     // History
+    //
     historyStep() {
         if (this.history.length && this.history[this.history.length-1])
             this.history.push(null);

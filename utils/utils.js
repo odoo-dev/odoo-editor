@@ -1,40 +1,41 @@
 "use strict";
 
-function parentsGet(node) {
+function parentsGet(node, root=undefined) {
     let parents = [];
     while (node) {
-        parents.push(node);
-        node = node.parent;
+        parents.unshift(node);
+        if (node == root) break;
+        node = node.parentNode;
     }
     return parents;
 }
 
-
-export function commonParentGet(node1, node2) {
+export function commonParentGet(node1, node2, root=undefined) {
     if ((!node1) || (!node2)) return null;
-    let n1p = parentsGet(node1);
-    let n2p = parentsGet(node2);
-    while (n1p[1]==n2p[1]) {
+    let n1p = parentsGet(node1, root);
+    let n2p = parentsGet(node2, root);
+    while ((n1p.length>1) && (n1p[1]==n2p[1])) {
         n1p.shift();
         n2p.shift();
     }
     return n1p[0];
 }
 
+
 // TODO: improve to include the :before/:after {content: ...} like fa- or <br/>
 export function hasContentAfter(node) {
-    let node2 = node;
-    while (node2.nextSibling) {
-        node2 = node2.nextSibling;
-        if (node2.nodeType == node2.TEXT_NODE) {
-            if (node.nodeValue.replace(/[ \t]+$/, ''))
-                return true;
-        } else {
-            if (hasContentAfter(node2))
-                return true;
-        }
+    return node && (hasContent(node) || hasContentAfter(node.nextElementSibling) || hasContentAfter(node.firstElementChild));
+}
+
+// TODO: improve performance (avoid recursive textContent that is already 
+export function hasContent(node) {
+    if (!node)
+        return false;
+    if (node.nodeType == node.ELEMENT_NODE) {
+        if (getComputedStyle(node, ':before').getPropertyValue('content') || getComputedStyle(node, ':after').getPropertyValue('content'))
+            return true;
     }
-    return false;
+    return !!node.textContent.replace(/[ \t\n]+$/, '');
 }
 
 
@@ -53,5 +54,5 @@ export function isSimilarNode(node, node2) {
                 return false;
         }
     }
-    return true;
+    return ['b','u','i', 'ul', 'strong'].includes(node.tagName);
 }

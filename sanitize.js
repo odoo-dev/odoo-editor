@@ -1,18 +1,17 @@
 "use strict";
 
 import {isBlock} from "./utils/isBlock.js";
-import {isSimilarNode} from "./utils/utils.js";
+import {isSimilarNode, hasContentAfter} from "./utils/utils.js";
 
-export class Sanitize {
+class Sanitize {
     constructor(root) {
         this.root = root;
         this.parse(root)
     }
 
     parse(node, cleanup=false) {
-        let parentBlock = node;
-        while (! isBlock(parentBlock) )
-            parentBlock = parentBlock.parent;
+        while (! isBlock(node) )
+            node = node.parentNode;
         this._parse(node, cleanup);
     }
 
@@ -24,7 +23,7 @@ export class Sanitize {
         }
 
         // merge identitcal nodes
-        if (isSimilarNode(node, node.nextSibling) && !isBlock(node)) {
+        if (isSimilarNode(node, node.nextSibling)) {
             if ((node.nodeType == node.ELEMENT_NODE)
               && !getComputedStyle(node, ':before').getPropertyValue('content')
               && !getComputedStyle(node, ':after').getPropertyValue('content'))
@@ -37,7 +36,6 @@ export class Sanitize {
                 if (sel.anchorNode == node.nextSibling) {
                     debugger;
                 }
-
                 node.nextSibling.remove();
             }
         }
@@ -51,7 +49,7 @@ export class Sanitize {
     tags = {
         BR: (node, cleanup) => {
             // <p>ab<br/></p> -->  <p>ab</p>
-            if ((!node.nextSibling) && (node.previousSibling && node.previousSibling.tagName!='BR'))
+            if ((!hasContentAfter(node.nextSibling)) && (node.previousSibling && node.previousSibling.tagName!='BR'))
                 node.remove();
         },
         P: (node, cleanup) => {
@@ -63,4 +61,7 @@ export class Sanitize {
 }
 
 
-
+export function sanitize(root) {
+    new Sanitize(root);
+    return root;
+}

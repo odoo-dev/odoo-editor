@@ -14,6 +14,9 @@
                 float: left;
             }
         </style>
+        <!-- 
+        <script src="https://use.fontawesome.com/80d52a392c.js"></script>
+        -->
 
         <!-- add mocha -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/3.2.0/mocha.css">
@@ -35,7 +38,15 @@
             </h1>
             <hr/>
             <div style="min-height:300px" id="dom">
-                <p><span><b>ab[]</b><b>cd</b></span></p>
+                <h1>My title</h1>
+                <h2>Subtitle</h2>
+                <p>
+                    abc is <b>bold</b>
+                </p>
+                <ul>
+                     <li>first line <i>italic <b>bold</b></i></li>
+                     <li>second line</li>
+                </ul>
             </div>
         </div>
         <div id="vdom-col">
@@ -47,7 +58,9 @@
         <div style="clear: both"></div>
         <script src="editor.js" type="module"></script>
 
+        <!--
         <div id="mocha"/>
         <script src="test/editor.test.js" type="module"></script>
+        -->
     </body>
 </html>
