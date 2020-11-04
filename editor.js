@@ -91,11 +91,11 @@ export class Editor {
     }
     observerApply(srcel, destel, records) {
         for (let record of records) {
-            console.log('    doing mutation' + record.type);
             switch (record.type) {
                 case "characterData": 
                     let node = this.idFind(destel, record.target.count)
                     if (node) {
+                        console.log('char ', node.textContent, '->', record.target.textContent);
                         this.history.push({
                             'type': "characterData",
                             'id': record.target.count,
@@ -108,6 +108,7 @@ export class Editor {
                     break
                 case "childList":
                     record.removedNodes.forEach( (removed, index) => {
+                        console.log('remove', removed);
                         this.history.push({
                             'type': "remove",
                             'id': removed.count,
@@ -148,6 +149,7 @@ export class Editor {
                         this.idSet(added, newnode);
                         action['id'] = added.count;
                         action['node'] = newnode;
+                        console.log('added', added);
                         this.history.push(action);
                     });
                     break;
@@ -221,7 +223,7 @@ export class Editor {
 
         return new Promise((resolve) => {
             setTimeout(() => {
-                this.sanitize();
+                // this.sanitize();
                 cb();
                 this.historyStep();
                 resolve(this);

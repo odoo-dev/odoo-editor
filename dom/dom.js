@@ -1,19 +1,41 @@
+
+function cursorSet(node, offset) {
+    let sel = document.defaultView.getSelection();
+    let range = new Range();
+    range.setStart(node, Math.max(offset,0));
+    range.setEnd(node, Math.max(offset,0));
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+function fillEmpty(node) {
+     if (node && (! node.innerText) && !node.children.length)
+         node.append(document.createElement('br'));
+}
+
 // Element Keys
 
-HTMLElement.prototype.oEnter = function(node) {
+HTMLElement.prototype.oEnter = function(nextSibling) {
     console.log('oBreak Element');
     let style = window.getComputedStyle(this).display;
     let new_el = document.createElement(this.tagName);
-    while (node) {
-        let oldnode = node;
-        node = node.nextSibling;
+
+    while (nextSibling) {
+        let oldnode = nextSibling;
+        nextSibling = nextSibling.nextSibling;
         new_el.append(oldnode);
     }
+    fillEmpty(new_el);
     this.after(new_el)
 
     // escale only if display = inline
-    if (['inline', 'inline-block'].includes(style))
+    if (['inline', 'inline-block'].includes(style)) {
         this.parentElement.oEnter(new_el);
+    } else {
+        fillEmpty(this);
+    }
+    cursorSet(new_el, 0);
+    return new_el;
 }
 
 HTMLElement.prototype.oDelete = function() {
@@ -88,11 +110,19 @@ HTMLLIElement.prototype.oRemove = function() {
         ul.remove();
 }
 
-HTMLLIElement.prototype.oEnter = function(node) {
+HTMLLIElement.prototype.oEnter = function(nextSibling) {
     console.log('oBreak LI');
-    if (! this.nextElementSibling && ! this.textContent)
-        return this.oRemove();
-    return HTMLElement.prototype.oEnter.call(this, node);
+    if (this.nextElementSibling || this.textContent)
+        return HTMLElement.prototype.oEnter.call(this, nextSibling);
+
+    // enter at last li: should remove the <ll> and create an empty paragraph
+    let p = document.createElement('p');
+    let br = document.createElement('br');
+    p.append(bt);
+    this.closest('ul,ol').after(p);
+    this.oRemove();
+    cursorSet(p, 0);
+    return p;
 }
 
 HTMLLIElement.prototype.oDelete = function() {
@@ -153,15 +183,20 @@ HTMLLIElement.prototype.oShiftTab = function(offset) {
 
 Text.prototype.oEnter = function(offset) {
     console.log('oBreak Text');
-    if (! offset)
-        return this.parentElement.oEnter(this);
-    if (offset >= this.length)
-        return this.parentElement.oEnter(null);
-
-    let newText = document.createTextNode(this.nodeValue.substring(offset));
-    this.after(newText);
-    this.nodeValue = this.nodeValue.substring(0, offset);
-    return this.parentElement.oEnter(newText)
+    if (! offset) {
+        this.parentElement.oEnter(this);
+    } else if (offset >= this.length) {
+        let el = this.parentElement.oEnter(this.nextSibling);
+        cursorSet(el, 0);
+        return true;
+    } else {
+        let newval = this.nodeValue.substring(0,offset).replace(/[ \t]+$/, '\u00A0');
+        let newText = document.createTextNode(newval);
+        this.before(newText);
+        this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
+        this.parentElement.oEnter(this)
+    }
+    cursorSet(this, 0);
 }
 
 Text.prototype.oDelete = function(offset) {
@@ -171,7 +206,7 @@ Text.prototype.oDelete = function(offset) {
     if (offset === 0)
         return (this.previousSibling || this.parentElement).oDelete();
     this.nodeValue = this.nodeValue.substring(0, offset-1) + this.nodeValue.substring(offset);
-    return true;
+    cursorSet(this, offset-1);
 }
 
 Text.prototype.oTab = function(offset) {
