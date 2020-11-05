@@ -190,36 +190,42 @@ export class Editor {
 
         let cb = () => {};
         let sel = document.defaultView.getSelection();
-        if (event.keyCode === 13) {                                          // enter key
-            if (! event.shiftKey) {
-                sel.anchorNode.oEnter( sel.anchorOffset )
+        try {
+            if (event.keyCode === 13) {                                          // enter key
+                if (! event.shiftKey) {
+                    sel.anchorNode.oEnter( sel.anchorOffset )
+                    event.preventDefault();
+                }
+            }
+            else if (event.keyCode === 8) {                                      // backspace
+                sel.anchorNode.oDeleteBackward( sel.anchorOffset )
                 event.preventDefault();
             }
+            else if (event.keyCode === 9 && event.shiftKey) {                    // tab key
+                sel.anchorNode.oShiftTab(sel.anchorOffset) && event.preventDefault();
+            }
+            else if (event.keyCode === 9 && !event.shiftKey) {                    // tab key
+                sel.anchorNode.oTab(sel.anchorOffset) && event.preventDefault();
+            }
+            else if (event.keyCode === 46) {                                     // delete
+                event.preventDefault();
+                alert('redo not implemented');
+            } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
+                event.preventDefault();
+                this.historyPop();
+            }
+            else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
+                event.preventDefault();
+                alert('redo not implemented');
+            } 
+        } catch(err) {
+            if (err.message!='rollback')
+                throw err;
+            // revert what has been done in the history
+            this.observerFlush()
+            if (this.history[this.history.length-1] != null)
+                alert('implement revert history')
         }
-        else if (event.keyCode === 8) {                                      // backspace
-            sel.anchorNode.oDelete( sel.anchorOffset )
-            event.preventDefault();
-        }
-        else if (event.keyCode === 9 && event.shiftKey) {                    // tab key
-            sel.anchorNode.oShiftTab(sel.anchorOffset) && event.preventDefault();
-        }
-        else if (event.keyCode === 9 && !event.shiftKey) {                    // tab key
-            sel.anchorNode.oTab(sel.anchorOffset) && event.preventDefault();
-        }
-        else if (event.keyCode === 46) {                                     // delete
-            cb = this.deletePreProcess(event, sel);
-            event.preventDefault();
-            document.execCommand('forwardDelete')
-
-        } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
-            event.preventDefault();
-            this.historyPop();
-        }
-        else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
-            event.preventDefault();
-            alert('redo not implemented');
-        } 
-
 
         return new Promise((resolve) => {
             setTimeout(() => {
