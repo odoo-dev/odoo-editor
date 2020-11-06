@@ -4,6 +4,17 @@ import {sanitize} from "./sanitize.js";
 import {commonParentGet, hasContentAfter} from "./utils/utils.js";
 import {} from "./dom/dom.js";
 
+function callAnchor(method) {
+    let sel = document.defaultView.getSelection();
+    if (sel.anchorNode.nodeType==Node.TEXT_NODE)
+        return sel.anchorNode[method](sel.anchorOffset);
+
+    let node = sel.anchorNode;
+    if (sel.anchorOffset)
+        node = sel.anchorNode.childNodes[sel.anchorOffset-1]
+    return node[method]((node.nodeType==Node.TEXT_NODE)?node.length:0);
+}
+
 export class Editor {
     constructor(dom) {
         this.count = 0;
@@ -166,24 +177,6 @@ export class Editor {
     //
     // keyboard handling
     //
-
-    // replace trailing space by &nbsp;
-    deletePreProcess(event, sel) {
-        let node = sel.anchorNode;
-        if (! node) return () => {};
-        if ((node.nodeType == node.TEXT_NODE) && sel.anchorOffset && " \t".includes(node.nodeValue[sel.anchorOffset-1])) {
-            let oldlen = node.nodeValue.length;
-            return () => {
-                if ((sel.anchorOffset >= node.nodeValue.length) && !hasContentAfter(node.nextSibling)) {
-                    node.nodeValue =  node.nodeValue.replace(/[ \t]+$/, "\u00A0");
-                    sel.setPosition(node, node.nodeValue.length);
-                }
-            }
-        }
-        return () => {};
-    }
-
-
     keyDown(event) {
         console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
@@ -192,24 +185,31 @@ export class Editor {
         let sel = document.defaultView.getSelection();
         try {
             if (event.keyCode === 13) {                                          // enter key
+                event.preventDefault();
                 if (! event.shiftKey) {
-                    sel.anchorNode.oEnter( sel.anchorOffset )
-                    event.preventDefault();
+                    try {
+                        callAnchor('oEnter');
+                    } catch(err) {
+                        if (err.message!='unbreakable') throw err;
+                        callAnchor('oShiftEnter');
+                    }
+                } else {
+                    callAnchor('oShiftEnter');
                 }
             }
             else if (event.keyCode === 8) {                                      // backspace
-                sel.anchorNode.oDeleteBackward( sel.anchorOffset )
                 event.preventDefault();
+                callAnchor('oDeleteBackward');
             }
             else if (event.keyCode === 9 && event.shiftKey) {                    // tab key
-                sel.anchorNode.oShiftTab(sel.anchorOffset) && event.preventDefault();
+                callAnchor('oShiftTab') && event.preventDefault();
             }
             else if (event.keyCode === 9 && !event.shiftKey) {                    // tab key
-                sel.anchorNode.oTab(sel.anchorOffset) && event.preventDefault();
+                callAnchor('oTab') && event.preventDefault();
             }
             else if (event.keyCode === 46) {                                     // delete
                 event.preventDefault();
-                alert('redo not implemented');
+                alert('delete not implemented yet');
             } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
                 event.preventDefault();
                 this.historyPop();
@@ -219,12 +219,12 @@ export class Editor {
                 alert('redo not implemented');
             } 
         } catch(err) {
-            if (err.message!='rollback')
+            if (err.message!='unbreakable')
                 throw err;
             // revert what has been done in the history
             this.observerFlush()
             if (this.history[this.history.length-1] != null)
-                alert('implement revert history')
+                alert('implement revert history: this.historyPop()');
         }
 
         return new Promise((resolve) => {
@@ -276,9 +276,7 @@ export class Editor {
                     if (el) el.remove();
             }
         };
-
         this.observerFlush();
-
         while (this.history.length > pos)
             this.history.pop();
     }

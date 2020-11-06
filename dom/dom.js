@@ -1,11 +1,17 @@
 
-function cursorSet(node, offset) {
+function setCursor(node, offset) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
     range.setStart(node, Math.max(offset,0));
     range.setEnd(node, Math.max(offset,0));
     sel.removeAllRanges();
     sel.addRange(range);
+}
+
+function setCursorEnd(node) {
+    while (node.lastChild)
+        node = node.lastChild;
+    setCursor(node, (node.nodeType == Node.TEXT_NODE)?node.length:node.children.length)
 }
 
 function fillEmpty(node) {
@@ -16,7 +22,7 @@ function fillEmpty(node) {
 function isBlock(node) {
     if (!node || (node.nodeType == Node.TEXT_NODE)) return false;
     let style = window.getComputedStyle(node).display;
-    return ['block'].includes(style);
+    return ['block', 'list-item'].includes(style);
 }
 
 function parentBlock(node) {
@@ -39,8 +45,19 @@ function isUnbreakable(node) {
     return (node.id=="dom");
 }
 
+function setTagName(el, newTagName) {
+    var n = document.createElement(newTagName);
+    var attr = el.attributes;
+    for (var i = 0, len = attr.length; i < len; ++i)
+        n.setAttribute(attr[i].name, attr[i].value);
+    while (el.firstChild)
+        n.append(el.firstChild);
+    el.parentNode.replaceChild(n, el);
+    return n;
+}
+
 // return the node in which you should add the &nbsp;
-function _findTrailingSpace(node) {
+function removeTrailingInvisible(node) {
     let last = null;
     if (node.nodeType==Node.TEXT_NODE) {
         if (node.nodeValue.match(/[ \n\t]+$/, '')) {
@@ -49,9 +66,11 @@ function _findTrailingSpace(node) {
         }
         if (node.nodeValue)
             return last;
+    } else if (node.nodeName == 'BR') {
+        node.remove();
+        return false;
     }
     if (isBlock(node)) return last;
-
     while (!isBlock(node) && !node.previousSibling)
         node = node.parentElement;
     if (isBlock(node)) return last;
@@ -60,12 +79,35 @@ function _findTrailingSpace(node) {
     while (node.lastChild) node = node.lastChild;
     if (isBlock(node)) return last;
 
-    return _findTrailingSpace(node) || last;
+    return removeTrailingInvisible(node) || last;
 }
 
 function replaceTrailingSpace(node) {
-    let lastSpace = _findTrailingSpace(node) || node;
-    lastSpace.nodeValue = lastSpace.nodeValue+'\u00A0';
+    let lastSpace = removeTrailingInvisible(node) || node;
+    if (lastSpace)
+        lastSpace.nodeValue = lastSpace.nodeValue+'\u00A0';
+}
+
+function hasTrailingChar(node) {
+    while (node.nextSibling) {
+        node = node.nextSibling;
+        if (node.nodeType==Node.TEXT_NODE) {
+            if (node.nodeValue.replace(/[ \t\r\n]*/, ''))
+                return true;
+        } else if (node.textContent || (node.tagName=='BR') || isBlock(node))
+            return true;
+    }
+    return false;
+}
+
+function addBr(node) {
+    let br = document.createElement('BR');
+    node.after(br);
+    if (!hasTrailingChar(br))
+        node.after(document.createElement('BR'));
+    let index = Array.prototype.indexOf.call(br.parentNode.childNodes, br);
+    setCursor(br.parentNode, index+1);
+    return br;
 }
 
 // Element Keys
@@ -75,15 +117,18 @@ Object.defineProperty(Node.prototype, "oParent", {
     get: function myProperty() {
         if (!isUnbreakable(this.parentElement))
             return this.parentElement;
-        let error = new Error('rollback');
+        let error = new Error('unbreakable');
         throw error;
     }
 });
 
 HTMLElement.prototype.oEnter = function(nextSibling) {
     console.log('oBreak Element');
+    if (isUnbreakable(this) || isUnbreakable(this.parentElement)) {
+        addBr(this);
+        return true;
+    }
     let new_el = document.createElement(this.tagName);
-
     while (nextSibling) {
         let oldnode = nextSibling;
         nextSibling = nextSibling.nextSibling;
@@ -98,21 +143,26 @@ HTMLElement.prototype.oEnter = function(nextSibling) {
     } else {
         fillEmpty(this);
     }
-    cursorSet(new_el, 0);
+    setCursor(new_el, 0);
     return new_el;
 }
+
+HTMLElement.prototype.oShiftEnter = function(offset) {
+    let br = document.createElement('BR');
+    this.before(br);
+    return true;
+}
+
 
 // remove PREVIOUS node's trailing character
 HTMLElement.prototype.oDeleteBackward = function() {
     console.log('oDeleteBackward Element');
+    if (isUnbreakable(this)) return false;
     // merge with preceeding block
     let node = this.previousSibling;
     if (isBlock(this) || isBlock(node)) {
-        node = this.previousElementSibling || this.oParent;
+        node = this.previousSibling || this.parentElement;
         node.oMove(this);
-        while (node.lastChild)
-            node = node.lastChild;
-        cursorSet(node, (node.nodeType == Node.TEXT_NODE)?node.length:node.children.length)
         return true;
     }
 
@@ -153,12 +203,38 @@ HTMLElement.prototype.oRemove = function() {
 }
 
 HTMLElement.prototype.oMove = function(src) {
-    if (this.lastElementChild && this.lastElementChild.tagName=='BR')
-        this.lastElementChild.remove();
-    while (src.textContent)
-        this.append(src.firstChild);
-    src.remove();
+    setCursorEnd(this);
+
+    let end = this;
+    while (end.lastChild)
+        end = end.lastChild
+    removeTrailingInvisible(end);
+
+    if (isBlock(src)) {
+        while (src.firstChild)
+            this.append(src.firstChild);
+        src.remove();
+    } else {
+        let node = src;
+        while (node && !isBlock(node)) {
+            let next = node.nextSibling;
+            this.append(node);
+            node = next;
+        }
+    }
+    // setCursorEnd(this);
 }
+
+// BR
+
+HTMLBRElement.prototype.oDeleteBackward = function() {
+    this.remove();
+}
+
+HTMLBRElement.prototype.oMove = function(src) {
+    this.remove();
+}
+
 
 // UL
 
@@ -188,23 +264,25 @@ HTMLLIElement.prototype.oEnter = function(nextSibling) {
     // enter at last li: should remove the <ll> and create an empty paragraph
     let p = document.createElement('p');
     let br = document.createElement('br');
-    p.append(bt);
+    p.append(br);
     this.closest('ul,ol').after(p);
     this.oRemove();
-    cursorSet(p, 0);
+    setCursor(p, 0);
     return p;
 }
 
 HTMLLIElement.prototype.oDeleteBackward = function() {
     console.log('oDeleteBackward LI');
     let target = this.previousElementSibling;
-    if (! target) {
-        target = document.createElement('p');
-        this.oParent.before(target);
-    }
+    if (target)
+        return HTMLElement.prototype.oDeleteBackward.call(this);
+
+    target = document.createElement('p');
+    this.oParent.before(target);
     while (this.firstChild)
         target.append(this.firstChild);
     this.oRemove();
+    setCursorEnd(target);
 }
 
 HTMLLIElement.prototype.oTab = function(offset) {
@@ -249,7 +327,36 @@ HTMLLIElement.prototype.oShiftTab = function(offset) {
     return true;
 }
 
+// Heading
+
+// Cursor en of line: <h1>title[]</h1>  --> <h1>title</h1><p>[]<br/></p>
+// Cursor in the line: <h1>tit[]le</h1>  --> <h1>tit</h1><h1>[]le</h1>
+HTMLHeadingElement.prototype.oEnter = function(nextSibling) {
+    console.log('oEnter');
+    let new_el = HTMLElement.prototype.oEnter.call(this, nextSibling);
+    if (!new_el.textContent)
+        new_el = setTagName(new_el, 'P');
+    return new_el;
+}
+
 // TextNode
+
+Text.prototype.oShiftEnter = function(offset) {
+    if (! offset) {
+        let br = document.createElement('BR');
+        this.before(br);
+    } else if (offset >= this.length) {
+        addBr(this);
+    } else {
+        let newval = this.nodeValue.substring(0,offset).replace(/[ \t]+$/, '\u00A0');
+        let newText = document.createTextNode(newval);
+        this.before(newText);
+        this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
+        addBr(newText);
+        setCursor(this, 0);
+    }
+    return true;
+}
 
 Text.prototype.oEnter = function(offset) {
     console.log('oBreak Text');
@@ -257,30 +364,30 @@ Text.prototype.oEnter = function(offset) {
         this.oParent.oEnter(this);
     } else if (offset >= this.length) {
         let el = this.oParent.oEnter(this.nextSibling);
-        cursorSet(el, 0);
+        setCursor(el, 0);
         return true;
     } else {
+        let parent = this.oParent;                     // check before modification of the DOM
         let newval = this.nodeValue.substring(0,offset).replace(/[ \t]+$/, '\u00A0');
         let newText = document.createTextNode(newval);
         this.before(newText);
         this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-        this.oParent.oEnter(this)
+        parent.oEnter(this);
     }
-    cursorSet(this, 0);
+    setCursor(this, 0);
 }
 
 Text.prototype.oDeleteBackward = function(offset=undefined) {
     console.log('oDeleteBackward Text');
     let node = this;
     if (!this.nodeValue) {
-        while (isInline(node.oParent) && !node.oParent.innerText) {
+        while (isInline(node.parentElement) && !node.parentElement.innerText) {
             let oldnode = node;
-            node = node.oParent;
+            node = node.parentElement;
             oldnode.remove();
         }
         return HTMLElement.prototype.oDeleteBackward.call(node);
     }
-
     if (offset === 0) {
         return HTMLElement.prototype.oDeleteBackward.call(this);
     }
@@ -289,8 +396,8 @@ Text.prototype.oDeleteBackward = function(offset=undefined) {
     let from = offset - 1;
 
     // if char is space, remove multiple spaces: <p>abc   []</p>
-    if ([' ', '\t', '\n'].includes(value.charAt(from)))
-        while (from && [' ', '\t', '\n'].includes(value.charAt(from-1)))
+    if ([' ', '\t', '\n', '\r'].includes(value.charAt(from)))
+        while (from && [' ', '\t', '\n', '\r'].includes(value.charAt(from-1)))
             from--;
 
     let pnode = parentBlock(this);
@@ -299,15 +406,12 @@ Text.prototype.oDeleteBackward = function(offset=undefined) {
     let removed = oldsize - pnode.innerText.length;
 
     // we just removed empty spaces at beginning (!from) or end; propagate
-    if (!removed) {
-        let prec = from?this:this.previousSibling || this.oParent;
-        if (!this.nodeValue.length) this.remove();
-        return prec.oDeleteBackward();
-    }
+    if (!removed)
+        return this.oDeleteBackward(from);
 
     // trailing space to add, if there is a non space character before <p>abc b[]</p>
-    if ((removed == 2) && value.substring(0, from).replace(/[ \t\n]+/, ''))
-        this.nodeValue = this.nodeValue.replace(/[ \t]+$/, '\u00A0');
+    if ((removed == 2) && value.substring(0, from).replace(/[ \t\r\n]+/, ''))
+        this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
 
     // restore trailing space in other blocks <p><u>abc </u><b> b[]</bold></p>
     removed = oldsize - pnode.innerText.length;
@@ -315,15 +419,35 @@ Text.prototype.oDeleteBackward = function(offset=undefined) {
         replaceTrailingSpace(this);
 
     // if last visible character deleted from a block, add a <br> to keep block visible
-    cursorSet(this, Math.min(from, this.nodeValue.length));
+    setCursor(this, Math.min(from, this.nodeValue.length));
 
     // remove empty inline blocks cascading. What about o.remove?
     if (!pnode.innerText) {
         while (pnode.firstChild) pnode.firstChild.remove();
         pnode.append(document.createElement('br'));
-        cursorSet(pnode, 0);
+        setCursor(pnode, 0);
     }
 }
+
+Text.prototype.oMove = function(src) {
+    this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '');
+    if (! this.nodeValue)
+        return (this.previousSibling || this.parentElement).oMove(src)
+    setCursorEnd(this);
+    if (isBlock(src)) {
+        while (src.firstChild)
+            this.after(src.firstChild);
+        src.remove();
+    } else {
+        let node = src;
+        while (node && !isBlock(node)) {
+            this.after(node);
+            node = node.nextSibling;
+        }
+    }
+    // setCursorEnd(this);
+}
+
 
 Text.prototype.oTab = function(offset) {
     return this.oParent.oTab(0);
