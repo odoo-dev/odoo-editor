@@ -1,7 +1,21 @@
+// backward traversal: latestChild(el.previousSibling) || el.parentNode
+function latestChild(el) {
+    while (el && el.lastChild) el = el.lastChild;
+    return el;
+}
+
+function firstChild(el) {
+    while (el && el.firstChild) el = el.firstChild;
+    return el;
+}
 
 function setCursor(node, offset) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
+    if (node.nodeType==Node.TEXT_NODE && !node.parentElement.textContent) {
+        node.nodeValue = '\u200c'
+        offset=1;
+    }
     range.setStart(node, Math.max(offset,0));
     range.setEnd(node, Math.max(offset,0));
     sel.removeAllRanges();
@@ -9,8 +23,7 @@ function setCursor(node, offset) {
 }
 
 function setCursorEnd(node) {
-    while (node.lastChild)
-        node = node.lastChild;
+    node = latestChild(node);
     setCursor(node, (node.nodeType == Node.TEXT_NODE)?node.length:node.children.length)
 }
 
@@ -56,45 +69,43 @@ function setTagName(el, newTagName) {
     return n;
 }
 
-// return the node in which you should add the &nbsp;
-function removeTrailingInvisible(node) {
-    let last = null;
-    if (node.nodeType==Node.TEXT_NODE) {
-        if (node.nodeValue.match(/[ \n\t]+$/, '')) {
-            node.nodeValue = node.nodeValue.replace(/[ \n\t]+$/, '')
-            last = node;
+function hasBackwardVisibleSpace(node) {
+    let last = false;
+    do {
+        node = latestChild(node.previousSibling) || node.parentElement;
+        if (node.nodeType==Node.TEXT_NODE) {
+            if (node.nodeValue.search(/[ \t\r\n]/)>-1)
+                last = node;
+            if (node.nodeValue.replace(/[ \t\r\n]+/, ''))
+                return last;
         }
-        if (node.nodeValue)
+        if (isBlock(node) || (node.tagName=='BR'))
             return last;
-    } else if (node.nodeName == 'BR') {
-        node.remove();
-        return false;
-    }
-    if (isBlock(node)) return last;
-    while (!isBlock(node) && !node.previousSibling)
-        node = node.parentElement;
-    if (isBlock(node)) return last;
-    node = node.previousSibling;
-    if (isBlock(node)) return last;
-    while (node.lastChild) node = node.lastChild;
-    if (isBlock(node)) return last;
-
-    return removeTrailingInvisible(node) || last;
+    } while (node);
 }
 
-function replaceTrailingSpace(node) {
-    let lastSpace = removeTrailingInvisible(node) || node;
-    if (lastSpace)
-        lastSpace.nodeValue = lastSpace.nodeValue+'\u00A0';
+function hasForwardVisibleSpace(node) {
+    let last = false;
+    do {
+        node = firstChild(node.nextSibling) || node.parentElement;
+        if (node.nodeType==Node.TEXT_NODE) {
+            if (node.nodeValue.search(/[ \t\r\n]/)>-1)
+                last = node;
+            if (node.nodeValue.replace(/[ \t\r\n]+/, ''))
+                return last;
+        }
+        if (isBlock(node) || (node.tagName=='BR'))
+            return false;
+    } while (node);
 }
 
-function hasTrailingChar(node) {
-    while (node.nextSibling) {
+function hasForwardChar(node) {
+    while (node.nextSibling && !isBlock(node.nextSibling)) {
         node = node.nextSibling;
         if (node.nodeType==Node.TEXT_NODE) {
-            if (node.nodeValue.replace(/[ \t\r\n]*/, ''))
+            if (node.nodeValue.replace(/[ \t\r\n]+/, ''))
                 return true;
-        } else if (node.textContent || (node.tagName=='BR') || isBlock(node))
+        } else if (node.textContent || (node.tagName=='BR'))
             return true;
     }
     return false;
@@ -103,11 +114,19 @@ function hasTrailingChar(node) {
 function addBr(node) {
     let br = document.createElement('BR');
     node.after(br);
-    if (!hasTrailingChar(br))
+    if (!hasForwardChar(br))
         node.after(document.createElement('BR'));
     let index = Array.prototype.indexOf.call(br.parentNode.childNodes, br);
     setCursor(br.parentNode, index+1);
     return br;
+}
+
+function isInvisible(ch) {
+    return ['\u200c'].includes(ch);
+}
+
+function isSpace(ch) {
+    return [' ', '\t', '\n', '\r'].includes(ch);
 }
 
 // Element Keys
@@ -123,11 +142,7 @@ Object.defineProperty(Node.prototype, "oParent", {
 });
 
 HTMLElement.prototype.oEnter = function(nextSibling) {
-    console.log('oBreak Element');
-    if (isUnbreakable(this) || isUnbreakable(this.parentElement)) {
-        addBr(this);
-        return true;
-    }
+    console.log('oEnter Element');
     let new_el = document.createElement(this.tagName);
     while (nextSibling) {
         let oldnode = nextSibling;
@@ -165,18 +180,10 @@ HTMLElement.prototype.oDeleteBackward = function() {
         node.oMove(this);
         return true;
     }
-
-    if (! node)
-        return this.oParent.oDeleteBackward();
-
-    if (node.nodeType == Node.TEXT_NODE)
-        return node.oDeleteBackward();
-
-    if (isInline(node)) {
-        while (node.lastChild)
-            node = node.lastChild;
-        return node.oDeleteBackward();
-    }
+    let next = latestChild(this.previousSibling) || this.oParent;
+    if (! this.textContent)
+        this.remove()
+    return next.oDeleteBackward();
 }
 
 HTMLElement.prototype.oTab = function(offset=undefined) {
@@ -204,17 +211,18 @@ HTMLElement.prototype.oRemove = function() {
 
 HTMLElement.prototype.oMove = function(src) {
     setCursorEnd(this);
-
-    let end = this;
-    while (end.lastChild)
-        end = end.lastChild
-    removeTrailingInvisible(end);
-
     if (isBlock(src)) {
+        let node = latestChild(this);
+        // remove invisible stuff until block or text content found
+        while (!isBlock(node) && !((node.nodeType==Node.TEXT_NODE) && (node.nodeValue.replace(/[ \n\t\r]/,'')))) {
+            let old = node;
+            node = latestChild(node.previousSibling) || node.parentNode;
+            old.remove();
+        }
         while (src.firstChild)
             this.append(src.firstChild);
         src.remove();
-    } else {
+     } else {
         let node = src;
         while (node && !isBlock(node)) {
             let next = node.nextSibling;
@@ -228,6 +236,9 @@ HTMLElement.prototype.oMove = function(src) {
 // BR
 
 HTMLBRElement.prototype.oDeleteBackward = function() {
+    // propagate delete if we removed an invisible <br/>
+    if (!hasForwardChar(this))
+        (this.previousSibling || this.oParent).oDeleteBackward();
     this.remove();
 }
 
@@ -257,7 +268,7 @@ HTMLLIElement.prototype.oRemove = function() {
 }
 
 HTMLLIElement.prototype.oEnter = function(nextSibling) {
-    console.log('oBreak LI');
+    console.log('oEnter LI');
     if (this.nextElementSibling || this.textContent)
         return HTMLElement.prototype.oEnter.call(this, nextSibling);
 
@@ -282,7 +293,7 @@ HTMLLIElement.prototype.oDeleteBackward = function() {
     while (this.firstChild)
         target.append(this.firstChild);
     this.oRemove();
-    setCursorEnd(target);
+    setCursor(target.firstChild || target, 0);
 }
 
 HTMLLIElement.prototype.oTab = function(offset) {
@@ -329,10 +340,10 @@ HTMLLIElement.prototype.oShiftTab = function(offset) {
 
 // Heading
 
-// Cursor en of line: <h1>title[]</h1>  --> <h1>title</h1><p>[]<br/></p>
+// Cursor end of line: <h1>title[]</h1>  --> <h1>title</h1><p>[]<br/></p>
 // Cursor in the line: <h1>tit[]le</h1>  --> <h1>tit</h1><h1>[]le</h1>
 HTMLHeadingElement.prototype.oEnter = function(nextSibling) {
-    console.log('oEnter');
+    console.log('oEnter Heading');
     let new_el = HTMLElement.prototype.oEnter.call(this, nextSibling);
     if (!new_el.textContent)
         new_el = setTagName(new_el, 'P');
@@ -359,7 +370,7 @@ Text.prototype.oShiftEnter = function(offset) {
 }
 
 Text.prototype.oEnter = function(offset) {
-    console.log('oBreak Text');
+    console.log('oEnter Text');
     if (! offset) {
         this.oParent.oEnter(this);
     } else if (offset >= this.length) {
@@ -379,54 +390,74 @@ Text.prototype.oEnter = function(offset) {
 
 Text.prototype.oDeleteBackward = function(offset=undefined) {
     console.log('oDeleteBackward Text');
-    let node = this;
-    if (!this.nodeValue) {
-        while (isInline(node.parentElement) && !node.parentElement.innerText) {
-            let oldnode = node;
-            node = node.parentElement;
-            oldnode.remove();
-        }
-        return HTMLElement.prototype.oDeleteBackward.call(node);
-    }
-    if (offset === 0) {
+    let space = false;
+    let value = this.nodeValue;
+    if (offset===undefined) offset = offset || value.length;
+    let from = offset-1;
+
+    // remove zero-width characters
+    while (isInvisible(value.charAt(from))) from--;
+    while (isInvisible(value.charAt(offset))) offset++;
+    if (from < 0) {
+        this.nodeValue = value.substring(offset);
         return HTMLElement.prototype.oDeleteBackward.call(this);
     }
-    let value = this.nodeValue;
-    offset = offset || value.length;
-    let from = offset - 1;
 
     // if char is space, remove multiple spaces: <p>abc   []</p>
-    if ([' ', '\t', '\n', '\r'].includes(value.charAt(from)))
-        while (from && [' ', '\t', '\n', '\r'].includes(value.charAt(from-1)))
+    space = isSpace(value.charAt(from));
+    if (space) {
+        while (from && (isSpace(value.charAt(from-1)) || isInvisible(value.charAt(from-1))))
             from--;
-
-    let pnode = parentBlock(this);
-    let oldsize = pnode.innerText.length;
-    this.nodeValue = value.substring(0, from) + value.substring(offset);
-    let removed = oldsize - pnode.innerText.length;
-
-    // we just removed empty spaces at beginning (!from) or end; propagate
-    if (!removed)
-        return this.oDeleteBackward(from);
-
-    // trailing space to add, if there is a non space character before <p>abc b[]</p>
-    if ((removed == 2) && value.substring(0, from).replace(/[ \t\r\n]+/, ''))
-        this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
-
-    // restore trailing space in other blocks <p><u>abc </u><b> b[]</bold></p>
-    removed = oldsize - pnode.innerText.length;
-    if (removed == 2)
-        replaceTrailingSpace(this);
-
-    // if last visible character deleted from a block, add a <br> to keep block visible
-    setCursor(this, Math.min(from, this.nodeValue.length));
-
-    // remove empty inline blocks cascading. What about o.remove?
-    if (!pnode.innerText) {
-        while (pnode.firstChild) pnode.firstChild.remove();
-        pnode.append(document.createElement('br'));
-        setCursor(pnode, 0);
+        // TODO: increae offset for this use case ___[]___
     }
+    this.nodeValue = value.substring(0, from) + value.substring(offset);
+
+    // adapt space into &nbsp; and vice-versa, depending on context
+    let left =  value.substring(0, from).replace(/[ \t\r\n]+/, '')
+    let right = value.substring(offset).replace(/[ \t\r\n]+/, '')
+    let leftSpace = hasBackwardVisibleSpace(this);
+    let rightSpace = hasForwardVisibleSpace(this);
+    if (!from) {
+        if (space)                                          // _</b>_[]  or  </p>_[]
+            return this.oDeleteBackward(0);
+        if (!space && !leftSpace)                            // </p>a[]_
+            this.nodeValue = this.nodeValue.replace(/^[ \t\r\n]+/, '\u00A0');
+        if (!space && leftSpace)                             // _</b>a[]_
+            leftSpace.nodeValue = leftSpace.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
+    } else if (!right) {
+        if (space && rightSpace)                              // _[]</b>_
+            return this.oDeleteBackward();
+        if (!space && !rightSpace)                            // a_a[]</p>   || <p>___a[]_</p>
+            if (left || leftSpace)
+                this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
+    } else {
+        if (!right && !space)                               // _a[]_</b>
+            this.nodeValue = value.substring(0, from).replace(/[ \t\r\n]+$/, '\u00A0')+value.substring(offset);
+        if (!left && !space)                                // </p>_a[]_
+            this.nodeValue = value.substring(0, from)+value.substring(offset).replace(/^[ \t\r\n]+/, '\u00A0');
+    }
+
+    // // TODO: move this to utils?
+    // add a <br> if necessary: double a preceeding one, or inside an empty block
+    if (!this.nodeValue.replace(/[ \t\r\n]+/, '') && !hasForwardChar(this)) {
+        let node = this;
+        do {
+            if (node.previousSibling) {
+                node = latestChild(node.previousSibling);
+                if (node.tagName=="BR") {
+                    node.before(document.createElement('BR'));
+                    break;
+                }
+            } else {
+                node = node.parentElement;
+                if (isBlock(node)) {
+                    node.append(document.createElement('BR'));
+                    break;
+                }
+            }
+        } while (!isBlock(node) && !((node.nodeType==Node.TEXT_NODE) && node.nodeValue.replace(/[ \t\r\n]+/, '')) )
+    }
+    setCursor(this, Math.min(from, this.nodeValue.length));
 }
 
 Text.prototype.oMove = function(src) {
