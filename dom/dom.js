@@ -9,7 +9,7 @@ function firstChild(el) {
     return el;
 }
 
-function setCursor(node, offset) {
+function setCursor(node, offset=undefined) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
     if (node.nodeType==Node.TEXT_NODE && !node.parentElement.textContent) {
@@ -300,10 +300,13 @@ HTMLLIElement.prototype.oTab = function(offset) {
     let lip = document.createElement("li")
     let ul = document.createElement("ul");
 
+    // TODO: improve DOM structure smarter by joining same level sibling (shiftTab already supports it)
+
     lip.append(ul);
     lip.style.listStyle = "none";
     this.before(lip);
     ul.append(this);
+    setCursor(this, 0);
     return true;
 }
 
@@ -326,14 +329,16 @@ HTMLLIElement.prototype.oShiftTab = function(offset) {
         let toremove = (! li.previousElementSibling)?li.parentNode.parentNode:null;
         li.parentNode.parentNode.after(li);
         if (toremove) toremove.remove();
+        setCursor(li.firstChild || li, 0);
     } else {
         let ul = li.parentNode;
-        p = document.createElement('p');
+        let p = document.createElement('P');
         while (li.firstChild)
             p.append(li.firstChild);
         li.parentNode.after(p);
         li.remove();
         if (! ul.firstElementChild) ul.remove();
+        setCursor(p.firstChild || p, 0);
     }
     return true;
 }
