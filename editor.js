@@ -2,7 +2,7 @@
 
 import {sanitize} from "./sanitize.js";
 import {commonParentGet, hasContentAfter} from "./utils/utils.js";
-import {} from "./dom/dom.js";
+import {parentBlock, setTagName} from "./dom/dom.js";
 
 function callAnchor(method) {
     let sel = document.defaultView.getSelection();
@@ -28,6 +28,11 @@ export class Editor {
         dom.setAttribute("contentEditable", true);
         this.observerActive(['characterData']);
         this.dom.addEventListener('keydown', this.keyDown.bind(this));
+        document.onselectionchange = this.selectionChange.bind(this);
+        this.toolbar = document.querySelector('#toolbar');
+        this.toolbar.querySelectorAll('div.btn').forEach((item) => {
+            item.onmousedown = this.toolbarClick.bind(this);
+        });
     }
 
     sanitize() {
@@ -174,9 +179,62 @@ export class Editor {
     }
 
 
-    //
+    // selection handling
+    selectionChange(event) {
+        let sel = document.defaultView.getSelection();
+        if (sel.isCollapsed) {
+            this.toolbar.style.visibility = 'hidden';
+            return true;
+        }
+        this.toolbar.style.visibility = 'visible';
+        toolbarUpdate();
+    }
+
+    toolbarUpdate() {
+        this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
+        this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
+        this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
+        this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
+
+        let pnode = parentBlock(sel.anchorNode);
+        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName=='P');
+        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName=='H1');
+        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName=='H2');
+        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName=='H3');
+        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName=='BLOCKQUOTE');
+        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName=='LI') && (pnode.parentElement.tagName=="UL"));
+        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName=='LI') && (pnode.parentElement.tagName=="OL"));
+        return true;
+    }
+
+    // toolbar handling
+    toolbarClick(event) {
+        const TAGS= {
+            'paragraph': 'p',
+            'heading1': 'H1',
+            'heading2': 'H2',
+            'heading3': 'H3',
+            'blockquote': 'BLOCKQUOTE',
+            'unordered': 'UL',
+            'ordered': 'OL',
+        }
+        try {
+            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.toElement.id)) {
+                document.execCommand(event.toElement.id);
+            } else {
+                let sel = document.defaultView.getSelection();
+                let pnode = parentBlock(sel.anchorNode);
+                setTagName(pnode, TAGS[event.toElement.id]);
+            }
+            toolbarUpdate();
+        } catch(err) {
+            if (err.message!='unbreakable') throw err;
+            this.historyRollback();
+        }
+        event.preventDefault();
+    }
+
     // keyboard handling
-    //
     keyDown(event) {
         console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
@@ -191,6 +249,7 @@ export class Editor {
                         callAnchor('oEnter');
                     } catch(err) {
                         if (err.message!='unbreakable') throw err;
+                        this.historyRollback();
                         callAnchor('oShiftEnter');
                     }
                 } else {
@@ -219,12 +278,8 @@ export class Editor {
                 alert('redo not implemented');
             } 
         } catch(err) {
-            if (err.message!='unbreakable')
-                throw err;
-            // revert what has been done in the history
-            this.observerFlush()
-            if (this.history[this.history.length-1] != null)
-                alert('implement revert history: this.historyPop()');
+            if (err.message!='unbreakable') throw err;
+            this.historyRollback();
         }
 
         return new Promise((resolve) => {
@@ -244,6 +299,12 @@ export class Editor {
     historyStep() {
         if (this.history.length && this.history[this.history.length-1])
             this.history.push(null);
+    }
+
+    historyRollback() {
+        this.observerFlush();
+        if (this.history.length && this.history[this.history.length-1])
+            this.historyPop();
     }
 
     historyPop() {

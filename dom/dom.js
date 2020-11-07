@@ -38,7 +38,7 @@ function isBlock(node) {
     return ['block', 'list-item'].includes(style);
 }
 
-function parentBlock(node) {
+export function parentBlock(node) {
     return isBlock(node)?node:parentBlock(node.parentElement);
 }
 
@@ -58,14 +58,17 @@ function isUnbreakable(node) {
     return (node.id=="dom");
 }
 
-function setTagName(el, newTagName) {
+export function setTagName(el, newTagName) {
     var n = document.createElement(newTagName);
     var attr = el.attributes;
     for (var i = 0, len = attr.length; i < len; ++i)
         n.setAttribute(attr[i].name, attr[i].value);
     while (el.firstChild)
         n.append(el.firstChild);
-    el.parentNode.replaceChild(n, el);
+    if (el.tagName == 'LI')
+        el.append(n);
+    else
+        el.parentNode.replaceChild(n, el);
     return n;
 }
 
@@ -143,6 +146,11 @@ Object.defineProperty(Node.prototype, "oParent", {
 
 HTMLElement.prototype.oEnter = function(nextSibling) {
     console.log('oEnter Element');
+
+    // if no block, or in an unbreackable: do a shiftEnter instead
+    let pnode = this;
+    while (!isBlock(pnode)) pnode=pnode.oParent;
+
     let new_el = document.createElement(this.tagName);
     while (nextSibling) {
         let oldnode = nextSibling;
@@ -153,7 +161,7 @@ HTMLElement.prototype.oEnter = function(nextSibling) {
     this.after(new_el)
 
     // escale only if display = inline
-    if (isInline(this) && !isUnbreakable(this.parentElement)) {
+    if (isInline(this) && this.oParent) {
         this.parentElement.oEnter(new_el);
     } else {
         fillEmpty(this);
@@ -376,6 +384,10 @@ Text.prototype.oShiftEnter = function(offset) {
 
 Text.prototype.oEnter = function(offset) {
     console.log('oEnter Text');
+    // check if the next block is unbreackable: rollback will do a shiftEnter instead
+    let pnode = this;
+    while (!isBlock(pnode)) pnode=pnode.oParent;
+
     if (! offset) {
         this.oParent.oEnter(this);
     } else if (offset >= this.length) {
@@ -383,12 +395,11 @@ Text.prototype.oEnter = function(offset) {
         setCursor(el, 0);
         return true;
     } else {
-        let parent = this.oParent;                     // check before modification of the DOM
         let newval = this.nodeValue.substring(0,offset).replace(/[ \t]+$/, '\u00A0');
         let newText = document.createTextNode(newval);
         this.before(newText);
         this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-        parent.oEnter(this);
+        this.oParent.oEnter(this);
     }
     setCursor(this, 0);
 }

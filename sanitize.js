@@ -47,16 +47,11 @@ class Sanitize {
 
 
     tags = {
-        BR: (node, cleanup) => {
-            // <p>ab<br/></p> -->  <p>ab</p>
-            if ((!hasContentAfter(node.nextSibling)) && (node.previousSibling && node.previousSibling.tagName!='BR'))
-                node.remove();
-        },
-        P: (node, cleanup) => {
-            // <p></p> -->  <p><br/></p>
-            if (!node.firstChild)
-                node.innerHTML = '<br/>';
-        }
+        // example
+        // P: (node, cleanup) => {
+        //     if (!node.firstChild)
+        //         node.innerHTML = '<br/>';
+        // }
     }
 }
 

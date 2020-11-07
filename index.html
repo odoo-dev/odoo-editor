@@ -15,17 +15,33 @@
             }
             #dom {
                 padding: 10px;
-                min-height: 300px;
+                min-height: 500px;
             }
             span.btn {
                 background-color: blue;
                 padding: 15px;
                 color: white;
             }
+            #toolbar {
+                background: #222222;
+                color: white;
+                display: inline-block;
+            }
+            .mr8 {
+                margin-right: 16px;
+            }
+            #toolbar div.btn {
+                padding: 7px;
+                float: left;
+            }
+            #toolbar div.active {
+                background: #555555;
+            }
         </style>
         <!-- 
         <script src="https://use.fontawesome.com/80d52a392c.js"></script>
         -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous"/>
 
         <!-- add mocha -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/3.2.0/mocha.css">
@@ -46,6 +62,19 @@
                 <button id="domReset">Reset DOM</button>
             </h1>
             <hr/>
+            <div id="toolbar" style="visibility:hidden">
+                <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
+                <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
+                <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
+                <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn mr8"></div>
+                <div class="btn" id="paragraph">P</div>
+                <div class="btn" id="heading1">H1</div>
+                <div class="btn" id="heading2">H2</div>
+                <div class="btn mr8" id="heading3">H3</div>
+                <div id="blockquote" title="Blockquote" class="fa fa-quote-right fa-fw btn mr8"></div>
+                <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
+                <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
+            </div>
             <div id="dom">
 
                 <h1>Title a</h1>
@@ -67,8 +96,9 @@
                 </div>
 
             </div>
-        </div>
-        <div id="vdom-col">
+         </div>
+
+       <div id="vdom-col">
             <h1>vDOM</h1>
             <hr/>
             <div id="vdom"></div>
