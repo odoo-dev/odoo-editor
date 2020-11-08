@@ -18,6 +18,7 @@ function callAnchor(method) {
 
 export class Editor {
     constructor(dom) {
+        dom.oid = 1;                      // convention: root node is ID 1
         this.dom = sanitize(dom);
         this.history = [{
             cursor: {
@@ -29,7 +30,6 @@ export class Editor {
             dom: [],
             id: undefined
         }];
-
         this.vdom = dom.cloneNode(true);
         this.idSet(dom, this.vdom);
 
@@ -54,7 +54,6 @@ export class Editor {
             ca = ca?commonParentGet(ca, node, this.dom):node;
         }
         if (! ca) return false;
-        console.log('sanitizing');
 
         // sanitize and mark current position as sanitized
         sanitize(ca);
@@ -113,11 +112,11 @@ export class Editor {
     }
     observerFlush() {
         let records = this.observer.takeRecords();
-        this.observerApply(this.dom, this.vdom, records);
+        this.observerApply(this.vdom, records);
     }
     observerActive(mode) {
         this.observer = new MutationObserver(records => {
-            this.observerApply(this.dom, this.vdom, records);
+            this.observerApply(this.vdom, records);
         });
         this.observer.observe(this.dom, {
             childList: true,
@@ -128,13 +127,15 @@ export class Editor {
         });
     }
 
-    observerApply(srcel, destel, records) {
+    // TODO: refactor this method to use history apply, in 2 steps:
+    //    1) transform observerRecord -> historyRecord
+    //    2) apply historyRecord
+    observerApply(destel, records) {
         for (let record of records) {
             switch (record.type) {
                 case "characterData":
                     let node = this.idFind(destel, record.target.oid)
                     if (node) {
-                        console.log('char ', node.textContent, '->', record.target.textContent);
                         this.history[this.history.length-1].dom.push({
                             'type': "characterData",
                             'id': record.target.oid,
@@ -146,7 +147,6 @@ export class Editor {
                     break
                 case "childList":
                     record.removedNodes.forEach( (removed, index) => {
-                        console.log('remove', removed);
                         this.history[this.history.length-1].dom.push({
                             'type': "remove",
                             'id': removed.oid,
@@ -184,7 +184,6 @@ export class Editor {
                         this.idSet(added, newnode);
                         action['id'] = added.oid;
                         action['node'] = this.serialize(newnode);
-                        console.log('added', added);
                         this.history[this.history.length-1].dom.push(action);
                     });
                     break;
@@ -192,11 +191,7 @@ export class Editor {
                     console.log('Unknown mutation type: '+record.type)
             }
         }
-        if (srcel.innerHTML!=destel.innerHTML) {
-            console.log('DOM & vDOM differs');
-        }
     }
-
 
     // selection handling
     selectionChange(event) {
@@ -258,6 +253,7 @@ export class Editor {
     keyDown(event) {
         console.log("Keyboard Event "+ event.keyCode);
         this.historyStep();
+        this.historyCursor();
 
         let cb = () => {};
         let sel = document.defaultView.getSelection();
@@ -317,20 +313,12 @@ export class Editor {
     // History
     //
 
-    // One operation completed, go to next one
+    // One operation of several changes completed, go to next one
     historyStep() {
         let latest=this.history[this.history.length-1];
-        let sel = document.defaultView.getSelection();
-
         if (!latest.dom.length)
             return false;
 
-        latest.cursor.anchorNode = sel.anchorNode.oid;
-        latest.cursor.anchorOffset = sel.anchorOffset;
-        if (! sel.isCollapsed) {
-            latest.cursor.focusNode = sel.focusNode.oid;
-            latest.cursor.focusOffset = sel.focusOffset;
-        }
         latest.id = Math.random() * 2**31 | 0; // TODO: replace by uuid4 generator
 
         this.historySend(latest);
@@ -341,7 +329,98 @@ export class Editor {
 
     }
 
+    historyCursor() {
+        let latest=this.history[this.history.length-1];
+        if (latest.cursor.anchorNode)
+            return false;
+        let sel = document.defaultView.getSelection();
+        latest.cursor.anchorNode = sel.anchorNode.oid;
+        latest.cursor.anchorOffset = sel.anchorOffset;
+        if (! sel.isCollapsed) {
+            latest.cursor.focusNode = sel.focusNode.oid;
+            latest.cursor.focusOffset = sel.focusOffset;
+        }
+    }
+
+    // apply changes according to some records
+    historyApply(destel, records) {
+        for (let record of records) {
+            switch (record.type) {
+                case "characterData":
+                    let node = this.idFind(destel, record.id)
+                    if (node)
+                        node.textContent = record.text;
+                    break
+                case "remove":
+                    let toremove = this.idFind(destel, record.id, record.parentId);
+                    if (toremove)
+                        toremove.remove()
+                    break;
+                case "add":
+                    let newnode = this.unserialize(record.node);
+                    if (record.append) {
+                        this.idFind(destel, record.append).append(newnode);
+                    } else if (record.before) {
+                        this.idFind(destel, record.before).before(newnode);
+                    } else if (record.after) {
+                        this.idFind(destel, record.after).after(newnode);
+                    } else
+                        return false;
+                    break;
+                default:
+                    console.log('Unknown history type: '+record.type)
+            }
+        }
+    }
+
+
     // send changes to server
+    historyFetch() {
+        if (this.collaborate) {
+            fetch('/history-get/'+(this.collaborate_last || 0), {
+                headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                method: 'GET',
+            }).then(response => {response.json().then(
+                (result) =>  {
+                    if (!result.length) return false;
+                    this.observerUnactive();
+
+                    let index = this.history.length;
+                    let updated = false;
+                    while (index && (this.history[index-1].id != this.collaborate_last))
+                        index--;
+
+                    for (let residx=0; residx < result.length; residx++) {
+                        let record = result[residx];
+                        if ((index<this.history.length) && (record.id==this.history[index].id)) {
+                            index++;
+                            continue
+                        }
+                        updated = true;
+
+                        // we are not synched with the server anymore, rollback and replay
+                        while (this.history.length > index)
+                            this.historyPop(false, true);
+
+                        this.historyApply(this.dom, record.dom);
+                        this.historyApply(this.vdom, record.dom);
+
+                        this.history.push(record);
+                        this.collaborate_last = record.id;
+                        index++;
+                    }
+                    if (updated)
+                        this.history.push({
+                            cursor: {},
+                            dom: [],
+                        });
+                    this.observerActive()
+                    this.historyFetch();
+                }
+            )});
+        }
+    }
+
     historySend(item) {
         if (this.collaborate) {
             fetch('/history-push', {
@@ -349,7 +428,7 @@ export class Editor {
                 headers: { 'Content-Type': 'application/json;charset=utf-8' },
                 method: 'POST',
             }).then(response => {
-                console.log(response)
+                console.log(response);
             });
         }
     }
@@ -367,7 +446,7 @@ export class Editor {
             this.historyPop(false);
         this.historyPop(true);
     }
-    historyPop(newStep=true) {
+    historyPop(newStep=true, cursor=true) {
         let step = this.history.pop();
         let pos = this.history.length;
         this.history.push({
@@ -398,7 +477,7 @@ export class Editor {
             }
         }
         // set cursor to step.cursor
-        if (step.cursor.anchorNode) {
+        if (cursor && step.cursor.anchorNode) {
             let anchor = this.idFind(this.dom, step.cursor.anchorNode);
             if (anchor)
                 setCursor(anchor, step.cursor.anchorOffset);
@@ -417,30 +496,7 @@ export class Editor {
     }
 }
 
-
 let editor = new Editor(document.getElementById("dom"));
 document.getElementById('vdom').append(editor.vdom)
-
-document.getElementById('domAdd').addEventListener("click", (event) => {
-    let newEl = document.createElement('div');
-    newEl.innerHTML="This div is in <b>DOM</b> but not in <b>VDOM</b>.";
-    editor.observerUnactive();
-    editor.dom.querySelector('div,p,li').after(newEl);
-    editor.observerActive();
-});
-
-document.getElementById('domChange').addEventListener("click", (event) => {
-    editor.observerUnactive();
-    let li = editor.dom.querySelector('li');
-    li.firstChild.nodeValue="Changed in DOM!";
-    editor.observerActive();
-});
-
-document.getElementById('domReset').addEventListener("click", (event) => {
-    editor.observerUnactive();
-    let dom = editor.newDom(editor.vdom);
-    editor.dom.parentNode.replaceChild(dom, editor.dom);
-    editor.dom = dom;
-    editor.observerActive();
-});
+editor.historyFetch();
 

@@ -10,8 +10,25 @@ api = restful.Api(app)
 
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-history = []
-history_patch = {}
+history = [1]
+history_patch = {1: {
+    'cursor': {},
+    'dom': [
+        {'type': 'add', 'append': 1, 'id': 1, 'node':
+            {
+                'nodeType': 1, 'oid': 1873262997,
+                'tagName': 'H1',
+                'children': [{
+                    'nodeType': 3, 'oid': 1550618946,
+                    'textValue': 'A Collaborative Title'
+                }],
+                'attributes': {}
+            }
+        }
+    ],
+    'id': 123456789
+}}
+
 
 @app.route('/')
 def index():
@@ -21,23 +38,26 @@ def index():
 def send_js(path):
     return send_from_directory('', path)
 
-class history_get(restful.Resource):
-    def get(self, lastoid=0):
-        index = lastoid and history.index(lastoid)
-        while index<=len(history):
-            time.sleep(0.5)
-        return {'history': history[index:], 'status': 200}
-
-@app.route('/history-push', methods = ['GET', 'POST', 'DELETE'])
+@app.route('/history-push', methods = ['POST'])
 def history_push():
-    print('Adding', request.data, request.get_json())
+    data = request.get_json()
+    print(data)
+    history.append(data['id'])
+    history_patch[data['id']] = data
+    return {'status': 200}
 
-    # history_patch[oid] = data
-    # history.append(oid)
-    return jsonify({'status': 200, 'yop': True})
+class history_get(restful.Resource):
+    def get(self, oid=0):
+        index = 0
+        if oid:
+            index = history.index(oid)+1
+            while index==len(history):
+                time.sleep(0.1)
 
-api.add_resource(history_get, '/history-get')
-
+        result = [history_patch[x] for x in history[index:]]
+        print('Get', result)
+        return result
+api.add_resource(history_get, '/history-get/<int:oid>')
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)

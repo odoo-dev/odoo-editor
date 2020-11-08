@@ -4,7 +4,10 @@ export function nodeToObject(node) {
        nodeType: node.nodeType,
        oid: node.oid,
     }
-    console.assert(node.oid, 'OID can not be false!');
+    if (!node.oid) {
+        console.log('OID can not be false!');
+        debugger;
+    }
     if (node.nodeType == Node.TEXT_NODE)
         result.textValue = node.nodeValue;
     if (node.nodeType == Node.ELEMENT_NODE) {

@@ -56,11 +56,7 @@
     </head>
     <body>
         <div id="dom-col">
-            <h1>DOM
-                <button id="domAdd">Add Stuff in DOM</button>
-                <button id="domChange">Change Text</button>
-                <button id="domReset">Reset DOM</button>
-            </h1>
+            <h1>DOM</h1>
             <hr/>
             <div id="toolbar" style="visibility:hidden">
                 <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
@@ -75,37 +71,36 @@
                 <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
                 <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
             </div>
-            <div id="dom">
+            <div id="dom"></div>
+            <!-- should start empty if in collaboration mode: content provided by server -->
+        </div>
 
-                <h1>Title a</h1>
-                <h2><br/></h2><h3>ubtitle</h3>
-                <p>
-                    My paragraph
-                    <br/>
-                    S<i>italic</i>
-                </p>
-                <ul>
-                    <li>first item</li>
-                    <li><br/></li>
-                    <li>second item</li>
-                    <li>a</li>
-                </ul>
-                <p>para</p>
-                <div>
-                    this <span class="btn">button</span> is an inline b
-                </div>
-
-            </div>
-         </div>
-
-       <div id="vdom-col">
+        <div id="vdom-col">
             <h1>vDOM</h1>
             <hr/>
             <div id="vdom"></div>
         </div>
-
         <div style="clear: both"></div>
-        <div id="new"></div>
+
+        <!--
+        <h1>Title a</h1>
+        <h2><br/></h2><h3>ubtitle</h3>
+        <p>
+            My paragraph
+            <br/>
+            S<i>italic</i>
+        </p>
+        <ul>
+            <li>first item</li>
+            <li><br/></li>
+            <li>second item</li>
+            <li>a</li>
+        </ul>
+        <p>para</p>
+        <div>
+            this <span class="btn">button</span> is an inline b
+        </div>
+        -->
 
         <script src="editor.js" type="module"></script>
 
