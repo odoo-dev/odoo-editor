@@ -2,6 +2,7 @@
 
 import {sanitize} from "./sanitize.js";
 import {commonParentGet, hasContentAfter} from "./utils/utils.js";
+import {nodeToObject, objectToNode} from "./utils/serialize.js";
 import {parentBlock, setTagName} from "./dom/dom.js";
 
 function callAnchor(method) {
@@ -17,7 +18,6 @@ function callAnchor(method) {
 
 export class Editor {
     constructor(dom) {
-        this.count = 0;
         this.dom = sanitize(dom);
         this.history = [];
         this.last_sanitize = 0;
@@ -56,10 +56,11 @@ export class Editor {
     // VDOM Processing
     //
     idSet(src, dest) {
-        if (src.count) {
-            dest.count = src.count;
+        if (src.oid) {
+            dest.oid = src.oid;
         } else {
-            src.count = dest.count = ++this.count;
+            // TODO: use a real UUID4 generator
+            src.oid = dest.oid = Math.random()*2**31 | 0;
         }
         let childsrc = src.firstChild;
         let childdest = dest.firstChild;
@@ -70,11 +71,11 @@ export class Editor {
         }
     }
     idFind(dom, id, parentid) {                        // todo: bissect optim to not traverse the whole tree
-        if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+        if (dom.oid==id && ((!parentid) || dom.parentNode.oid==parentid))
             return dom;
         let cur = dom.firstChild;
         while (cur) {
-            if (dom.count==id && ((!parentid) || dom.parentNode.count==parentid))
+            if (dom.oid==id && ((!parentid) || dom.parentNode.oid==parentid))
                 return dom;
             let result = this.idFind(cur, id, parentid);
             if (result)
@@ -109,12 +110,12 @@ export class Editor {
         for (let record of records) {
             switch (record.type) {
                 case "characterData": 
-                    let node = this.idFind(destel, record.target.count)
+                    let node = this.idFind(destel, record.target.oid)
                     if (node) {
                         console.log('char ', node.textContent, '->', record.target.textContent);
                         this.history.push({
                             'type': "characterData",
-                            'id': record.target.count,
+                            'id': record.target.oid,
                             "text": record.target.textContent,
                             'time': Date.now(),
                             "oldValue": node.textContent
@@ -127,21 +128,21 @@ export class Editor {
                         console.log('remove', removed);
                         this.history.push({
                             'type': "remove",
-                            'id': removed.count,
-                            'parentId': record.target.count,
+                            'id': removed.oid,
+                            'parentId': record.target.oid,
                             'time': Date.now(),
                             'node': removed,
-                            'nextId': record.nextSibling ? record.nextSibling.count : undefined,
-                            'previousId': record.previousSibling ? record.previousSibling.count : undefined,
+                            'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
+                            'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
-                        let toremove = this.idFind(destel, removed.count, record.target.count);
+                        let toremove = this.idFind(destel, removed.oid, record.target.oid);
                         if (toremove)
                             toremove.remove()
                     });
                     record.addedNodes.forEach( (added, index) => {
-                        if (! record.target.count) return false;
-                        if (added.count && this.idFind(destel, added.count)) {
-                            if (record.target.count == this.idFind(destel, added.count).parentNode.count) {
+                        if (! record.target.oid) return false;
+                        if (added.oid && this.idFind(destel, added.oid)) {
+                            if (record.target.oid == this.idFind(destel, added.oid).parentNode.oid) {
                                 return false;
                             }
                         }
@@ -152,18 +153,18 @@ export class Editor {
                             'node': newnode,
                         }
                         if (! record.nextSibling) {
-                            this.idFind(destel, record.target.count).append(newnode);
-                            action['append'] = record.target.count;
-                        } else if (record.nextSibling.count) {
-                            this.idFind(destel, record.nextSibling.count).before(newnode);
-                            action['before'] = record.nextSibling.count;
-                        } else if (record.previousSibling.count) {
-                            this.idFind(destel, record.previousSibling.count).after(newnode);
-                            action['after'] = record.previousSibling.count;
+                            this.idFind(destel, record.target.oid).append(newnode);
+                            action['append'] = record.target.oid;
+                        } else if (record.nextSibling.oid) {
+                            this.idFind(destel, record.nextSibling.oid).before(newnode);
+                            action['before'] = record.nextSibling.oid;
+                        } else if (record.previousSibling.oid) {
+                            this.idFind(destel, record.previousSibling.oid).after(newnode);
+                            action['after'] = record.previousSibling.oid;
                         } else
                             return false;
                         this.idSet(added, newnode);
-                        action['id'] = added.count;
+                        action['id'] = added.oid;
                         action['node'] = newnode;
                         console.log('added', added);
                         this.history.push(action);

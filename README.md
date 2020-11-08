@@ -7,4 +7,6 @@ Web Editor Proof of Concept
 - Fast Diff / Patch through MutationObserver
 - Allow having a DOM that diverges from VDOM
 - Undo / Redo History (=mutations batched by operations)
+- unbreakable
+- floating toolbar on selection
 
