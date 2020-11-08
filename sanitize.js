@@ -40,6 +40,9 @@ class Sanitize {
             }
         }
 
+        // TOOD: <li> must be in a <ul> or <ol> as the code is not fault tolerant
+        // to implement: cleaning
+
         if (node.nodeType == node.ELEMENT_NODE)
             this._parse(node.firstChild, cleanup);
         this._parse(node.nextSibling, cleanup);

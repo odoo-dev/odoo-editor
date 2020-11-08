@@ -3,7 +3,7 @@
 import {sanitize} from "./sanitize.js";
 import {commonParentGet, hasContentAfter} from "./utils/utils.js";
 import {nodeToObject, objectToNode} from "./utils/serialize.js";
-import {parentBlock, setTagName} from "./dom/dom.js";
+import {parentBlock, setTagName, setCursor} from "./dom/dom.js";
 
 function callAnchor(method) {
     let sel = document.defaultView.getSelection();
@@ -19,8 +19,16 @@ function callAnchor(method) {
 export class Editor {
     constructor(dom) {
         this.dom = sanitize(dom);
-        this.history = [];
-        this.last_sanitize = 0;
+        this.history = [{
+            cursor: {
+                anchorNode: undefined,
+                anchorOffset: undefined,
+                focusNode: undefined,
+                focusOffset: undefined,
+            },
+            dom: [],
+            id: undefined
+        }];
 
         this.vdom = dom.cloneNode(true);
         this.idSet(dom, this.vdom);
@@ -33,22 +41,22 @@ export class Editor {
         this.toolbar.querySelectorAll('div.btn').forEach((item) => {
             item.onmousedown = this.toolbarClick.bind(this);
         });
+        this.collaborate = true;
+        this.collaborate_last = null;
     }
 
     sanitize() {
-        // find common ancestror in this.history[this.last_sanitize:]
+        // find common ancestror in this.history[-1]
+        let step = this.history[this.history.length-1];
         let ca, record;
-        for (record of this.history.slice(this.last_sanitize)) {
-            if (record===null) continue;
+        for (record of step.dom) {
             let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
             ca = ca?commonParentGet(ca, node, this.dom):node;
         }
         if (! ca) return false;
-
         console.log('sanitizing');
 
         // sanitize and mark current position as sanitized
-        this.last_sanitize = this.history.length;
         sanitize(ca);
     }
 
@@ -70,7 +78,9 @@ export class Editor {
             childdest = childdest.nextSibling;
         }
     }
-    idFind(dom, id, parentid) {                        // todo: bissect optim to not traverse the whole tree
+
+    // TODO: improve to avoid traversing the whole DOM just to find a node of an ID
+    idFind(dom, id, parentid) {
         if (dom.oid==id && ((!parentid) || dom.parentNode.oid==parentid))
             return dom;
         let cur = dom.firstChild;
@@ -86,6 +96,17 @@ export class Editor {
 
 
     // Observer that syncs doms
+
+    // if not in collaboration mode, no need to serialize / unserialize
+    serialize(node) {
+        if (this.collaborate)
+            return nodeToObject(node);
+        return node;
+    }
+    unserialize(obj) {
+        return this.collaborate?objectToNode(obj):obj;
+    }
+
     observerUnactive() {
         this.observer.disconnect();
         this.observerFlush();
@@ -106,18 +127,18 @@ export class Editor {
             characterDataOldValue: true,
         });
     }
+
     observerApply(srcel, destel, records) {
         for (let record of records) {
             switch (record.type) {
-                case "characterData": 
+                case "characterData":
                     let node = this.idFind(destel, record.target.oid)
                     if (node) {
                         console.log('char ', node.textContent, '->', record.target.textContent);
-                        this.history.push({
+                        this.history[this.history.length-1].dom.push({
                             'type': "characterData",
                             'id': record.target.oid,
                             "text": record.target.textContent,
-                            'time': Date.now(),
                             "oldValue": node.textContent
                         });
                         node.textContent = record.target.textContent;
@@ -126,12 +147,11 @@ export class Editor {
                 case "childList":
                     record.removedNodes.forEach( (removed, index) => {
                         console.log('remove', removed);
-                        this.history.push({
+                        this.history[this.history.length-1].dom.push({
                             'type': "remove",
                             'id': removed.oid,
                             'parentId': record.target.oid,
-                            'time': Date.now(),
-                            'node': removed,
+                            'node': this.serialize(removed),
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
                             'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
@@ -149,8 +169,6 @@ export class Editor {
                         let newnode = added.cloneNode(1);
                         let action = {
                             'type': "add",
-                            'time': Date.now(),
-                            'node': newnode,
                         }
                         if (! record.nextSibling) {
                             this.idFind(destel, record.target.oid).append(newnode);
@@ -165,9 +183,9 @@ export class Editor {
                             return false;
                         this.idSet(added, newnode);
                         action['id'] = added.oid;
-                        action['node'] = newnode;
+                        action['node'] = this.serialize(newnode);
                         console.log('added', added);
-                        this.history.push(action);
+                        this.history[this.history.length-1].dom.push(action);
                     });
                     break;
                 default:
@@ -188,10 +206,11 @@ export class Editor {
             return true;
         }
         this.toolbar.style.visibility = 'visible';
-        toolbarUpdate();
+        this.toolbarUpdate();
     }
 
     toolbarUpdate() {
+        let sel = document.defaultView.getSelection();
         this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
         this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
         this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
@@ -227,7 +246,7 @@ export class Editor {
                 let pnode = parentBlock(sel.anchorNode);
                 setTagName(pnode, TAGS[event.toElement.id]);
             }
-            toolbarUpdate();
+            this.toolbarUpdate();
         } catch(err) {
             if (err.message!='unbreakable') throw err;
             this.historyRollback();
@@ -272,7 +291,7 @@ export class Editor {
                 alert('delete not implemented yet');
             } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
                 event.preventDefault();
-                this.historyPop();
+                this.historyUndo();
             }
             else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
                 event.preventDefault();
@@ -285,7 +304,7 @@ export class Editor {
 
         return new Promise((resolve) => {
             setTimeout(() => {
-                // this.sanitize();
+                this.sanitize();
                 cb();
                 this.historyStep();
                 resolve(this);
@@ -297,50 +316,104 @@ export class Editor {
     //
     // History
     //
+
+    // One operation completed, go to next one
     historyStep() {
-        if (this.history.length && this.history[this.history.length-1])
-            this.history.push(null);
+        let latest=this.history[this.history.length-1];
+        let sel = document.defaultView.getSelection();
+
+        if (!latest.dom.length)
+            return false;
+
+        latest.cursor.anchorNode = sel.anchorNode.oid;
+        latest.cursor.anchorOffset = sel.anchorOffset;
+        if (! sel.isCollapsed) {
+            latest.cursor.focusNode = sel.focusNode.oid;
+            latest.cursor.focusOffset = sel.focusOffset;
+        }
+        latest.id = Math.random() * 2**31 | 0; // TODO: replace by uuid4 generator
+
+        this.historySend(latest);
+        this.history.push({
+            cursor: {},
+            dom: [],
+        });
+
+    }
+
+    // send changes to server
+    historySend(item) {
+        if (this.collaborate) {
+            fetch('/history-push', {
+                body: JSON.stringify(item),
+                headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                method: 'POST',
+            }).then(response => {
+                console.log(response)
+            });
+        }
     }
 
     historyRollback() {
         this.observerFlush();
-        if (this.history.length && this.history[this.history.length-1])
-            this.historyPop();
+        this.historyPop(true);
     }
 
-    historyPop() {
-        while (this.history.length && !this.history[this.history.length-1])
-            this.history.pop();
+    historyUndo() {
+        this.observerFlush();
 
+        // remove the one in progress before removing the last step
+        if (this.history.length>1)
+            this.historyPop(false);
+        this.historyPop(true);
+    }
+    historyPop(newStep=true) {
+        let step = this.history.pop();
         let pos = this.history.length;
-        while (pos && this.history[pos-1])
-            pos -= 1;
-        let todo = this.history.slice(pos);
-
-        while (todo.length) {
-            let action = todo.pop();
+        this.history.push({
+            cursor: {},
+            dom: [],
+        });
+        // aplly dom changes by reverting history
+        while (step.dom.length) {
+            let action = step.dom.pop();
             if (!action) break;
             switch (action.type) {
-                case "characterData": 
+                case "characterData":
                     this.idFind(this.dom, action.id).textContent = action.oldValue;
                     break;
-                case "remove": 
+                case "remove":
+                    let node = this.unserialize(action.node);
                     if (action.nextId && this.idFind(this.dom, action.nextId)) {
-                        this.idFind(this.dom, action.nextId).before(action.node);
+                        this.idFind(this.dom, action.nextId).before(node);
                     } else if (action.previousId && this.idFind(this.dom, action.previousId)) {
-                        this.idFind(this.dom, action.previousId).after(action.node);
+                        this.idFind(this.dom, action.previousId).after(node);
                     } else {
-                        this.idFind(this.dom, action.parentId).append(action.node);
+                        this.idFind(this.dom, action.parentId).append(node);
                     }
                     break;
-                case "add": 
+                case "add":
                     let el = this.idFind(this.dom, action.id);
                     if (el) el.remove();
             }
-        };
+        }
+        // set cursor to step.cursor
+        if (step.cursor.anchorNode) {
+            let anchor = this.idFind(this.dom, step.cursor.anchorNode);
+            if (anchor)
+                setCursor(anchor, step.cursor.anchorOffset);
+        }
+
         this.observerFlush();
         while (this.history.length > pos)
             this.history.pop();
+
+        if (newStep) {
+            this.history.push({
+                cursor: {},
+                dom: [],
+            });
+        }
     }
 }
 

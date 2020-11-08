@@ -54,5 +54,5 @@ export function isSimilarNode(node, node2) {
                 return false;
         }
     }
-    return ['b','u','i', 'ul', 'strong'].includes(node.tagName);
+    return ['b','u','i', 'strong', 'strong', 'em', 'strike'].includes(node.tagName);
 }

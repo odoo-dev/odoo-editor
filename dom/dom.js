@@ -9,7 +9,7 @@ function firstChild(el) {
     return el;
 }
 
-function setCursor(node, offset=undefined) {
+export function setCursor(node, offset=undefined) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
     if (node.nodeType==Node.TEXT_NODE && !node.parentElement.textContent) {
