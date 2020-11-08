@@ -10,8 +10,8 @@ api = restful.Api(app)
 
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-history = [1]
-history_patch = {1: {
+history = [123456789]
+history_patch = {123456789: {
     'cursor': {},
     'dom': [
         {'type': 'add', 'append': 1, 'id': 1, 'node':
@@ -55,7 +55,7 @@ class history_get(restful.Resource):
                 time.sleep(0.1)
 
         result = [history_patch[x] for x in history[index:]]
-        print('Get', result)
+        print('Get After', oid,':', [x for x in history[index:]])
         return result
 api.add_resource(history_get, '/history-get/<int:oid>')
 

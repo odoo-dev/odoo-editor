@@ -225,17 +225,31 @@ export class Editor {
     // toolbar handling
     toolbarClick(event) {
         const TAGS= {
-            'paragraph': 'p',
+            'paragraph': 'P',
             'heading1': 'H1',
             'heading2': 'H2',
             'heading3': 'H3',
             'blockquote': 'BLOCKQUOTE',
-            'unordered': 'UL',
             'ordered': 'OL',
+            'unordered': 'UL'
         }
         try {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.toElement.id)) {
                 document.execCommand(event.toElement.id);
+            } if (['ordered','unordered'].includes(event.toElement.id)) {
+                let sel = document.defaultView.getSelection();
+                let pnode = parentBlock(sel.anchorNode);
+                if (pnode.tagName != 'LI') {
+                    // TODO: better implementation
+
+                    let main = document.createElement(TAGS[event.toElement.id]);
+                    let li = document.createElement('LI');
+                    while (pnode.firstChild)
+                        li.append(pnode.firstChild);
+                    main.append(li);
+                    pnode.after(main);
+                    pnode.remove();
+                }
             } else {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
@@ -392,6 +406,7 @@ export class Editor {
 
                     for (let residx=0; residx < result.length; residx++) {
                         let record = result[residx];
+                        this.collaborate_last = record.id;
                         if ((index<this.history.length) && (record.id==this.history[index].id)) {
                             index++;
                             continue
@@ -406,7 +421,6 @@ export class Editor {
                         this.historyApply(this.vdom, record.dom);
 
                         this.history.push(record);
-                        this.collaborate_last = record.id;
                         index++;
                     }
                     if (updated)
