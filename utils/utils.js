@@ -57,7 +57,8 @@ export function isInline(node) {
 }
 
 export function isUnbreakable(node) {
-    return (node.id=="dom");
+    if (!node || (node.nodeType == Node.TEXT_NODE)) return false;
+    return node.hasAttribute('t') || (node.id=="dom");
 }
 
 export function setTagName(el, newTagName) {
