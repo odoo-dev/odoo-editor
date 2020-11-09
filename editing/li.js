@@ -21,12 +21,13 @@ HTMLLIElement.prototype.oEnter = function(nextSibling) {
         return this.oShiftTab();
 
     // if latest LI at lowest level, convert to a paragraph
+    debugger;
     let p = document.createElement('p');
     let br = document.createElement('br');
     p.append(br);
     this.closest('ul,ol').after(p);
     this.oRemove();
-    setCursor(p, 0);
+    setCursor(br, 0);
     return p;
 }
 

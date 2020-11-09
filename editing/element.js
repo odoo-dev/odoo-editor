@@ -33,7 +33,7 @@ HTMLElement.prototype.oEnter = function(nextSibling) {
 
     // escale only if display = inline
     if (isInline(this) && this.oParent) {
-        this.parentElement.oEnter(new_el);
+        new_el = this.parentElement.oEnter(new_el);
     } else {
         fillEmpty(this);
     }
