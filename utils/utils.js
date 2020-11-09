@@ -30,8 +30,9 @@ export function setCursorEnd(node) {
 }
 
 export function fillEmpty(node) {
-     if (node && (! node.innerText.replace(/[ \r\n\t]+/, '')) && !node.firstElementChild)
-         node.append(document.createElement('br'));
+     if (node && (! node.innerText.replace(/[ \r\n\t]+/, '')))
+        if (!node.querySelector('br')) // to improve
+            node.append(document.createElement('br'));
 }
 
 export function isBlock(node) {
