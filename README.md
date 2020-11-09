@@ -24,6 +24,8 @@ to run in collaborative mode:
 
     ./server.py
 
+WARNING: collaborative does not work yet with undo.
+
 
 To Improve
 ----------
@@ -31,3 +33,5 @@ To Improve
 Undo should add a reverted step in the history, rather than rollbacking the history; redo support, and
 no more issue on collaboration mode. Instead of applying an history step backward: revert the record, and
 do a regular apply. Should reduce code by ~20 lines too.
+
+Simple actions (b,u,i) still use execCommand; to implement for cross-browser.

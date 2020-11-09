@@ -241,15 +241,15 @@ export class Editor {
             'unordered': 'UL'
         }
         try {
-            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.toElement.id)) {
-                document.execCommand(event.toElement.id);
-            } else if (['ordered','unordered'].includes(event.toElement.id)) {
+            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.target.id)) {
+                document.execCommand(event.target.id);
+            } else if (['ordered','unordered'].includes(event.target.id)) {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
                 if (pnode.tagName != 'LI') {
                     // TODO: better implementation
 
-                    let main = document.createElement(TAGS[event.toElement.id]);
+                    let main = document.createElement(TAGS[event.target.id]);
                     let li = document.createElement('LI');
                     while (pnode.firstChild)
                         li.append(pnode.firstChild);
@@ -260,7 +260,7 @@ export class Editor {
             } else {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
-                setTagName(pnode, TAGS[event.toElement.id]);
+                setTagName(pnode, TAGS[event.target.id]);
             }
             this.toolbarUpdate();
         } catch(err) {
