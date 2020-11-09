@@ -71,8 +71,26 @@
                 <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
                 <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
             </div>
-            <div id="dom"></div>
-            <!-- should start empty if in collaboration mode: content provided by server -->
+            <!-- innerHTML only used in non collaborative mode -->
+            <div id="dom">
+                <h1>Title a</h1>
+                <h2><br/></h2><h3>ubtitle</h3>
+                <p>
+                    My paragraph
+                    <br/>
+                    S<i>italic</i>
+                </p>
+                <ul>
+                    <li>first item</li>
+                    <li><br/></li>
+                    <li>second item</li>
+                    <li>a</li>
+                </ul>
+                <p>para</p>
+                <div>
+                    this <span class="btn">button</span> is an inline b
+                </div>
+            </div>
         </div>
 
         <div id="vdom-col">
@@ -81,26 +99,6 @@
             <div id="vdom"></div>
         </div>
         <div style="clear: both"></div>
-
-        <!--
-        <h1>Title a</h1>
-        <h2><br/></h2><h3>ubtitle</h3>
-        <p>
-            My paragraph
-            <br/>
-            S<i>italic</i>
-        </p>
-        <ul>
-            <li>first item</li>
-            <li><br/></li>
-            <li>second item</li>
-            <li>a</li>
-        </ul>
-        <p>para</p>
-        <div>
-            this <span class="btn">button</span> is an inline b
-        </div>
-        -->
 
         <script src="editor.js" type="module"></script>
 

@@ -10,8 +10,8 @@ api = restful.Api(app)
 
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-history = [123456789]
-history_patch = {123456789: {
+history = [1]             # TODO: use an ordered dict instead
+history_patch = {1: {
     'cursor': {},
     'dom': [
         {'type': 'add', 'append': 1, 'id': 1, 'node':
@@ -26,7 +26,7 @@ history_patch = {123456789: {
             }
         }
     ],
-    'id': 123456789
+    'id': 1
 }}
 
 

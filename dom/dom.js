@@ -277,10 +277,15 @@ HTMLLIElement.prototype.oRemove = function() {
 
 HTMLLIElement.prototype.oEnter = function(nextSibling) {
     console.log('oEnter LI');
+    // if not last bullet, regular block break
     if (this.nextElementSibling || this.textContent)
         return HTMLElement.prototype.oEnter.call(this, nextSibling);
 
-    // enter at last li: should remove the <ll> and create an empty paragraph
+    // if nested LI, shiftTab
+    if (this.parentNode.parentNode.tagName=='LI')
+        return this.oShiftTab();
+
+    // if latest LI at lowest level, convert to a paragraph
     let p = document.createElement('p');
     let br = document.createElement('br');
     p.append(br);

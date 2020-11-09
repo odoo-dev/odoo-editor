@@ -30,6 +30,7 @@ export class Editor {
             dom: [],
             id: undefined
         }];
+        this.undo_index = 1;
         this.vdom = dom.cloneNode(true);
         this.idSet(dom, this.vdom);
 
@@ -299,6 +300,7 @@ export class Editor {
             else if (event.keyCode === 46) {                                     // delete
                 event.preventDefault();
                 alert('delete not implemented yet');
+                debugger;
             } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
                 event.preventDefault();
                 this.historyUndo();
@@ -401,7 +403,7 @@ export class Editor {
 
                     let index = this.history.length;
                     let updated = false;
-                    while (index && (this.history[index-1].id != this.collaborate_last))
+                    while (index && (this.history[index-1].id !== this.collaborate_last))
                         index--;
 
                     for (let residx=0; residx < result.length; residx++) {
@@ -417,10 +419,16 @@ export class Editor {
                         while (this.history.length > index)
                             this.historyPop(false, true);
 
+                        if (record.id==1) {
+                            this.dom.innerHTML='';
+                            this.vdom.innerHTML='';
+                        }
                         this.historyApply(this.dom, record.dom);
                         this.historyApply(this.vdom, record.dom);
 
-                        this.history.push(record);
+                        // first record is not added in the history
+                        if (record.id != 1)
+                            this.history.push(record);
                         index++;
                     }
                     if (updated)
