@@ -248,7 +248,6 @@ export class Editor {
                 let pnode = parentBlock(sel.anchorNode);
                 if (pnode.tagName != 'LI') {
                     // TODO: better implementation
-
                     let main = document.createElement(TAGS[event.target.id]);
                     let li = document.createElement('LI');
                     while (pnode.firstChild)
@@ -261,6 +260,7 @@ export class Editor {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
                 setTagName(pnode, TAGS[event.target.id]);
+                setCursor(sel.anchorNode, sel.anchorOffset);
             }
             this.toolbarUpdate();
         } catch(err) {
