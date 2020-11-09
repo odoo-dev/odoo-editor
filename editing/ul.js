@@ -9,4 +9,4 @@ HTMLUListElement.prototype.oMove = function(src) {
     li.oMove(src);
 }
 
-
+HTMLOListElement.prototype.oMove = HTMLUListElement.prototype.oMove;

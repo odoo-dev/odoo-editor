@@ -22,7 +22,8 @@ class Sanitize {
                 this.tags[node.tagName](node, cleanup);
         }
 
-        // merge identitcal nodes
+        // merge identitcal nodes: not necessary, but a bit cleaner (it works fine without)
+        // not sure we should keep if collaborative as it's more transformation on network)
         if (isSimilarNode(node, node.nextSibling)) {
             if ((node.nodeType == node.ELEMENT_NODE)
               && !getComputedStyle(node, ':before').getPropertyValue('content')

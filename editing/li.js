@@ -51,7 +51,7 @@ HTMLLIElement.prototype.oTab = function(offset) {
     let lip = document.createElement("li")
     let ul = document.createElement("ul");
 
-    // TODO: improve DOM structure smarter by joining same level sibling (shiftTab already supports it)
+    // TODO: improve DOM structure by joining same level sibling (oShiftTab already supports it)
 
     lip.append(ul);
     lip.style.listStyle = "none";
