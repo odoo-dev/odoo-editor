@@ -1,9 +1,15 @@
 "use strict";
 
 import {sanitize} from "./sanitize.js";
-import {commonParentGet, hasContentAfter} from "./utils/utils.js";
+import {commonParentGet, parentBlock, setTagName, setCursor} from "./utils/utils.js";
 import {nodeToObject, objectToNode} from "./utils/serialize.js";
-import {parentBlock, setTagName, setCursor} from "./dom/dom.js";
+
+import {} from "./editing/element.js";
+import {} from "./editing/heading.js";
+import {} from "./editing/br.js";
+import {} from "./editing/ul.js";
+import {} from "./editing/li.js";
+import {} from "./editing/text.js";
 
 function callAnchor(method) {
     let sel = document.defaultView.getSelection();
@@ -439,7 +445,12 @@ export class Editor {
                     this.observerActive()
                     this.historyFetch();
                 }
-            )});
+            ).catch(error => {
+                // if server unreachable, fault back to non collaborative mode
+                this.collaborate=false;
+            })
+
+            });
         }
     }
 
