@@ -242,8 +242,9 @@ export class Editor {
         }
         try {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.toElement.id)) {
+                debugger;
                 document.execCommand(event.toElement.id);
-            } if (['ordered','unordered'].includes(event.toElement.id)) {
+            } else if (['ordered','unordered'].includes(event.toElement.id)) {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
                 if (pnode.tagName != 'LI') {
