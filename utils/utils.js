@@ -30,7 +30,7 @@ export function setCursorEnd(node) {
 }
 
 export function fillEmpty(node) {
-     if (node && (! node.innerText) && !node.children.length)
+     if (node && (! node.innerText.replace(/[ \r\n\t]+/, '')) && !node.firstElementChild)
          node.append(document.createElement('br'));
 }
 
