@@ -90,6 +90,7 @@ HTMLElement.prototype.oRemove = function() {
 
 HTMLElement.prototype.oMove = function(src) {
     // TODO: check is this is unBreackable
+    if (isUnbreakable(src) || isUnbreakable(this)) return true;
     setCursorEnd(this);
     if (isBlock(src)) {
         let node = latestChild(this);
