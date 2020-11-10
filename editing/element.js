@@ -20,25 +20,27 @@ HTMLElement.prototype.oEnter = function(nextSibling) {
 
     // if no block, or in an unbreackable: do a shiftEnter instead
     let pnode = this;
+    let next = this.nextSibling;
     while (!isBlock(pnode)) pnode=pnode.oParent;
-
-    let new_el = document.createElement(this.tagName);
-    while (nextSibling) {
-        let oldnode = nextSibling;
-        nextSibling = nextSibling.nextSibling;
-        new_el.append(oldnode);
+    if (nextSibling || isBlock(this)) {
+        next = document.createElement(this.tagName);
+        while (nextSibling) {
+            let oldnode = nextSibling;
+            nextSibling = nextSibling.nextSibling;
+            next.append(oldnode);
+        }
+        fillEmpty(next);
+        this.after(next);
     }
-    fillEmpty(new_el);
-    this.after(new_el)
 
     // escale only if display = inline
     if (isInline(this) && this.oParent) {
-        new_el = this.parentElement.oEnter(new_el);
+        next = this.parentElement.oEnter(next);
     } else {
         fillEmpty(this);
     }
-    setCursor(new_el, 0);
-    return new_el;
+    setCursor(next || this, 0);
+    return next;
 }
 
 HTMLElement.prototype.oShiftEnter = function(offset) {
