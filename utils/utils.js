@@ -62,6 +62,17 @@ export function isUnbreakable(node) {
     return node.hasAttribute('t') || (node.id=="dom");
 }
 
+export function containsUnbreakable(node) {
+    if (!node) return false;
+    return isUnbreakable(node) || containsUnbreakable(node.firstChild);
+}
+
+export function inUnbreakable(node) {
+    while ((! node) || (! isUnbreakable(node)))
+        node = node.parentNode;
+    return node;
+}
+
 export function setTagName(el, newTagName) {
     var n = document.createElement(newTagName);
     var attr = el.attributes;

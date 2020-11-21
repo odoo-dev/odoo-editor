@@ -1,7 +1,10 @@
 "use strict";
 
 import {sanitize} from "./sanitize.js";
-import {commonParentGet, parentBlock, setTagName, setCursor} from "./utils/utils.js";
+import {
+    commonParentGet, parentBlock, setTagName, setCursor,
+    containsUnbreakable, inUnbreakable
+} from "./utils/utils.js";
 import {nodeToObject, objectToNode} from "./utils/serialize.js";
 
 import {} from "./editing/element.js";
@@ -50,6 +53,10 @@ export class Editor {
         });
         this.collaborate = true;
         this.collaborate_last = null;
+
+        // used to check if we have to rollback an operation as an unbreakable is
+        this.torollback = false;             // unbreakable removed or added
+        this.unbreaks = new Set();               // modified unbreakables, should not be more than one per step
     }
 
     sanitize() {
@@ -150,6 +157,7 @@ export class Editor {
                             "oldValue": node.textContent
                         });
                         node.textContent = record.target.textContent;
+                        this.unbreaks.add(inUnbreakable(node));
                     }
                     break
                 case "childList":
@@ -162,6 +170,7 @@ export class Editor {
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
                             'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
+                        this.unbreaks.add(inUnbreakable(record.target));
                         let toremove = this.idFind(destel, removed.oid, record.target.oid);
                         if (toremove)
                             toremove.remove()
@@ -173,6 +182,9 @@ export class Editor {
                                 return false;
                             }
                         }
+                        this.unbreaks.add(inUnbreakable(added));
+                        this.torollback |= containsUnbreakable(added);
+
                         let newnode = added.cloneNode(1);
                         let action = {
                             'type': "add",
@@ -337,6 +349,13 @@ export class Editor {
 
     // One operation of several changes completed, go to next one
     historyStep() {
+        // check that not two unBreakables modified
+        if (this.torollback || (this.unbreaks.length>1))
+            this.historyRollback();
+        this.torollback = false;
+        this.unbreaks = new Set();
+
+        // push history
         let latest=this.history[this.history.length-1];
         if (!latest.dom.length)
             return false;
@@ -348,7 +367,6 @@ export class Editor {
             cursor: {},
             dom: [],
         });
-
     }
 
     historyCursor() {
@@ -469,6 +487,8 @@ export class Editor {
     historyRollback() {
         this.observerFlush();
         this.historyPop(true);
+        this.torollback = false;
+        this.unbreaks = []
     }
 
     historyUndo() {

@@ -28,12 +28,12 @@ Text.prototype.oEnter = function(offset) {
     console.log('oEnter Text');
     // check if the next block is unbreackable: rollback will do a shiftEnter instead
     let pnode = this;
-    while (!isBlock(pnode)) pnode=pnode.oParent;
+    while (!isBlock(pnode)) pnode=pnode.parentElement;
 
     if (! offset) {
-        this.oParent.oEnter(this);
+        this.parentElement.oEnter(this);
     } else if (offset >= this.length) {
-        let el = this.oParent.oEnter(this.nextSibling);
+        let el = this.parentElement.oEnter(this.nextSibling);
         setCursor(el, 0);
         return true;
     } else {
@@ -41,7 +41,7 @@ Text.prototype.oEnter = function(offset) {
         let newText = document.createTextNode(newval);
         this.before(newText);
         this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-        this.oParent.oEnter(this);
+        this.parentElement.oEnter(this);
     }
     setCursor(this, 0);
 }
@@ -139,10 +139,10 @@ Text.prototype.oMove = function(src) {
 
 
 Text.prototype.oTab = function(offset) {
-    return this.oParent.oTab(0);
+    return this.parentElement.oTab(0);
 };
 
 Text.prototype.oShiftTab = function(offset) {
-    return this.oParent.oShiftTab(0);
+    return this.parentElement.oShiftTab(0);
 };
 

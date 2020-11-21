@@ -4,7 +4,7 @@ import {setCursor} from "../utils/utils.js";
 
 
 HTMLLIElement.prototype.oRemove = function() {
-    let ul = this.oParent;
+    let ul = this.parentElement;
     this.remove()
     if (! ul.querySelector('li'))
         ul.remove();
@@ -41,7 +41,7 @@ HTMLLIElement.prototype.oDeleteBackward = function() {
         return this.oShiftTab();
 
     target = document.createElement('p');
-    this.oParent.before(target);
+    this.parentElement.before(target);
     while (this.firstChild)
         target.append(this.firstChild);
     this.oRemove();
