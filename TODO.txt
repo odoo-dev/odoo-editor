@@ -1,0 +1,7 @@
+- Fix issue with <p>te[]st</p> then enter-backspace-enter-enter (the cursor is not set on the right node)
+- rolllback if unbreakable modified, and remove oParent's code!
+- fix undo: push the reverse operation in the history (instead of removing from history): that should fix collaborative undo too
+- Implement "attributes" in mutationRecords
+- Implement backspace on mobile: catch at inputEvent, rollback, call backspace code
+- Test extensively on mobile
+- Implement ForwardDelete and cleanup utils code
