@@ -13,6 +13,7 @@ import {} from "./editing/br.js";
 import {} from "./editing/ul.js";
 import {} from "./editing/li.js";
 import {} from "./editing/text.js";
+import {} from "./editing/td.js";
 
 function callAnchor(method) {
     let sel = document.defaultView.getSelection();
