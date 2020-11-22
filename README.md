@@ -35,3 +35,8 @@ no more issue on collaboration mode. Instead of applying an history step backwar
 do a regular apply. Should reduce code by ~20 lines too.
 
 Simple actions (b,u,i) still use execCommand; to implement for cross-browser.
+
+Useful Links
+------------
+
+https://danburzo.github.io/input-methods/
