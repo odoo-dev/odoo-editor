@@ -1,6 +1,7 @@
-- Test Enter & Backspace on mobiles and fix issues (uncomment keypress backspace to use input handler)
+- Test and fix Enter & Backspace on mobiles (uncomment keypress backspace to use input handler only)
+    - works on samsung A9 gboard, huawei A7 gboard & swipe
+    - issues on Firefox for Android
+- Implement ForwardDelete and refactor invisible space & empty blocks in the process
 - Fix issue with "<p>te[]st</p>" then enter-backspace-enter-enter (the cursor is not set on the right node)
 - fix undo: push the reverse operation in the history (instead of removing from history): that should fix collaborative undo too
 - Implement "attributes" in mutationRecords
-- Test extensively on mobile
-- Implement ForwardDelete and cleanup utils code

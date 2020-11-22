@@ -8,10 +8,16 @@ import {
 HTMLElement.prototype.oEnter = function(nextSibling) {
     console.log('oEnter Element');
 
-    // if no block, or in an unbreackable: do a shiftEnter instead
     let pnode = this;
     let next = this.nextSibling;
     while (!isBlock(pnode)) pnode=pnode.parentElement;
+
+    // if no block, or in an unbreackable: do a shiftEnter instead
+    if (isUnbreakable(pnode)) {
+        let error = new Error('unbreakable');
+        throw error;
+    }
+
     if (nextSibling || isBlock(this)) {
         next = document.createElement(this.tagName);
         while (nextSibling) {

@@ -59,7 +59,7 @@ export function isInline(node) {
 
 export function isUnbreakable(node) {
     if (!node || (node.nodeType == Node.TEXT_NODE)) return false;
-    return node.hasAttribute('t') || (node.id=="dom");
+    return node.hasAttribute('t') || (node.id=="dom") || ['TR','TABLE','TD'].includes(node.tagName);
 }
 
 export function containsUnbreakable(node) {
