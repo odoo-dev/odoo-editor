@@ -68,9 +68,9 @@ export function containsUnbreakable(node) {
 }
 
 export function inUnbreakable(node) {
-    while ((! node) || (! isUnbreakable(node)))
+    while (node && (! isUnbreakable(node)))
         node = node.parentNode;
-    return node;
+    return node || null;
 }
 
 export function setTagName(el, newTagName) {

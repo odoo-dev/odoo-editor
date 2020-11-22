@@ -10,6 +10,13 @@ HTMLLIElement.prototype.oRemove = function() {
         ul.remove();
 }
 
+HTMLLIElement.prototype.oMove = function(src) {
+    let le = this.lastElementChild;
+    if (le && ['UL','OL'].includes(le.tagName))
+        return le.oMove(src);
+    return HTMLElement.prototype.oMove.call(this, src);
+}
+
 HTMLLIElement.prototype.oEnter = function(nextSibling) {
     console.log('oEnter LI');
     // if not last bullet, regular block break
@@ -21,7 +28,6 @@ HTMLLIElement.prototype.oEnter = function(nextSibling) {
         return this.oShiftTab();
 
     // if latest LI at lowest level, convert to a paragraph
-    debugger;
     let p = document.createElement('p');
     let br = document.createElement('br');
     p.append(br);

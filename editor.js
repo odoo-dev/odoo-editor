@@ -27,14 +27,12 @@ function callAnchor(method) {
 
 export class Editor {
     constructor(dom) {
-        dom.oid = 1;                      // convention: root node is ID 1
+        dom.oid = 1;                                                // convention: root node is ID 1
         this.dom = sanitize(dom);
         this.history = [{
-            cursor: {
-                anchorNode: undefined,
-                anchorOffset: undefined,
-                focusNode: undefined,
-                focusOffset: undefined,
+            cursor: {                                               // cursor at beginning of step
+                anchorNode: undefined, anchorOffset: undefined,
+                focusNode: undefined, focusOffset: undefined,
             },
             dom: [],
             id: undefined
@@ -45,7 +43,11 @@ export class Editor {
 
         dom.setAttribute("contentEditable", true);
         this.observerActive(['characterData']);
+
         this.dom.addEventListener('keydown', this.keyDown.bind(this));
+        this.dom.addEventListener('click', this.mouseClick.bind(this));
+        this.dom.addEventListener('input', this.inputEvent.bind(this));
+
         document.onselectionchange = this.selectionChange.bind(this);
         this.toolbar = document.querySelector('#toolbar');
         this.toolbar.querySelectorAll('div.btn').forEach((item) => {
@@ -56,7 +58,7 @@ export class Editor {
 
         // used to check if we have to rollback an operation as an unbreakable is
         this.torollback = false;             // unbreakable removed or added
-        this.unbreaks = new Set();               // modified unbreakables, should not be more than one per step
+        this.unbreaks = new Set();           // modified unbreakables from vDOM, should not be more than one per step
     }
 
     sanitize() {
@@ -170,8 +172,8 @@ export class Editor {
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
                             'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
-                        this.unbreaks.add(inUnbreakable(record.target));
                         let toremove = this.idFind(destel, removed.oid, record.target.oid);
+                        this.unbreaks.add(inUnbreakable(toremove));
                         if (toremove)
                             toremove.remove()
                     });
@@ -182,7 +184,6 @@ export class Editor {
                                 return false;
                             }
                         }
-                        this.unbreaks.add(inUnbreakable(added));
                         this.torollback |= containsUnbreakable(added);
 
                         let newnode = added.cloneNode(1);
@@ -201,6 +202,7 @@ export class Editor {
                         } else
                             return false;
                         this.idSet(added, newnode);
+                        this.unbreaks.add(inUnbreakable(newnode));
                         action['id'] = added.oid;
                         action['node'] = this.serialize(newnode);
                         this.history[this.history.length-1].dom.push(action);
@@ -282,12 +284,22 @@ export class Editor {
         event.preventDefault();
     }
 
-    // keyboard handling
+    mouseClick(event) {
+        this.historyCursor();
+    }
+
+    // mobile keyboard, catch at input event
+    inputEvent(event) {
+        if (event.type=='input' && event.inputType=='deleteContentBackward') {      // backspace on mobile
+            this.historyRollback();
+            event.preventDefault();
+            callAnchor('oDeleteBackward');
+        }
+    }
+
     keyDown(event) {
         console.log("Keyboard Event "+ event.keyCode);
-        this.historyStep();
         this.historyCursor();
-
         let cb = () => {};
         let sel = document.defaultView.getSelection();
         try {
@@ -305,6 +317,7 @@ export class Editor {
                     callAnchor('oShiftEnter');
                 }
             }
+            // this is an optimization for desktop keyboards, but it should be removed to use input event, like mobiles
             else if (event.keyCode === 8) {                                      // backspace
                 event.preventDefault();
                 callAnchor('oDeleteBackward');
@@ -317,8 +330,8 @@ export class Editor {
             }
             else if (event.keyCode === 46) {                                     // delete
                 event.preventDefault();
-                alert('delete not implemented yet');
                 debugger;
+                alert('delete not implemented yet');
             } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
                 event.preventDefault();
                 this.historyUndo();
@@ -326,7 +339,7 @@ export class Editor {
             else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
                 event.preventDefault();
                 alert('redo not implemented');
-            } 
+            }
         } catch(err) {
             if (err.message!='unbreakable') throw err;
             this.historyRollback();
@@ -350,6 +363,7 @@ export class Editor {
     // One operation of several changes completed, go to next one
     historyStep() {
         // check that not two unBreakables modified
+        this.unbreaks.delete(null);
         if (this.torollback || (this.unbreaks.length>1))
             this.historyRollback();
         this.torollback = false;
@@ -361,18 +375,16 @@ export class Editor {
             return false;
 
         latest.id = Math.random() * 2**31 | 0; // TODO: replace by uuid4 generator
-
         this.historySend(latest);
         this.history.push({
             cursor: {},
             dom: [],
         });
+        this.historyCursor();
     }
 
     historyCursor() {
         let latest=this.history[this.history.length-1];
-        if (latest.cursor.anchorNode)
-            return false;
         let sel = document.defaultView.getSelection();
         latest.cursor.anchorNode = sel.anchorNode.oid;
         latest.cursor.anchorOffset = sel.anchorOffset;
@@ -441,7 +453,7 @@ export class Editor {
 
                         // we are not synched with the server anymore, rollback and replay
                         while (this.history.length > index)
-                            this.historyPop(false, true);
+                            this.historyPop(false);
 
                         if (record.id==1) {
                             this.dom.innerHTML='';
@@ -456,10 +468,7 @@ export class Editor {
                         index++;
                     }
                     if (updated)
-                        this.history.push({
-                            cursor: {},
-                            dom: [],
-                        });
+                        this.historyStep();
                     this.observerActive()
                     this.historyFetch();
                 }
@@ -488,18 +497,17 @@ export class Editor {
         this.observerFlush();
         this.historyPop(true);
         this.torollback = false;
-        this.unbreaks = []
+        this.unbreaks = new Set();
     }
 
     historyUndo() {
         this.observerFlush();
-
         // remove the one in progress before removing the last step
         if (this.history.length>1)
             this.historyPop(false);
         this.historyPop(true);
     }
-    historyPop(newStep=true, cursor=true) {
+    historyPop(newStep=true) {
         let step = this.history.pop();
         let pos = this.history.length;
         this.history.push({
@@ -529,8 +537,8 @@ export class Editor {
                     if (el) el.remove();
             }
         }
-        // set cursor to step.cursor
-        if (cursor && step.cursor.anchorNode) {
+        // set cursor to latest position
+        if (step.cursor.anchorNode) {
             let anchor = this.idFind(this.dom, step.cursor.anchorNode);
             if (anchor)
                 setCursor(anchor, step.cursor.anchorOffset);
