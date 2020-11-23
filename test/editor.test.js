@@ -1,6 +1,6 @@
 "use strict";
 
-import { testEditor, deleteForward } from './utils.js';
+import {testEditor, deleteForward} from './utils.js';
 
 describe('Editor', () => {
     // Note: implementing a test for deleteForward, make sure to implement

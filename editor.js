@@ -17,21 +17,23 @@ import {} from "./editing/td.js";
 
 function callAnchor(method) {
     let sel = document.defaultView.getSelection();
-    if (sel.anchorNode.nodeType==Node.TEXT_NODE)
+    if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
         return sel.anchorNode[method](sel.anchorOffset);
+    }
 
     let node = sel.anchorNode;
-    if (sel.anchorOffset)
-        node = sel.anchorNode.childNodes[sel.anchorOffset-1]
-    return node[method]((node.nodeType==Node.TEXT_NODE)?node.length:0);
+    if (sel.anchorOffset) {
+        node = sel.anchorNode.childNodes[sel.anchorOffset - 1];
+    }
+    return node[method](node.nodeType === Node.TEXT_NODE ? node.length : 0);
 }
 
 export class Editor {
     constructor(dom) {
-        dom.oid = 1;                                                // convention: root node is ID 1
+        dom.oid = 1; // convention: root node is ID 1
         this.dom = sanitize(dom);
         this.history = [{
-            cursor: {                                               // cursor at beginning of step
+            cursor: { // cursor at beginning of step
                 anchorNode: undefined, anchorOffset: undefined,
                 focusNode: undefined, focusOffset: undefined,
             },
@@ -58,19 +60,21 @@ export class Editor {
         this.collaborate_last = null;
 
         // used to check if we have to rollback an operation as an unbreakable is
-        this.torollback = false;             // unbreakable removed or added
-        this.unbreaks = new Set();           // modified unbreakables from vDOM, should not be more than one per step
+        this.torollback = false; // unbreakable removed or added
+        this.unbreaks = new Set(); // modified unbreakables from vDOM, should not be more than one per step
     }
 
     sanitize() {
         // find common ancestror in this.history[-1]
-        let step = this.history[this.history.length-1];
+        let step = this.history[this.history.length - 1];
         let ca, record;
         for (record of step.dom) {
             let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
-            ca = ca?commonParentGet(ca, node, this.dom):node;
+            ca = ca ? commonParentGet(ca, node, this.dom) : node;
         }
-        if (! ca) return false;
+        if (!ca) {
+            return false;
+        }
 
         // sanitize and mark current position as sanitized
         sanitize(ca);
@@ -84,7 +88,7 @@ export class Editor {
             dest.oid = src.oid;
         } else {
             // TODO: use a real UUID4 generator
-            src.oid = dest.oid = Math.random()*2**31 | 0;
+            src.oid = dest.oid = Math.random() * 2 ** 31 | 0;
         }
         let childsrc = src.firstChild;
         let childdest = dest.firstChild;
@@ -97,15 +101,18 @@ export class Editor {
 
     // TODO: improve to avoid traversing the whole DOM just to find a node of an ID
     idFind(dom, id, parentid) {
-        if (dom.oid==id && ((!parentid) || dom.parentNode.oid==parentid))
+        if (dom.oid === id && (!parentid || dom.parentNode.oid === parentid)) {
             return dom;
+        }
         let cur = dom.firstChild;
         while (cur) {
-            if (dom.oid==id && ((!parentid) || dom.parentNode.oid==parentid))
+            if (dom.oid === id && ((!parentid) || dom.parentNode.oid === parentid)) {
                 return dom;
+            }
             let result = this.idFind(cur, id, parentid);
-            if (result)
+            if (result) {
                 return result;
+            }
             cur = cur.nextSibling;
         }
     }
@@ -115,12 +122,13 @@ export class Editor {
 
     // if not in collaboration mode, no need to serialize / unserialize
     serialize(node) {
-        if (this.collaborate)
+        if (this.collaborate) {
             return nodeToObject(node);
+        }
         return node;
     }
     unserialize(obj) {
-        return this.collaborate?objectToNode(obj):obj;
+        return this.collaborate ? objectToNode(obj) : obj;
     }
 
     observerUnactive() {
@@ -150,10 +158,10 @@ export class Editor {
     observerApply(destel, records) {
         for (let record of records) {
             switch (record.type) {
-                case "characterData":
-                    let node = this.idFind(destel, record.target.oid)
+                case "characterData": {
+                    let node = this.idFind(destel, record.target.oid);
                     if (node) {
-                        this.history[this.history.length-1].dom.push({
+                        this.history[this.history.length - 1].dom.push({
                             'type': "characterData",
                             'id': record.target.oid,
                             "text": record.target.textContent,
@@ -162,10 +170,11 @@ export class Editor {
                         node.textContent = record.target.textContent;
                         this.unbreaks.add(inUnbreakable(node));
                     }
-                    break
-                case "childList":
-                    record.removedNodes.forEach( (removed, index) => {
-                        this.history[this.history.length-1].dom.push({
+                    break;
+                }
+                case "childList": {
+                    record.removedNodes.forEach((removed, index) => {
+                        this.history[this.history.length - 1].dom.push({
                             'type': "remove",
                             'id': removed.oid,
                             'parentId': record.target.oid,
@@ -175,23 +184,25 @@ export class Editor {
                         });
                         let toremove = this.idFind(destel, removed.oid, record.target.oid);
                         this.unbreaks.add(inUnbreakable(toremove));
-                        if (toremove)
-                            toremove.remove()
+                        if (toremove) {
+                            toremove.remove();
+                        }
                     });
-                    record.addedNodes.forEach( (added, index) => {
-                        if (! record.target.oid) return false;
-                        if (added.oid && this.idFind(destel, added.oid)) {
-                            if (record.target.oid == this.idFind(destel, added.oid).parentNode.oid) {
-                                return false;
-                            }
+                    record.addedNodes.forEach((added, index) => {
+                        if (!record.target.oid) {
+                            return false;
+                        }
+                        if (added.oid && this.idFind(destel, added.oid)
+                                && record.target.oid === this.idFind(destel, added.oid).parentNode.oid) {
+                            return false;
                         }
                         this.torollback |= containsUnbreakable(added);
 
                         let newnode = added.cloneNode(1);
                         let action = {
                             'type': "add",
-                        }
-                        if (! record.nextSibling) {
+                        };
+                        if (!record.nextSibling) {
                             this.idFind(destel, record.target.oid).append(newnode);
                             action['append'] = record.target.oid;
                         } else if (record.nextSibling.oid) {
@@ -200,17 +211,20 @@ export class Editor {
                         } else if (record.previousSibling.oid) {
                             this.idFind(destel, record.previousSibling.oid).after(newnode);
                             action['after'] = record.previousSibling.oid;
-                        } else
+                        } else {
                             return false;
+                        }
                         this.idSet(added, newnode);
                         this.unbreaks.add(inUnbreakable(newnode));
                         action['id'] = added.oid;
                         action['node'] = this.serialize(newnode);
-                        this.history[this.history.length-1].dom.push(action);
+                        this.history[this.history.length - 1].dom.push(action);
                     });
                     break;
-                default:
-                    console.log('Unknown mutation type: '+record.type)
+                }
+                default: {
+                    console.log(`Unknown mutation type: ${record.type}`);
+                }
             }
         }
     }
@@ -234,19 +248,19 @@ export class Editor {
         this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
 
         let pnode = parentBlock(sel.anchorNode);
-        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName=='P');
-        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName=='H1');
-        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName=='H2');
-        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName=='H3');
-        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName=='BLOCKQUOTE');
-        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName=='LI') && (pnode.parentElement.tagName=="UL"));
-        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName=='LI') && (pnode.parentElement.tagName=="OL"));
+        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
+        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
+        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
+        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
+        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
+        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "UL"));
+        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "OL"));
         return true;
     }
 
     // toolbar handling
     toolbarClick(event) {
-        const TAGS= {
+        const TAGS = {
             'paragraph': 'P',
             'heading1': 'H1',
             'heading2': 'H2',
@@ -254,19 +268,20 @@ export class Editor {
             'blockquote': 'BLOCKQUOTE',
             'ordered': 'OL',
             'unordered': 'UL'
-        }
+        };
         try {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.target.id)) {
                 document.execCommand(event.target.id);
-            } else if (['ordered','unordered'].includes(event.target.id)) {
+            } else if (['ordered', 'unordered'].includes(event.target.id)) {
                 let sel = document.defaultView.getSelection();
                 let pnode = parentBlock(sel.anchorNode);
-                if (pnode.tagName != 'LI') {
+                if (pnode.tagName !== 'LI') {
                     // TODO: better implementation
                     let main = document.createElement(TAGS[event.target.id]);
                     let li = document.createElement('LI');
-                    while (pnode.firstChild)
+                    while (pnode.firstChild) {
                         li.append(pnode.firstChild);
+                    }
                     main.append(li);
                     pnode.after(main);
                     pnode.remove();
@@ -278,8 +293,10 @@ export class Editor {
                 setCursor(sel.anchorNode, sel.anchorOffset);
             }
             this.toolbarUpdate();
-        } catch(err) {
-            if (err.message!='unbreakable') throw err;
+        } catch (err) {
+            if (err.message !== 'unbreakable') {
+                throw err;
+            }
             this.historyRollback();
         }
         event.preventDefault();
@@ -291,7 +308,7 @@ export class Editor {
 
     // mobile keyboard, catch at input event
     inputEvent(event) {
-        if (event.type=='input' && event.inputType=='deleteContentBackward') {      // backspace on mobile
+        if (event.type === 'input' && event.inputType === 'deleteContentBackward') { // backspace on mobile
             this.historyRollback();
             event.preventDefault();
             callAnchor('oDeleteBackward');
@@ -299,50 +316,53 @@ export class Editor {
     }
 
     keyDown(event) {
-        console.log("Keyboard Event "+ event.keyCode);
+        console.log(`Keyboard Event ${event.keyCode}`);
         this.historyCursor();
         let cb = () => {};
-        let sel = document.defaultView.getSelection();
+        // let sel = document.defaultView.getSelection();
         try {
-            if (event.keyCode === 13) {                                          // enter key
+            if (event.keyCode === 13) { // enter key
                 event.preventDefault();
                 if (! event.shiftKey) {
                     try {
                         callAnchor('oEnter');
-                    } catch(err) {
-                        if (err.message!='unbreakable') throw err;
+                    } catch (err) {
+                        if (err.message !== 'unbreakable') {
+                            throw err;
+                        }
                         this.historyRollback();
                         callAnchor('oShiftEnter');
                     }
                 } else {
                     callAnchor('oShiftEnter');
                 }
-            }
-            // this is an optimization for desktop keyboards, but it should be removed to use input event, like mobiles
-            else if (event.keyCode === 8) {                                      // backspace
+            } else if (event.keyCode === 8) { // backspace
+                // this is an optimization for desktop keyboards, but it should be removed to use input event, like mobiles
                 event.preventDefault();
                 callAnchor('oDeleteBackward');
-            }
-            else if (event.keyCode === 9 && event.shiftKey) {                    // tab key
-                callAnchor('oShiftTab') && event.preventDefault();
-            }
-            else if (event.keyCode === 9 && !event.shiftKey) {                    // tab key
-                callAnchor('oTab') && event.preventDefault();
-            }
-            else if (event.keyCode === 46) {                                     // delete
+            } else if (event.keyCode === 9 && event.shiftKey) { // tab key
+                if (callAnchor('oShiftTab')) {
+                    event.preventDefault();
+                }
+            } else if (event.keyCode === 9 && !event.shiftKey) { // tab key
+                if (callAnchor('oTab')) {
+                    event.preventDefault();
+                }
+            } else if (event.keyCode === 46) { // delete
                 event.preventDefault();
                 debugger;
                 alert('delete not implemented yet');
-            } else if ((event.key == 'z') && event.ctrlKey) {                    // Ctrl Z: Undo
+            } else if ((event.key === 'z') && event.ctrlKey) { // Ctrl Z: Undo
                 event.preventDefault();
                 this.historyUndo();
-            }
-            else if ((event.key == 'y') && event.ctrlKey) {                      // Ctrl y: redo
+            } else if ((event.key === 'y') && event.ctrlKey) { // Ctrl y: redo
                 event.preventDefault();
                 alert('redo not implemented');
             }
-        } catch(err) {
-            if (err.message!='unbreakable') throw err;
+        } catch (err) {
+            if (err.message !== 'unbreakable') {
+                throw err;
+            }
             this.historyRollback();
         }
 
@@ -354,7 +374,6 @@ export class Editor {
                 resolve(this);
             }, 0);
         });
-
     }
 
     //
@@ -365,17 +384,19 @@ export class Editor {
     historyStep() {
         // check that not two unBreakables modified
         this.unbreaks.delete(null);
-        if (this.torollback || (this.unbreaks.length>1))
+        if (this.torollback || this.unbreaks.length > 1) {
             this.historyRollback();
+        }
         this.torollback = false;
         this.unbreaks = new Set();
 
         // push history
-        let latest=this.history[this.history.length-1];
-        if (!latest.dom.length)
+        let latest = this.history[this.history.length - 1];
+        if (!latest.dom.length) {
             return false;
+        }
 
-        latest.id = Math.random() * 2**31 | 0; // TODO: replace by uuid4 generator
+        latest.id = Math.random() * 2 ** 31 | 0; // TODO: replace by uuid4 generator
         this.historySend(latest);
         this.history.push({
             cursor: {},
@@ -385,7 +406,7 @@ export class Editor {
     }
 
     historyCursor() {
-        let latest=this.history[this.history.length-1];
+        let latest = this.history[this.history.length - 1];
         let sel = document.defaultView.getSelection();
         latest.cursor.anchorNode = sel.anchorNode.oid;
         latest.cursor.anchorOffset = sel.anchorOffset;
@@ -399,17 +420,21 @@ export class Editor {
     historyApply(destel, records) {
         for (let record of records) {
             switch (record.type) {
-                case "characterData":
-                    let node = this.idFind(destel, record.id)
-                    if (node)
+                case "characterData": {
+                    let node = this.idFind(destel, record.id);
+                    if (node) {
                         node.textContent = record.text;
-                    break
-                case "remove":
-                    let toremove = this.idFind(destel, record.id, record.parentId);
-                    if (toremove)
-                        toremove.remove()
+                    }
                     break;
-                case "add":
+                }
+                case "remove": {
+                    let toremove = this.idFind(destel, record.id, record.parentId);
+                    if (toremove) {
+                        toremove.remove();
+                    }
+                    break;
+                }
+                case "add": {
                     let newnode = this.unserialize(record.node);
                     if (record.append) {
                         this.idFind(destel, record.append).append(newnode);
@@ -417,11 +442,14 @@ export class Editor {
                         this.idFind(destel, record.before).before(newnode);
                     } else if (record.after) {
                         this.idFind(destel, record.after).after(newnode);
-                    } else
+                    } else {
                         return false;
+                    }
                     break;
-                default:
-                    console.log('Unknown history type: '+record.type)
+                }
+                default: {
+                    console.log(`Unknown history type: ${record.type}`);
+                }
             }
         }
     }
@@ -429,69 +457,75 @@ export class Editor {
 
     // send changes to server
     historyFetch() {
-        if (this.collaborate) {
-            fetch('/history-get/'+(this.collaborate_last || 0), {
-                headers: { 'Content-Type': 'application/json;charset=utf-8' },
-                method: 'GET',
-            }).then(response => {response.json().then(
-                (result) =>  {
-                    if (!result.length) return false;
-                    this.observerUnactive();
-
-                    let index = this.history.length;
-                    let updated = false;
-                    while (index && (this.history[index-1].id !== this.collaborate_last))
-                        index--;
-
-                    for (let residx=0; residx < result.length; residx++) {
-                        let record = result[residx];
-                        this.collaborate_last = record.id;
-                        if ((index<this.history.length) && (record.id==this.history[index].id)) {
-                            index++;
-                            continue
-                        }
-                        updated = true;
-
-                        // we are not synched with the server anymore, rollback and replay
-                        while (this.history.length > index)
-                            this.historyPop(false);
-
-                        if (record.id==1) {
-                            this.dom.innerHTML='';
-                            this.vdom.innerHTML='';
-                        }
-                        this.historyApply(this.dom, record.dom);
-                        this.historyApply(this.vdom, record.dom);
-
-                        // first record is not added in the history
-                        if (record.id != 1)
-                            this.history.push(record);
-                        index++;
-                    }
-                    if (updated)
-                        this.historyStep();
-                    this.observerActive()
-                    this.historyFetch();
-                }
-            ).catch(error => {
-                // if server unreachable, fault back to non collaborative mode
-                this.collaborate=false;
-            })
-
-            });
+        if (!this.collaborate) {
+            return;
         }
+        window.fetch(`/history-get/${this.collaborate_last || 0}`, {
+            headers: {'Content-Type': 'application/json;charset=utf-8'},
+            method: 'GET',
+        }).then(response => {
+            response.json().then(result => {
+                if (!result.length) {
+                    return false;
+                }
+                this.observerUnactive();
+
+                let index = this.history.length;
+                let updated = false;
+                while (index && (this.history[index - 1].id !== this.collaborate_last)) {
+                    index--;
+                }
+
+                for (let residx = 0; residx < result.length; residx++) {
+                    let record = result[residx];
+                    this.collaborate_last = record.id;
+                    if (index < this.history.length && record.id === this.history[index].id) {
+                        index++;
+                        continue;
+                    }
+                    updated = true;
+
+                    // we are not synched with the server anymore, rollback and replay
+                    while (this.history.length > index) {
+                        this.historyPop(false);
+                    }
+
+                    if (record.id === 1) {
+                        this.dom.innerHTML = '';
+                        this.vdom.innerHTML = '';
+                    }
+                    this.historyApply(this.dom, record.dom);
+                    this.historyApply(this.vdom, record.dom);
+
+                    // first record is not added in the history
+                    if (record.id !== 1) {
+                        this.history.push(record);
+                    }
+                    index++;
+                }
+                if (updated) {
+                    this.historyStep();
+                }
+                this.observerActive();
+                this.historyFetch();
+            }).catch(error => {
+                // if server unreachable, fault back to non collaborative mode
+                this.collaborate = false;
+            });
+        });
     }
 
     historySend(item) {
-        if (this.collaborate) {
-            fetch('/history-push', {
-                body: JSON.stringify(item),
-                headers: { 'Content-Type': 'application/json;charset=utf-8' },
-                method: 'POST',
-            }).then(response => {
-                console.log(response);
-            });
+        if (!this.collaborate) {
+            return;
         }
+        window.fetch('/history-push', {
+            body: JSON.stringify(item),
+            headers: {'Content-Type': 'application/json;charset=utf-8'},
+            method: 'POST',
+        }).then(response => {
+            console.log(response);
+        });
     }
 
     historyRollback() {
@@ -504,11 +538,12 @@ export class Editor {
     historyUndo() {
         this.observerFlush();
         // remove the one in progress before removing the last step
-        if (this.history.length>1)
+        if (this.history.length > 1) {
             this.historyPop(false);
+        }
         this.historyPop(true);
     }
-    historyPop(newStep=true) {
+    historyPop(newStep = true) {
         let step = this.history.pop();
         let pos = this.history.length;
         this.history.push({
@@ -518,12 +553,15 @@ export class Editor {
         // aplly dom changes by reverting history
         while (step.dom.length) {
             let action = step.dom.pop();
-            if (!action) break;
+            if (!action) {
+                break;
+            }
             switch (action.type) {
-                case "characterData":
+                case "characterData": {
                     this.idFind(this.dom, action.id).textContent = action.oldValue;
                     break;
-                case "remove":
+                }
+                case "remove": {
                     let node = this.unserialize(action.node);
                     if (action.nextId && this.idFind(this.dom, action.nextId)) {
                         this.idFind(this.dom, action.nextId).before(node);
@@ -533,21 +571,27 @@ export class Editor {
                         this.idFind(this.dom, action.parentId).append(node);
                     }
                     break;
-                case "add":
+                }
+                case "add": {
                     let el = this.idFind(this.dom, action.id);
-                    if (el) el.remove();
+                    if (el) {
+                        el.remove();
+                    }
+                }
             }
         }
         // set cursor to latest position
         if (step.cursor.anchorNode) {
             let anchor = this.idFind(this.dom, step.cursor.anchorNode);
-            if (anchor)
+            if (anchor) {
                 setCursor(anchor, step.cursor.anchorOffset);
+            }
         }
 
         this.observerFlush();
-        while (this.history.length > pos)
+        while (this.history.length > pos) {
             this.history.pop();
+        }
 
         if (newStep) {
             this.history.push({
@@ -559,6 +603,5 @@ export class Editor {
 }
 
 let editor = new Editor(document.getElementById("dom"));
-document.getElementById('vdom').append(editor.vdom)
+document.getElementById('vdom').append(editor.vdom);
 editor.historyFetch();
-

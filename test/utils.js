@@ -1,11 +1,11 @@
 "use strict";
 
-import {Editor} from "../editor.js"
+import {Editor} from "../editor.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
     FORWARD: 'FORWARD',
-}
+};
 
 function _nextNode(node) {
     let next = node.firstChild || node.nextSibling;
@@ -168,7 +168,6 @@ export function nodeLength(node) {
     }
 }
 
-
 /**
  * Insert in the DOM:
  * - `SELECTION_ANCHOR_CHAR` in place for the selection start
@@ -178,7 +177,9 @@ export function nodeLength(node) {
  */
 export function renderTextualSelection() {
     const selection = document.getSelection();
-    if (selection.rangeCount === 0) return;
+    if (selection.rangeCount === 0) {
+        return;
+    }
 
     const anchor = targetDeepest(selection.anchorNode, selection.anchorOffset);
     const focus = targetDeepest(selection.focusNode, selection.focusOffset);
@@ -196,7 +197,6 @@ export function renderTextualSelection() {
     _insertCharAt(']', focusNode, focusOffset);
 }
 
-
 export async function testEditor(spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
@@ -211,18 +211,19 @@ export async function testEditor(spec) {
         document.getSelection().removeAllRanges();
     }
 
-    if (spec.stepFunction)
+    if (spec.stepFunction) {
         await spec.stepFunction(editor);
+    }
 
     if (spec.contentAfter) {
         renderTextualSelection();
         const value = editor.dom.innerHTML;
         assert.equal(value, spec.contentAfter);
     }
-    testNode.remove()
+    testNode.remove();
 }
 
 export let deleteForward = async (editor) => {
-    let event = new KeyboardEvent('keydown', {'keyCode':46});
+    let event = new KeyboardEvent('keydown', {'keyCode': 46});
     await editor.keyDown(event);
 };

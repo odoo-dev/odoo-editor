@@ -2,15 +2,17 @@
 
 import {
     setCursor, setCursorEnd, isBlock, latestChild,
-    isUnbreakable, fillEmpty, isInline, 
+    isUnbreakable, fillEmpty, isInline,
 } from "../utils/utils.js";
 
-HTMLElement.prototype.oEnter = function(nextSibling) {
+HTMLElement.prototype.oEnter = function (nextSibling) {
     console.log('oEnter Element');
 
     let pnode = this;
     let next = this.nextSibling;
-    while (!isBlock(pnode)) pnode=pnode.parentElement;
+    while (!isBlock(pnode)) {
+        pnode = pnode.parentElement;
+    }
 
     // if no block, or in an unbreackable: do a shiftEnter instead
     if (isUnbreakable(pnode)) {
@@ -37,19 +39,20 @@ HTMLElement.prototype.oEnter = function(nextSibling) {
     }
     setCursor(next || this, 0);
     return next;
-}
+};
 
-HTMLElement.prototype.oShiftEnter = function(offset) {
+HTMLElement.prototype.oShiftEnter = function (offset) {
     let br = document.createElement('BR');
     this.before(br);
     return true;
-}
-
+};
 
 // remove PREVIOUS node's trailing character
-HTMLElement.prototype.oDeleteBackward = function() {
+HTMLElement.prototype.oDeleteBackward = function () {
     console.log('oDeleteBackward Element');
-    if (isUnbreakable(this)) return false;
+    if (isUnbreakable(this)) {
+        return false;
+    }
     // merge with preceeding block
     let node = this.previousSibling;
     if (isBlock(this) || isBlock(node)) {
@@ -58,48 +61,55 @@ HTMLElement.prototype.oDeleteBackward = function() {
         return true;
     }
     let next = latestChild(this.previousSibling) || this.parentElement;
-    if (! this.textContent)
-        this.remove()
+    if (!this.textContent) {
+        this.remove();
+    }
     return next.oDeleteBackward();
-}
+};
 
-HTMLElement.prototype.oTab = function(offset=undefined) {
-    if (isInline(this))
+HTMLElement.prototype.oTab = function (offset = undefined) {
+    if (isInline(this)) {
         return this.parentElement.oTab(offset);
+    }
     return false;
 };
 
-HTMLElement.prototype.oShiftTab = function(offset=undefined) {
-    if (isInline(this))
+HTMLElement.prototype.oShiftTab = function (offset = undefined) {
+    if (isInline(this)) {
         return this.parentElement.oShiftTab(offset);
+    }
     return false;
 };
 
 // Element Utils
 
-HTMLElement.prototype.oRemove = function() {
+HTMLElement.prototype.oRemove = function () {
     console.log('oRemove Element');
     let pe = this.parentElement;
 
     this.remove();
-    if (isInline(this))
+    if (isInline(this)) {
         pe.oRemove();
-}
+    }
+};
 
-HTMLElement.prototype.oMove = function(src) {
+HTMLElement.prototype.oMove = function (src) {
     // TODO: check is this is unBreackable
-    if (isUnbreakable(src) || isUnbreakable(this)) return true;
+    if (isUnbreakable(src) || isUnbreakable(this)) {
+        return true;
+    }
     setCursorEnd(this);
     if (isBlock(src)) {
         let node = latestChild(this);
         // remove invisible stuff until block or text content found
-        while (!isBlock(node) && !((node.nodeType==Node.TEXT_NODE) && (node.nodeValue.replace(/[ \n\t\r]/,'')))) {
+        while (!isBlock(node) && !(node.nodeType === Node.TEXT_NODE && (node.nodeValue.replace(/[ \n\t\r]/, '')))) {
             let old = node;
             node = latestChild(node.previousSibling) || node.parentNode;
             old.remove();
         }
-        while (src.firstChild)
+        while (src.firstChild) {
             this.append(src.firstChild);
+        }
         src.remove();
      } else {
         let node = src;
@@ -110,6 +120,4 @@ HTMLElement.prototype.oMove = function(src) {
         }
     }
     // setCursorEnd(this);
-}
-
-
+};
