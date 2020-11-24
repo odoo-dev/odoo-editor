@@ -112,10 +112,10 @@ export function hasBackwardVisibleSpace(node) {
     do {
         node = latestChild(node.previousSibling) || node.parentElement;
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/[ \t\r\n]/) > -1) {
+            if (node.nodeValue.search(/\s/) > -1) {
                 last = node;
             }
-            if (node.nodeValue.replace(/[ \t\r\n]+/, '')) {
+            if (node.nodeValue.replace(/\s+/, '')) {
                 return last;
             }
         }
@@ -130,10 +130,10 @@ export function hasForwardVisibleSpace(node) {
     do {
         node = firstChild(node.nextSibling) || node.parentElement;
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/[ \t\r\n]/) > -1) {
+            if (node.nodeValue.search(/\s/) > -1) {
                 last = node;
             }
-            if (node.nodeValue.replace(/[ \t\r\n]+/, '')) {
+            if (node.nodeValue.replace(/\s+/, '')) {
                 return last;
             }
         }
@@ -146,7 +146,7 @@ export function hasForwardVisibleSpace(node) {
 export function hasForwardChar(node) {
     while (node.nextSibling && !isBlock(node.nextSibling)) {
         node = node.nextSibling;
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/[ \t\r\n]+/, '')
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')
                 || node.textContent
                 || node.tagName === 'BR') {
             return true;

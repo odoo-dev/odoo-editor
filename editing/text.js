@@ -80,8 +80,8 @@ Text.prototype.oDeleteBackward = function (offset = undefined) {
     this.nodeValue = value.substring(0, from) + value.substring(offset);
 
     // adapt space into &nbsp; and vice-versa, depending on context
-    let left = value.substring(0, from).replace(/[ \t\r\n]+/, '');
-    let right = value.substring(offset).replace(/[ \t\r\n]+/, '');
+    let left = value.substring(0, from).replace(/\s+/, '');
+    let right = value.substring(offset).replace(/\s+/, '');
     let leftSpace = hasBackwardVisibleSpace(this);
     let rightSpace = hasForwardVisibleSpace(this);
     if (!from) {
@@ -89,10 +89,10 @@ Text.prototype.oDeleteBackward = function (offset = undefined) {
             return this.oDeleteBackward(0);
         }
         if (!space && !leftSpace) { // </p>a[]_
-            this.nodeValue = this.nodeValue.replace(/^[ \t\r\n]+/, '\u00A0');
+            this.nodeValue = this.nodeValue.replace(/^\s+/, '\u00A0');
         }
         if (!space && leftSpace) { // _</b>a[]_
-            leftSpace.nodeValue = leftSpace.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
+            leftSpace.nodeValue = leftSpace.nodeValue.replace(/\s+$/, '\u00A0');
         }
     } else if (!right) {
         if (space && rightSpace) { // _[]</b>_
@@ -100,21 +100,21 @@ Text.prototype.oDeleteBackward = function (offset = undefined) {
         }
         if (!space && !rightSpace) { // a_a[]</p>   || <p>___a[]_</p>
             if (left || leftSpace) {
-                this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '\u00A0');
+                this.nodeValue = this.nodeValue.replace(/\s+$/, '\u00A0');
             }
         }
     } else {
         if (!right && !space) { // _a[]_</b>
-            this.nodeValue = value.substring(0, from).replace(/[ \t\r\n]+$/, '\u00A0') + value.substring(offset);
+            this.nodeValue = value.substring(0, from).replace(/\s+$/, '\u00A0') + value.substring(offset);
         }
         if (!left && !space) { // </p>_a[]_
-            this.nodeValue = value.substring(0, from) + value.substring(offset).replace(/^[ \t\r\n]+/, '\u00A0');
+            this.nodeValue = value.substring(0, from) + value.substring(offset).replace(/^\s+/, '\u00A0');
         }
     }
 
     // // TODO: move this to utils?
     // add a <br> if necessary: double a preceeding one, or inside an empty block
-    if (!this.nodeValue.replace(/[ \t\r\n]+/, '') && !hasForwardChar(this)) {
+    if (!this.nodeValue.replace(/\s+/, '') && !hasForwardChar(this)) {
         let node = this;
         do {
             if (node.previousSibling) {
@@ -130,13 +130,13 @@ Text.prototype.oDeleteBackward = function (offset = undefined) {
                     break;
                 }
             }
-        } while (!isBlock(node) && !(node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/[ \t\r\n]+/, '')));
+        } while (!isBlock(node) && !(node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')));
     }
     setCursor(this, Math.min(from, this.nodeValue.length));
 };
 
 Text.prototype.oMove = function (src) {
-    this.nodeValue = this.nodeValue.replace(/[ \t\r\n]+$/, '');
+    this.nodeValue = this.nodeValue.replace(/\s+$/, '');
     if (!this.nodeValue) {
         return (this.previousSibling || this.parentElement).oMove(src);
     }
