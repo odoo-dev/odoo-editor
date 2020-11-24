@@ -47,13 +47,12 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     return true;
 };
 
-// remove PREVIOUS node's trailing character
 HTMLElement.prototype.oDeleteBackward = function () {
     console.log('oDeleteBackward Element');
     if (isUnbreakable(this)) {
         return false;
     }
-    // merge with preceeding block
+    // merge with previous block
     let node = this.previousSibling;
     if (isBlock(this) || isBlock(node)) {
         node = this.previousSibling || this.parentElement;
@@ -65,6 +64,10 @@ HTMLElement.prototype.oDeleteBackward = function () {
         this.remove();
     }
     return next.oDeleteBackward();
+};
+
+HTMLElement.prototype.oDeleteForward = function () {
+
 };
 
 HTMLElement.prototype.oTab = function (offset = undefined) {

@@ -1,6 +1,6 @@
 "use strict";
 
-import OdooEditor from "../editor.js";
+import OdooEditor, {callAnchor} from "../editor.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -224,13 +224,11 @@ export async function testEditor(Editor = OdooEditor, spec) {
 }
 
 export let deleteForward = async (editor) => {
-    let event = new KeyboardEvent('keydown', {'keyCode': 46});
-    await editor.keyDown(event);
+    callAnchor('oDeleteForward');
 };
 
 export let deleteBackward = async (editor) => {
-    let event = new KeyboardEvent('keydown', {'keyCode': 8});
-    await editor.keyDown(event);
+    callAnchor('oDeleteBackward');
 };
 
 export class BasicEditor extends OdooEditor {

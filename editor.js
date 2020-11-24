@@ -15,7 +15,7 @@ import {} from "./editing/li.js";
 import {} from "./editing/text.js";
 import {} from "./editing/td.js";
 
-function callAnchor(method) {
+export function callAnchor(method) {
     let sel = document.defaultView.getSelection();
     if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
         return sel.anchorNode[method](sel.anchorOffset);
@@ -308,7 +308,7 @@ export default class OdooEditor {
 
     // mobile keyboard, catch at input event
     inputEvent(event) {
-        if (event.type === 'input' && event.inputType === 'deleteContentBackward') { // backspace on mobile
+        if (event.inputType === 'deleteContentBackward') {
             this.historyRollback();
             event.preventDefault();
             callAnchor('oDeleteBackward');
@@ -336,10 +336,6 @@ export default class OdooEditor {
                 } else {
                     callAnchor('oShiftEnter');
                 }
-            } else if (event.keyCode === 8) { // backspace
-                // this is an optimization for desktop keyboards, but it should be removed to use input event, like mobiles
-                event.preventDefault();
-                callAnchor('oDeleteBackward');
             } else if (event.keyCode === 9 && event.shiftKey) { // tab key
                 if (callAnchor('oShiftTab')) {
                     event.preventDefault();
@@ -350,7 +346,7 @@ export default class OdooEditor {
                 }
             } else if (event.keyCode === 46) { // delete
                 event.preventDefault();
-                // debugger;
+                callAnchor('oDeleteForward');
                 // alert('delete not implemented yet');
             } else if ((event.key === 'z') && event.ctrlKey) { // Ctrl Z: Undo
                 event.preventDefault();
