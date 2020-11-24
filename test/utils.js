@@ -114,19 +114,30 @@ export function setSelection(selection) {
 }
 
 /**
- * Insert the given character at the given offset of the given container.
+ * Inserts the given character at the given offset of the given node.
  *
- * @param char
- * @param container
- * @param offset
+ * @param {string} char
+ * @param {Node} node
+ * @param {number} offset
  */
-function _insertCharAt(char, container, offset) {
-    if (container.nodeType === Node.TEXT_NODE) {
-        const startValue = container.nodeValue;
-        container.nodeValue =
-            startValue.slice(0, offset) + char + startValue.slice(offset, startValue.length);
+function _insertCharAt(char, node, offset) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        const startValue = node.nodeValue;
+        if (offset < 0 || offset > startValue.length) {
+            throw new Error(`Invalid ${char} insertion in text node`);
+        }
+        node.nodeValue =
+            startValue.slice(0, offset) + char + startValue.slice(offset);
     } else {
-        container.parentNode.insertBefore(document.createTextNode(char), container);
+        if (offset < 0 || offset > node.childNodes.length) {
+            throw new Error(`Invalid ${char} insertion in non-text node`);
+        }
+        const textNode = document.createTextNode(char);
+        if (offset < node.childNodes.length) {
+            node.insertBefore(textNode, node.childNodes[offset]);
+        } else {
+            node.appendChild(textNode);
+        }
     }
 }
 
@@ -138,23 +149,27 @@ function _insertCharAt(char, container, offset) {
  * @param offset
  */
 export function targetDeepest(container, offset) {
-    while (container.hasChildNodes()) {
-        let childNodes;
-        if (container instanceof Element && container.shadowRoot) {
-            childNodes = container.shadowRoot.childNodes;
-        } else {
-            childNodes = container.childNodes;
-        }
-        if (offset >= childNodes.length) {
-            container = container.lastChild;
-            // The new container might be a text node, so considering only
-            // the `childNodes` property would be wrong.
-            offset = nodeLength(container);
-        } else {
-            container = childNodes[offset];
-            offset = 0;
-        }
-    }
+    // TODO check at which point the method is necessary, for now it creates
+    // a bug where there is not: it causes renderTextualSelection to put "[]"
+    // chars inside a <br/>.
+
+    // while (container.hasChildNodes()) {
+    //     let childNodes;
+    //     if (container instanceof Element && container.shadowRoot) {
+    //         childNodes = container.shadowRoot.childNodes;
+    //     } else {
+    //         childNodes = container.childNodes;
+    //     }
+    //     if (offset >= childNodes.length) {
+    //         container = container.lastChild;
+    //         // The new container might be a text node, so considering only
+    //         // the `childNodes` property would be wrong.
+    //         offset = nodeLength(container);
+    //     } else {
+    //         container = childNodes[offset];
+    //         offset = 0;
+    //     }
+    // }
     return [container, offset];
 }
 
