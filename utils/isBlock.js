@@ -55,26 +55,22 @@ const computedStyles = new WeakMap();
  * @param node
  */
 export function isBlock(node) {
-    let result;
-    if (node instanceof Element) {
-        const tagName = node.tagName;
-        // every custom jw-* node will be considered as blocks
-        if (tagName.startsWith('JW-') || tagName === 'T') {
-            return true;
-        }
-        // We won't call `getComputedStyle` more than once per node.
-        let style = computedStyles.get(node);
-        if (!style) {
-            style = window.getComputedStyle(node);
-        }
-        // The node might not be in the DOM, in which case it has no CSS values.
-        if (style.display) {
-            result = !style.display.includes('inline') && style.display !== 'contents';
-        } else {
-            result = blockTagNames.includes(tagName);
-        }
-    } else {
-        result = false;
+    if (!(node instanceof Element)) {
+        return false;
     }
-    return result;
+    const tagName = node.tagName;
+    // every custom jw-* node will be considered as blocks
+    if (tagName.startsWith('JW-') || tagName === 'T') {
+        return true;
+    }
+    // We won't call `getComputedStyle` more than once per node.
+    let style = computedStyles.get(node);
+    if (!style) {
+        style = window.getComputedStyle(node);
+    }
+    // The node might not be in the DOM, in which case it has no CSS values.
+    if (style.display) {
+        return !style.display.includes('inline') && style.display !== 'contents';
+    }
+    return blockTagNames.includes(tagName);
 }
