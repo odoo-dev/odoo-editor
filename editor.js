@@ -350,14 +350,14 @@ export class Editor {
                 }
             } else if (event.keyCode === 46) { // delete
                 event.preventDefault();
-                debugger;
-                alert('delete not implemented yet');
+                // debugger;
+                // alert('delete not implemented yet');
             } else if ((event.key === 'z') && event.ctrlKey) { // Ctrl Z: Undo
                 event.preventDefault();
                 this.historyUndo();
             } else if ((event.key === 'y') && event.ctrlKey) { // Ctrl y: redo
                 event.preventDefault();
-                alert('redo not implemented');
+                // alert('redo not implemented');
             }
         } catch (err) {
             if (err.message !== 'unbreakable') {

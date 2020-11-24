@@ -551,4 +551,14 @@ describe('Editor', () => {
     });
 });
 
-mocha.run();
+/**
+ * Quick UI to launch tests from the test web page.
+ */
+const startTestsButtonEl = document.getElementById('start-tests');
+startTestsButtonEl.addEventListener('click', () => {
+    startTestsButtonEl.disabled = true;
+    const mochaEl = document.createElement('div');
+    mochaEl.id = 'mocha';
+    document.body.appendChild(mochaEl);
+    mocha.run();
+});

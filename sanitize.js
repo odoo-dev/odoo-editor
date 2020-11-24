@@ -39,7 +39,7 @@ class Sanitize {
 
                 // move slection anchor if needed
                 if (sel.anchorNode === node.nextSibling) {
-                    debugger;
+                    // debugger;
                 }
                 node.nextSibling.remove();
             }

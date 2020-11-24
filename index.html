@@ -2,47 +2,8 @@
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <style>
-            body { padding:5px; }
-            #dom-col {
-                width: 45%;
-                float: left;
-                margin-right: 20px;
-            }
-            #vdom-col {
-                width: 45%;
-                float: left;
-            }
-            #dom {
-                padding: 10px;
-                min-height: 500px;
-            }
-            span.btn {
-                background-color: blue;
-                padding: 15px;
-                color: white;
-            }
-            #toolbar {
-                background: #222222;
-                color: white;
-                display: inline-block;
-            }
-            .mr8 {
-                margin-right: 16px;
-            }
-            #toolbar div.btn {
-                padding: 7px;
-                float: left;
-            }
-            #toolbar div.active {
-                background: #555555;
-            }
-            td {
-                border: 1px solid grey;
-                padding: 6px;
-            }
-        </style>
-        <!-- 
+        <link rel="stylesheet" href="style.css"/>
+        <!--
         <script src="https://use.fontawesome.com/80d52a392c.js"></script>
         -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous"/>
@@ -57,106 +18,106 @@
         <script>
             let assert = chai.assert;
         </script>
+
+        <script src="editor.js" type="module" defer></script>
+        <script src="test/editor.test.js" type="module" defer></script>
     </head>
     <body>
-        <div id="dom-col">
-            <h1>DOM</h1>
-            <hr/>
-            <div id="toolbar" style="visibility:hidden">
-                <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
-                <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
-                <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
-                <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn mr8"></div>
-                <div class="btn" id="paragraph">P</div>
-                <div class="btn" id="heading1">H1</div>
-                <div class="btn" id="heading2">H2</div>
-                <div class="btn mr8" id="heading3">H3</div>
-                <div id="blockquote" title="Blockquote" class="fa fa-quote-right fa-fw btn mr8"></div>
-                <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
-                <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
+        <div id="control-panel">
+            <button type="button" id="start-tests">Launch Tests</button>
+        </div>
+        <div id="test-container">
+            <div id="dom-col">
+                <h1>DOM</h1>
+                <hr/>
+                <div id="toolbar" class="toolbar">
+                    <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
+                    <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
+                    <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
+                    <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn mr8"></div>
+                    <div class="btn" id="paragraph">P</div>
+                    <div class="btn" id="heading1">H1</div>
+                    <div class="btn" id="heading2">H2</div>
+                    <div class="btn mr8" id="heading3">H3</div>
+                    <div id="blockquote" title="Blockquote" class="fa fa-quote-right fa-fw btn mr8"></div>
+                    <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
+                    <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
+                </div>
+                <!-- innerHTML only used in non collaborative mode -->
+                <div id="dom">
+                    <h1>Title H1</h1>
+                    <h2><br/></h2>
+                    <h3>Subtitle H3 (<u>empty <i>h2</i> above</u>)</h3>
+                    <p>
+                        <b>Select text to see the toolbar</b> dolor sit amet, consectetur
+                        adipiscing elit. Pellentesque et purus vel enim scelerisque faucibus. Duis
+                        malesuada lorem at placerat semper.
+                        <br/>
+                        Praesent cursus ornare convallis. Aliquam vitae vestibulum metus. Morbi
+                        commodolacus ut varius tincidunt. Vivamus in mattis lectus.
+                        Praesent commodo eget nunc non mollis.
+                    </p><p>
+                        <i>
+                        Pe</i><i>lentesque id massa ac mi iaculis tincidunt accumsan vitae
+                        tellus. Aliquam mi massa, suscipit non varius eu, ornare
+                        aliquet ex. Quisque mattis mi in magna viverra blandit.
+                        Curabitur auctor imperdiet nunc. Aenean id massa mauris.
+                        Nulla placerat orci sed blandit luctus. In ac nisl augue.
+                        </i>
+                    </p>
+                    <ul>
+                        <li>first item</li>
+                        <li style="list-style: none;">
+                            <ul>
+                                <li>first sub-item</li>
+                                <li>second sub-item</li>
+                            </ul>
+                        </li>
+                        <li><i>third item</i></li>
+                        <li>fourth <b>item</b></li>
+                    </ul>
+                    <p>
+                        Suspendisse euismod dictum ex
+                    </p>
+                    <div>
+                        div containing a <span class="btn">button</span> in span.
+                    </div>
+                    <p>final paragraph</p>
+                    <div style="background-color: #eee" t="unbreak">
+                        <h1>Unbreakable div</h1>
+                        <p>unbreakable zone: light grey bg</p>
+                    </div>
+                    <p>
+                        Outside unbreak
+                    </p>
+                    <div style="background-color: #eee" t="unbreak">
+                        unbreakable <b>text field</b> (no block)
+                    </div>
+                    <p>
+                        And here is a table
+                    </p>
+                    <table>
+                        <tr>
+                            <td>cell 1</td>
+                            <td>cell 2</td>
+                            <td>cell 3</td>
+                        </tr><tr>
+                            <td><i>italic</i> 2.1</td>
+                            <td>c 2.2</td>
+                            <td><b>bold 3.2</b></td>
+                        </tr>
+                    </table>
+                    <p>
+                        That's all folks!
+                    </p>
+                </div>
             </div>
-            <!-- innerHTML only used in non collaborative mode -->
-            <div id="dom">
-                <h1>Title H1</h1>
-                <h2><br/></h2>
-                <h3>Subtitle H3 (<u>empty <i>h2</i> above</u>)</h3>
-                <p>
-                    <b>Select text to see the toolbar</b> dolor sit amet, consectetur
-                    adipiscing elit. Pellentesque et purus vel enim scelerisque faucibus. Duis
-                    malesuada lorem at placerat semper.
-                    <br/>
-                    Praesent cursus ornare convallis. Aliquam vitae vestibulum metus. Morbi
-                    commodolacus ut varius tincidunt. Vivamus in mattis lectus.
-                    Praesent commodo eget nunc non mollis.
-                </p><p>
-                    <i>
-                    Pe</i><i>lentesque id massa ac mi iaculis tincidunt accumsan vitae
-                    tellus. Aliquam mi massa, suscipit non varius eu, ornare
-                    aliquet ex. Quisque mattis mi in magna viverra blandit.
-                    Curabitur auctor imperdiet nunc. Aenean id massa mauris.
-                    Nulla placerat orci sed blandit luctus. In ac nisl augue.
-                    </i>
-                </p>
-                <ul>
-                    <li>first item</li>
-                    <li style="list-style: none;">
-                        <ul>
-                            <li>first sub-item</li>
-                            <li>second sub-item</li>
-                        </ul>
-                    </li>
-                    <li><i>third item</i></li>
-                    <li>fourth <b>item</b></li>
-                </ul>
-                <p>
-                    Suspendisse euismod dictum ex
-                </p>
-                <div>
-                    div containing a <span class="btn">button</span> in span.
-                </div>
-                <p>final paragraph</p>
-                <div style="background-color: #eee" t="unbreak">
-                    <h1>Unbreakable div</h1>
-                    <p>unbreakable zone: light grey bg</p>
-                </div>
-                <p>
-                    Outside unbreak
-                </p>
-                <div style="background-color: #eee" t="unbreak">
-                    unbreakable <b>text field</b> (no block)
-                </div>
-                <p>
-                    And here is a table
-                </p>
-                <table>
-                    <tr>
-                        <td>cell 1</td>
-                        <td>cell 2</td>
-                        <td>cell 3</td>
-                    </tr><tr>
-                        <td><i>italic</i> 2.1</td>
-                        <td>c 2.2</td>
-                        <td><b>bold 3.2</b></td>
-                    </tr>
-                </table>
-                <p>
-                    That's all folks!
-                </p>
+            <div id="vdom-col">
+                <h1>vDOM</h1>
+                <hr/>
+                <div class="toolbar"><!-- Just for vertical alignment with DOM --></div>
+                <div id="vdom"></div>
             </div>
         </div>
-
-        <div id="vdom-col" style="display: none">
-            <h1>vDOM</h1>
-            <hr/>
-            <div id="vdom"></div>
-        </div>
-        <div style="clear: both"></div>
-
-        <script src="editor.js" type="module"></script>
-
-        <!--
-        <div id="mocha"/>
-        <script src="test/editor.test.js" type="module"></script>
-        -->
     </body>
 </html>

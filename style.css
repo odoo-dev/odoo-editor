@@ -1,0 +1,45 @@
+* {
+    box-sizing: border-box;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+#test-container {
+    display: flex;
+}
+#test-container > * {
+    margin: 0 10px;
+}
+.toolbar {
+    height: 35px;
+    visibility: hidden;
+    background: #222222;
+    color: white;
+    display: inline-block;
+}
+.toolbar div.btn {
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 7px;
+}
+.toolbar div.active {
+    background: #555555;
+}
+
+#dom {
+    min-height: 500px;
+}
+span.btn {
+    background-color: blue;
+    padding: 15px;
+    color: white;
+}
+.mr8 {
+    margin-right: 16px;
+}
+td {
+    border: 1px solid grey;
+    padding: 6px;
+}

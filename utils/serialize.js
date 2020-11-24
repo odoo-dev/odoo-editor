@@ -6,7 +6,7 @@ export function nodeToObject(node) {
     };
     if (!node.oid) {
         console.log('OID can not be false!');
-        debugger;
+        // debugger;
     }
     if (node.nodeType === Node.TEXT_NODE) {
         result.textValue = node.nodeValue;
