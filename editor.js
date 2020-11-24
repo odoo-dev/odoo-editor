@@ -28,7 +28,7 @@ function callAnchor(method) {
     return node[method](node.nodeType === Node.TEXT_NODE ? node.length : 0);
 }
 
-export class Editor {
+export default class OdooEditor {
     constructor(dom) {
         dom.oid = 1; // convention: root node is ID 1
         this.dom = sanitize(dom);
@@ -602,6 +602,6 @@ export class Editor {
     }
 }
 
-let editor = new Editor(document.getElementById("dom"));
+let editor = new OdooEditor(document.getElementById("dom"));
 document.getElementById('vdom').append(editor.vdom);
 editor.historyFetch();

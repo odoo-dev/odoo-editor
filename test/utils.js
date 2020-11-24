@@ -1,6 +1,6 @@
 "use strict";
 
-import {Editor} from "../editor.js";
+import OdooEditor from "../editor.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -197,7 +197,7 @@ export function renderTextualSelection() {
     _insertCharAt(']', focusNode, focusOffset);
 }
 
-export async function testEditor(spec) {
+export async function testEditor(Editor = OdooEditor, spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
     const editor = new Editor(testNode);
@@ -227,3 +227,12 @@ export let deleteForward = async (editor) => {
     let event = new KeyboardEvent('keydown', {'keyCode': 46});
     await editor.keyDown(event);
 };
+
+export let deleteBackward = async (editor) => {
+    let event = new KeyboardEvent('keydown', {'keyCode': 8});
+    await editor.keyDown(event);
+};
+
+export class BasicEditor extends OdooEditor {
+
+}

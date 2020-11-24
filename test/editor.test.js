@@ -1,75 +1,77 @@
 "use strict";
 
-import {testEditor, deleteForward} from './utils.js';
+import {
+    testEditor,
+    BasicEditor,
+    deleteBackward,
+} from './utils.js';
 
 describe('Editor', () => {
-    // Note: implementing a test for deleteForward, make sure to implement
-    // its equivalent for deleteBackward.
-    describe('deleteForward', () => {
+    describe('deleteBackward', () => {
         describe('Selection collapsed', () => {
             describe('Basic', () => {
                 it('should do nothing', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore: '<p>[]</p>',
-                        stepFunction: deleteForward,
+                        stepFunction: deleteBackward,
                         // A <br> is automatically added to make the <p>
                         // visible.
                         contentAfter: '<p>[]<br></p>',
                     });
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore: '<p>[<br>]</p>',
-                        stepFunction: deleteForward,
+                        stepFunction: deleteBackward,
                         // The <br> is there only to make the <p> visible.
                         // It does not exist in VDocument and selecting it
                         // has no meaning in the DOM.
                         contentAfter: '<p>[]<br></p>',
                     });
-                    await testEditor({
-                        contentBefore: '<p>abc[]</p>',
-                        stepFunction: deleteForward,
-                        contentAfter: '<p>abc[]</p>',
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]abc</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]abc</p>',
                     });
                 });
                 it('should delete the first character in a paragraph', async () => {
-                    await testEditor({
-                        contentBefore: '<p>[]abc</p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a[]bc</p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<p>[]bc</p>',
                     });
                 });
                 it('should delete a character within a paragraph', async () => {
-                    await testEditor({
-                        contentBefore: '<p>a[]bc</p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]c</p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<p>a[]c</p>',
                     });
                 });
                 it('should delete the last character in a paragraph', async () => {
-//                     await testEditor({
-//                         contentBefore: '<p>ab[]c</p>',
-//                         stepFunction: deleteForward,
-//                         contentAfter: '<p>ab[]</p>',
-//                     });
-                    await testEditor({
-                        contentBefore: '<p>ab []c</p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab c[]</p>',
+                        stepFunction: deleteBackward,
                         // The space should be converted to an unbreakable space
                         // so it is visible.
                         contentAfter: '<p>ab&nbsp;[]</p>',
                     });
                 });
                 it('should merge a paragraph into an empty paragraph', async () => {
-                    await testEditor({
-                        contentBefore: '<p>[]<br></p><p>abc</p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br></p><p>[]abc</p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<p>[]abc</p>',
                     });
                 });
                 it('should not break unbreakables', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
                             '<table><tbody><tr><td>[]<br></td><td>abc</td></tr></tbody></table>',
-                        stepFunction: deleteForward,
+                        stepFunction: deleteBackward,
                         contentAfter:
                             '<table><tbody><tr><td>[]<br></td><td>abc</td></tr></tbody></table>',
                     });
@@ -78,236 +80,275 @@ describe('Editor', () => {
             describe('Line breaks', () => {
                 describe('Single', () => {
                     it('should delete a leading line break', async () => {
-                        await testEditor({
-                            contentBefore: '<p>[]<br>abc</p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p><br>[]abc</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>[]abc</p>',
                         });
-                        await testEditor({
-                            contentBefore: '<p>[]<br> abc</p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p><br>[] abc</p>',
+                            stepFunction: deleteBackward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
                             contentAfter: '<p>[]abc</p>',
                         });
                     });
                     it('should delete a line break within a paragraph', async () => {
-                        await testEditor({
-                            contentBefore: '<p>ab[]<br>cd</p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab<br>[]cd</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>ab[]cd</p>',
                         });
-                        await testEditor({
-                            contentBefore: '<p>ab []<br>cd</p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab <br>[]cd</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>ab []cd</p>',
                         });
-                        await testEditor({
-                            contentBefore: '<p>ab[]<br> cd</p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab<br>[] cd</p>',
+                            stepFunction: deleteBackward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
                             contentAfter: '<p>ab[]cd</p>',
                         });
                     });
-
                     it('should delete a trailing line break', async () => {
-                        await testEditor({
-                            contentBefore: '<p>abc[]<br><br></p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc<br><br>[]</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>abc[]</p>',
                         });
-                        // trailing space are visible before because the default css of BR is
-                        // br:before { content: "\A"; white-space: pre-line }
-                        // What about when the user customize it's CSS instead of BR? like in <span class="fa fa-gears"/>
-                        await testEditor({
-                            contentBefore: '<p>abc []<br><br></p>',
-                            stepFunction: deleteForward,
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc<br>[]<br></p>',
+                            stepFunction: deleteBackward,
+                            // This should be identical to the one before.
+                            contentAfter: '<p>abc[]</p>',
+                        });
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc <br><br>[]</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>abc&nbsp;[]</p>',
                         });
                     });
                     it('should delete a character and a line break, emptying a paragraph', async () => {
-                        await testEditor({
-                            contentBefore: '<p>[]a<br><br></p><p>bcd</p>',
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>aaa</p><p><br>a[]</p>',
                             stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
                             },
-                            contentAfter: '<p>[]<br></p><p>bcd</p>',
+                            contentAfter: '<p>aaa</p><p>[]<br></p>',
                         });
                     });
-                    it('should delete a character before a trailing line break', async () => {
-                        await testEditor({
-                            contentBefore: '<p>ab[]c<br><br></p>',
-                            stepFunction: deleteForward,
-                            contentAfter: '<p>ab[]<br><br></p>',
+                    it('should delete a character after a trailing line break', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab<br>c[]</p>',
+                            stepFunction: deleteBackward,
+                            // A new <br> should be insterted, to make the first one
+                            // visible.
+                            contentAfter: '<p>ab<br>[]<br></p>',
                         });
                     });
                 });
                 describe('Consecutive', () => {
-                    it('should merge a paragraph into a paragraph with 4 <br>', async () => {
-                        // 1
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
-                            stepFunction: deleteForward,
-                            contentAfter: '<p>ab</p><p><br><br><br>[]cd</p>',
-                        });
-                        // 2-1
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
-                            stepFunction: deleteForward,
-                            // This should be identical to 1
-                            contentAfter: '<p>ab</p><p><br><br><br>[]cd</p>',
-                        });
-                    });
-                    it('should delete a trailing line break', async () => {
-                        // 3-1
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
-                            stepFunction: deleteForward,
-                            contentAfter: '<p>ab</p><p><br><br>[]<br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete a trailing line break, then merge a paragraph into a paragraph with 3 <br>', async () => {
-                        // 3-2
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p><br><br>[]cd</p>',
-                        });
-                    });
-                    it('should delete a line break', async () => {
-                        // 4-1
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: deleteForward,
-                            contentAfter: '<p>ab</p><p><br>[]<br><br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete two line breaks', async () => {
-                        // 4-2
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p><br>[]<br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete two line breaks, then merge a paragraph into a paragraph with 2 <br>', async () => {
-                        // 4-3
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p><br>[]cd</p>',
-                        });
-                    });
-                    it('should delete a line break', async () => {
-                        // 5-1
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: deleteForward,
-                            contentAfter: '<p>ab</p><p>[]<br><br><br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete two line breaks', async () => {
-                        // 5-2
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p>[]<br><br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete three line breaks (emptying a paragraph)', async () => {
-                        // 5-3
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p>[]<br></p><p>cd</p>',
-                        });
-                    });
-                    it('should delete three line breaks, then merge a paragraph into an empty parargaph', async () => {
-                        // 5-4
-                        await testEditor({
-                            contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                            },
-                            contentAfter: '<p>ab</p><p>[]cd</p>',
-                        });
-                    });
                     it('should merge a paragraph with 4 <br> into a paragraph with text', async () => {
-                        // 6-1
-                        await testEditor({
-                            contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
-                            stepFunction: deleteForward,
+                        // 1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
+                            stepFunction: deleteBackward,
                             contentAfter: '<p>ab[]<br><br><br><br></p><p>cd</p>',
                         });
                     });
-                    it('should merge a paragraph with 4 <br> into a paragraph with text, then delete a line break', async () => {
-                        // 6-2
-                        await testEditor({
-                            contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
+                    it('should delete a line break', async () => {
+                        // 2-1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<p>ab</p><p>[]<br><br><br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete a line break, then merge a paragraph with 3 <br> into a paragraph with text', async () => {
+                        // 2-2
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
                             stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
                             },
                             contentAfter: '<p>ab[]<br><br><br></p><p>cd</p>',
                         });
                     });
-                    it('should merge a paragraph with 4 <br> into a paragraph with text, then delete two line breaks', async () => {
-                        // 6-3
-                        await testEditor({
-                            contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
+                    it('should delete a line break', async () => {
+                        // 3-1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<p>ab</p><p><br>[]<br><br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete two line breaks', async () => {
+                        // 3-2
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
                             stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            contentAfter: '<p>ab</p><p>[]<br><br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete two line breaks, then merge a paragraph with 3 <br> into a paragraph with text', async () => {
+                        // 3-3
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
                             },
                             contentAfter: '<p>ab[]<br><br></p><p>cd</p>',
                         });
                     });
-                    it('should merge a paragraph with 4 <br> into a paragraph with text, then delete three line breaks', async () => {
-                        // 6-4
-                        await testEditor({
-                            contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
+                    it('should delete a line break', async () => {
+                        // 4-1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
+                            stepFunction: deleteBackward,
+                            // A trailing line break is rendered as two <br>.
+                            contentAfter: '<p>ab</p><p><br><br>[]<br></p><p>cd</p>',
+                        });
+                        // 5-1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
+                            stepFunction: deleteBackward,
+                            // This should be identical to 4-1
+                            contentAfter: '<p>ab</p><p><br><br>[]<br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete two line breaks', async () => {
+                        // 4-2
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
                             stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            // A trailing line break is rendered as two <br>.
+                            contentAfter: '<p>ab</p><p><br>[]<br></p><p>cd</p>',
+                        });
+                        // 5-2
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            // This should be identical to 4-2
+                            contentAfter: '<p>ab</p><p><br>[]<br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete three line breaks (emptying a paragraph)', async () => {
+                        // 4-3
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            contentAfter: '<p>ab</p><p>[]<br></p><p>cd</p>',
+                        });
+                        // 5-3
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            // This should be identical to 4-3
+                            contentAfter: '<p>ab</p><p>[]<br></p><p>cd</p>',
+                        });
+                    });
+                    it('should delete three line breaks, then merge an empty parargaph into a paragraph with text', async () => {
+                        // 4-4
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            // This should be identical to 4-4
+                            contentAfter: '<p>ab[]</p><p>cd</p>',
+                        });
+                        // 5-4
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
                             },
                             contentAfter: '<p>ab[]</p><p>cd</p>',
                         });
                     });
-                    it('should merge a paragraph with 4 <br> into a paragraph with text, then delete three line breaks, then merge two paragraphs with text', async () => {
-                        // 6-5
-                        await testEditor({
-                            contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
+                    it('should merge a paragraph into a paragraph with 4 <br>', async () => {
+                        // 6-1
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<p>ab</p><p><br><br><br>[]cd</p>',
+                        });
+                    });
+                    it('should merge a paragraph into a paragraph with 4 <br>, then delete a trailing line break', async () => {
+                        // 6-2
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
                             stepFunction: async (editor) => {
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
-                                await deleteForward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            contentAfter: '<p>ab</p><p><br><br>[]cd</p>',
+                        });
+                    });
+                    it('should merge a paragraph into a paragraph with 4 <br>, then delete two line breaks', async () => {
+                        // 6-3
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            contentAfter: '<p>ab</p><p><br>[]cd</p>',
+                        });
+                    });
+                    it('should merge a paragraph into a paragraph with 4 <br>, then delete three line breaks', async () => {
+                        // 6-4
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                            },
+                            contentAfter: '<p>ab</p><p>[]cd</p>',
+                        });
+                    });
+                    it('should merge a paragraph into a paragraph with 4 <br>, then delete three line breaks, then merge two paragraphs with text', async () => {
+                        // 6-5
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
+                            stepFunction: async (editor) => {
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
+                                await deleteBackward(editor);
                             },
                             contentAfter: '<p>ab[]cd</p>',
                         });
@@ -315,238 +356,175 @@ describe('Editor', () => {
                 });
             });
             describe('Formats', () => {
-                it('should delete a character after a format node', async () => {
-                    await testEditor({
-                        contentBefore: '<p><b>abc[]</b>def</p>',
-                        stepFunction: deleteForward,
-                        contentAfter: '<p><b>abc[]</b>ef</p>',
-                    });
-                    await testEditor({
-                        contentBefore: '<p><b>abc</b>[]def</p>',
-                        stepFunction: deleteForward,
+                it('should delete a character before a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc<b>[]def</b></p>',
+                        stepFunction: deleteBackward,
                         // The selection is normalized so we only have one way
                         // to represent a position.
-                        contentAfter: '<p><b>abc[]</b>ef</p>',
+                        contentAfter: '<p>ab[]<b>def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]<b>def</b></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]<b>def</b></p>',
                     });
                 });
             });
             describe('Merging different types of elements', () => {
+                it('should merge a paragraph with text into a paragraph with text', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab</p><p>[]cd</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]cd</p>',
+                    });
+                });
+                it('should merge a paragraph with formated text into a paragraph with text', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>aa</p><p>[]a<i>bbb</i></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>aa[]a<i>bbb</i></p>',
+                    });
+                });
                 it('should merge a paragraph with text into a heading1 with text', async () => {
-                    await testEditor({
-                        contentBefore: '<h1>ab[]</h1><p>cd</p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>ab</h1><p>[]cd</p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<h1>ab[]cd</h1>',
                     });
                 });
                 it('should merge an empty paragraph into a heading1 with text', async () => {
-                    await testEditor({
-                        contentBefore: '<h1>ab[]</h1><p><br></p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>ab</h1><p>[]<br></p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<h1>ab[]</h1>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>ab</h1><p>[<br>]</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<h1>ab[]</h1>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>ab</h1><p><br>[]</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<h1>ab[]</h1>',
+                    });
+                });
+                it('should merge a heading1 with text into an empty paragraph (keeping the heading)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br></p><h1>[]ab</h1>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<h1>[]ab</h1>',
+                    });
+                });
+                it('should merge with previous node (default behaviour)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<jw-block-a>a</jw-block-a><jw-block-b>[]b</jw-block-b>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<jw-block-a>a[]b</jw-block-a>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<jw-block-a>a</jw-block-a><jw-block-b>[<br>]</jw-block-b>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<jw-block-a>a[]</jw-block-a>',
+                    });
+                });
+                it('should merge nested elements (default behaviour)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<jw-block-a><jw-block-b>ab</jw-block-b></jw-block-a><jw-block-c><jw-block-d>[]cd</jw-block-d></jw-block-c>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<jw-block-a><jw-block-b>ab[]cd</jw-block-b></jw-block-a>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<jw-block-a><jw-block-b>ab</jw-block-b></jw-block-a><jw-block-c><jw-block-d>[<br>]</jw-block-d></jw-block-c>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<jw-block-a><jw-block-b>ab[]</jw-block-b></jw-block-a>',
+                    });
+                });
+                it('should not break unbreakables', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td><br></td><td>[]abc</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td><br></td><td>[]abc</td></tr></tbody></table>',
+                    });
+                });
+                it('should merge a text preceding a paragraph (removing the paragraph)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: 'ab<p>[]cd</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: 'ab[]cd',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: 'ab<p>[]cd</p>ef',
+                        stepFunction: deleteBackward,
+                        contentAfter: 'ab[]cdef',
                     });
                 });
             });
             describe('With attributes', () => {
                 it('should merge a paragraph without class into an empty paragraph with a class', async () => {
-                    await testEditor({
-                        contentBefore: '<p class="a"><br>[]</p><p>abc</p>',
-                        stepFunction: deleteForward,
-                        contentAfter: '<p class="a">[]abc</p>',
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p class="a"><br></p><p>[]abc</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]abc</p>',
                     });
                 });
                 it('should merge two paragraphs with spans of same classes', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
-                            '<p><span class="a">dom to[]</span></p><p><span class="a">edit</span></p>',
-                        stepFunction: deleteForward,
-                        contentAfter: '<p><span class="a">dom to[]edit</span></p>',
+                            '<p><span class="a">ab</span></p><p><span class="a">[]cd</span></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p><span class="a">ab[]cd</span></p>',
                     });
                 });
                 it('should merge two paragraphs with spans of different classes without merging the spans', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
-                            '<p><span class="a">dom to[]</span></p><p><span class="b">edit</span></p>',
-                        stepFunction: deleteForward,
-                        contentAfter:
-                            '<p><span class="a">dom to[]</span><span class="b">edit</span></p>',
+                            '<p><span class="a">ab</span></p><p><span class="b">[]cd</span></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p><span class="a">ab[]</span><span class="b">cd</span></p>',
                     });
                 });
                 it('should merge two paragraphs of different classes, each containing spans of the same class', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
-                            '<p class="a"><span class="b">ab[]</span></p><p class="c"><span class="b">cd</span></p>',
-                        stepFunction: deleteForward,
+                            '<p class="a"><span class="b">ab</span></p><p class="c"><span class="b">[]cd</span></p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<p class="a"><span class="b">ab[]cd</span></p>',
                     });
                 });
                 it('should merge two paragraphs of different classes, each containing spans of different classes without merging the spans', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
-                            '<p class="a"><span class="b">ab[]</span></p><p class="c"><span class="d">cd</span></p>',
-                        stepFunction: deleteForward,
+                            '<p class="a"><span class="b">ab</span></p><p class="c"><span class="d">[]cd</span></p>',
+                        stepFunction: deleteBackward,
                         contentAfter:
                             '<p class="a"><span class="b">ab[]</span><span class="d">cd</span></p>',
                     });
                 });
                 it('should delete a line break between two spans with bold and merge these formats', async () => {
-                    await testEditor({
-                        contentBefore: '<p><span><b>ab[]</b></span><br/><span><b>cd</b></span></p>',
-                        stepFunction: deleteForward,
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><span><b>ab</b></span><br/><span><b>[]cd</b></span></p>',
+                        stepFunction: deleteBackward,
                         contentAfter: '<p><span><b>ab[]cd</b></span></p>',
                     });
                 });
                 it('should delete a character in a span with bold, then a line break between two spans with bold and merge these formats', async () => {
-                    await testEditor({
+                    await testEditor(BasicEditor, {
                         contentBefore:
-                            '<p><span><b>a[]b</b></span><br><span><b><br>cde</b></span></p>',
+                            '<p><span><b>ab<br></b></span><br><span><b>c[]de</b></span></p>',
                         stepFunction: async (editor) => {
-                            await deleteForward(editor);
-                            await deleteForward(editor);
+                            await deleteBackward(editor);
+                            await deleteBackward(editor);
                         },
-                        contentAfter: '<p><span><b>a[]</b></span><br><span><b>cde</b></span></p>',
+                        contentAfter: '<p><span><b>ab<br>[]de</b></span></p>',
                     });
                 });
             });
-        });
-
-        describe('Selection not collapsed', () => {
-            it('should delete part of the text within a paragraph', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<p>ab[cd]ef</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>ab[]ef</p>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<p>ab]cd[ef</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>ab[]ef</p>',
-                });
-            });
-            it('should delete across two paragraphs', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<p>ab[cd</p><p>ef]gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>ab[]gh</p>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<p>ab]cd</p><p>ef[gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>ab[]gh</p>',
-                });
-            });
-            it('should delete all the text in a paragraph', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<p>[abc]</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>[]<br></p>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<p>]abc[</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>[]<br></p>',
-                });
-            });
-            it('should delete a complex selection accross format nodes and multiple paragraphs', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>kl]</i>mn</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p><b>ab[]</b>mn</p>',
-                });
-                await testEditor({
-                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>k]l</i>mn</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>kl[</i>mn</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p><b>ab[]</b>mn</p>',
-                });
-                await testEditor({
-                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>k[l</i>mn</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
-                });
-            });
-            it('should delete all contents of a complex DOM with format nodes and multiple paragraphs', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>[]<br></p>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<p>[]<br></p>',
-                });
-            });
-            it('should delete a selection accross a heading1 and a paragraph', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<h1>ab [cd</h1><p>ef]gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>ab []gh</h1>',
-                });
-                // // Backward selection
-                await testEditor({
-                    contentBefore: '<h1>ab ]cd</h1><p>ef[gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>ab []gh</h1>',
-                });
-            });
-            it('should delete a selection from the beginning of a heading1 with a format to the middle of a paragraph', async () => {
-                // Forward selection
-                await testEditor({
-                    contentBefore: '<h1><b>[abcd</b></h1><p>ef]gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
-                });
-                await testEditor({
-                    contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
-                });
-                // Backward selection
-                await testEditor({
-                    contentBefore: '<h1><b>]abcd</b></h1><p>ef[gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
-                });
-                await testEditor({
-                    contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
-                });
-            });
-            it('should not break unbreakables', async () => {
-                await testEditor({
-                    contentBefore:
-                        '<table><tbody><tr><td>a[bc</td><td>de]f</td></tr></tbody></table>',
-                    stepFunction: deleteForward,
-                    contentAfter: '<table><tbody><tr><td>a[</td><td>]f</td></tr></tbody></table>',
-                });
-                await testEditor({
-                    contentBefore: '<p>a[bc</p><p>de]f</p>',
-                    stepFunction: (editor) => {
-                        const domEngine = editor.plugins.get(Layout).engines.dom;
-                        const editable = domEngine.components.get('editable')[0];
-                        editable.firstChild().breakable = false;
-                        editable.lastChild().breakable = false;
-                        return deleteForward(editor);
-                    },
-                    contentAfter: '<p>a[</p><p>]f</p>',
-                });
-             });
         });
     });
 });
