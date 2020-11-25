@@ -10,14 +10,20 @@ html, body {
     display: flex;
 }
 #test-container > * {
+    width: 50%;
+    flex: 1 1 auto;
     margin: 0 10px;
+}
+@media (max-width: 767px) {
+    #vdom-col {
+        display: none;
+    }
 }
 .toolbar {
     height: 35px;
     visibility: hidden;
     background: #222222;
     color: white;
-    display: inline-block;
 }
 .toolbar div.btn {
     box-sizing: content-box;
