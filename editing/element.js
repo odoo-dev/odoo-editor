@@ -7,34 +7,31 @@ import {
 
 HTMLElement.prototype.oEnter = function (nextSibling) {
     console.log('oEnter Element');
-    if (nextSibling === undefined) {
-        nextSibling = this.firstChild;
-    }
+    nextSibling = (nextSibling === undefined)?this.firstChild:nextSibling;
     let next = nextSibling;
 
     // if no block, or in an unbreackable: do a shiftEnter instead
+    // this code could be removed to catch it at MutationObserver?
     if (isUnbreakable(this)) {
         let error = new Error('unbreakable');
         throw error;
     }
 
-    if (nextSibling || isBlock(this)) {
-        next = document.createElement(this.tagName);
-        while (nextSibling) {
-            let oldnode = nextSibling;
-            nextSibling = nextSibling.nextSibling;
-            next.append(oldnode);
-        }
-        fillEmpty(next);
-        this.after(next);
+    next = document.createElement(this.tagName);
+    while (nextSibling) {
+        let oldnode = nextSibling;
+        nextSibling = nextSibling.nextSibling;
+        next.append(oldnode);
     }
+    this.after(next);
 
-    // escale only if display = inline
+    // escale only if inline block
     if (isInline(this) && this.parentElement) {
         next = this.parentElement.oEnter(next);
     } else {
         fillEmpty(this);
     }
+    fillEmpty(next);
     setCursor(next || this, 0);
     return next;
 };
