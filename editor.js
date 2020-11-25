@@ -37,7 +37,6 @@ export default class OdooEditor {
         this.observerActive();
 
         this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
-        this.dom.addEventListener('click', this._onClick.bind(this));
         this.dom.addEventListener('input', this._onInput.bind(this));
 
         document.onselectionchange = this._onSelectionChange.bind(this);
@@ -251,18 +250,7 @@ export default class OdooEditor {
             cursor: {},
             dom: [],
         });
-        this.historyCursor();
-    }
-
-    historyCursor() {
-        let latest = this.history[this.history.length - 1];
-        let sel = document.defaultView.getSelection();
-        latest.cursor.anchorNode = sel.anchorNode.oid;
-        latest.cursor.anchorOffset = sel.anchorOffset;
-        if (! sel.isCollapsed) {
-            latest.cursor.focusNode = sel.focusNode.oid;
-            latest.cursor.focusOffset = sel.focusOffset;
-        }
+        this._recordHistoryCursor();
     }
 
     // apply changes according to some records
@@ -465,6 +453,8 @@ export default class OdooEditor {
      * @returns {?}
      */
     execCommand(method) {
+        this._computeHistoryCursor();
+
         if (method === 'oDeleteBackward') {
             // For backspace command, to execute the same operations as when
             // using the editor, we have to rollback the input after the
@@ -481,10 +471,14 @@ export default class OdooEditor {
     // Private
     //--------------------------------------------------------------------------
 
+    // EDITOR COMMANDS
+    // ===============
+
     /**
      * Applies the given command to the current selection. This does not protect
-     * the unbreakables nor follow the exact same operations that would be done
-     * following events that would lead to that command.
+     * the unbreakables nor update the history cursor nor follow the exact same
+     * operations that would be done following events that would lead to that
+     * command.
      *
      * To protect the unbreakables, @see _applyCommand
      * For simulation of editor external commands, @see execCommand
@@ -506,13 +500,15 @@ export default class OdooEditor {
         return node[method](node.nodeType === Node.TEXT_NODE ? node.length : undefined);
     }
     /**
-     * Same as @see _applyRawCommand but protects the unbreakables.
+     * Same as @see _applyRawCommand but protects the unbreakables and updates
+     * cursor position before execution with latest computed cursor.
      *
      * @private
      * @param {string} method
      * @returns {?}
      */
     _applyCommand(method) {
+        this._recordHistoryCursor(true);
         return this._protectUnbreakable(() => this._applyRawCommand(...arguments));
     }
     /**
@@ -531,6 +527,36 @@ export default class OdooEditor {
         this.historyRollback();
         return UNBREAKABLE_ROLLBACK_CODE;
     }
+
+    // HISTORY
+    // =======
+
+    /**
+     * @private
+     * @returns {Object}
+     */
+    _computeHistoryCursor() {
+        const sel = document.defaultView.getSelection();
+        this._latestComputedCursor = {
+            anchorNode: sel.anchorNode.oid,
+            anchorOffset: sel.anchorOffset,
+            focusNode: sel.focusNode.oid,
+            focusOffset: sel.focusOffset,
+        };
+        return this._latestComputedCursor;
+    }
+    /**
+     * @private
+     * @param {boolean} [useCache=false]
+     */
+    _recordHistoryCursor(useCache = false) {
+        const latest = this.history[this.history.length - 1];
+        latest.cursor = useCache ? this._latestComputedCursor : this._computeHistoryCursor();
+    }
+
+    // TOOLBAR
+    // =======
+
     /**
      * @private
      * @param {boolean} [show]
@@ -561,18 +587,16 @@ export default class OdooEditor {
     //--------------------------------------------------------------------------
 
     /**
-     * @private
-     */
-    _onClick() {
-        this.historyCursor();
-    }
-    /**
      * If backspace input, rollback the operation and handle the operation
      * ourself. Needed for mobile, used for desktop for consistency.
      *
      * @private
      */
     _onInput(ev) {
+        // Record the cursor position that was computed on keydown or before
+        // contentEditable execCommand (whatever preceded the 'input' event)
+        this._recordHistoryCursor(true);
+
         if (ev.inputType === 'deleteContentBackward') {
             this.historyRollback();
             ev.preventDefault();
@@ -585,7 +609,9 @@ export default class OdooEditor {
     _onKeyDown(ev) {
         console.log(`Keyboard Event ${ev.keyCode}`);
 
-        this.historyCursor();
+        // Compute the current cursor on keydown but do not record it. Leave
+        // that to the command execution or the 'input' event handler.
+        this._computeHistoryCursor();
 
         if (ev.keyCode === 13) { // Enter
             ev.preventDefault();
@@ -608,11 +634,10 @@ export default class OdooEditor {
             // TODO to implement
         }
 
-        return new Promise(resolve => setTimeout(() => {
+        setTimeout(() => {
             this.sanitize();
             this.historyStep();
-            resolve(this);
-        }, 0));
+        }, 0);
     }
     /**
      * @private
