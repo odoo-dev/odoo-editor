@@ -15,18 +15,7 @@ import {} from "./editing/li.js";
 import {} from "./editing/text.js";
 import {} from "./editing/td.js";
 
-export function callAnchor(method) {
-    let sel = document.defaultView.getSelection();
-    if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
-        return sel.anchorNode[method](sel.anchorOffset);
-    }
-
-    let node = sel.anchorNode;
-    if (sel.anchorOffset) {
-        node = sel.anchorNode.childNodes[sel.anchorOffset - 1];
-    }
-    return node[method](node.nodeType === Node.TEXT_NODE ? node.length : undefined);
-}
+export const UNBREAKABLE_ROLLBACK_CODE = 100;
 
 export default class OdooEditor {
     constructor(dom) {
@@ -124,7 +113,6 @@ export default class OdooEditor {
             cur = cur.nextSibling;
         }
     }
-
 
     // Observer that syncs doms
 
@@ -277,7 +265,7 @@ export default class OdooEditor {
             'ordered': 'OL',
             'unordered': 'UL'
         };
-        try {
+        this._protectUnbreakable(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.target.id)) {
                 document.execCommand(event.target.id);
             } else if (['ordered', 'unordered'].includes(event.target.id)) {
@@ -301,12 +289,8 @@ export default class OdooEditor {
                 setCursor(sel.anchorNode, sel.anchorOffset);
             }
             this.toolbarUpdate();
-        } catch (err) {
-            if (err.message !== 'unbreakable') {
-                throw err;
-            }
-            this.historyRollback();
-        }
+        });
+
         event.preventDefault();
     }
 
@@ -319,7 +303,7 @@ export default class OdooEditor {
         if (event.inputType === 'deleteContentBackward') {
             this.historyRollback();
             event.preventDefault();
-            callAnchor('oDeleteBackward');
+            this._applyCommand('oDeleteBackward');
         }
     }
 
@@ -328,46 +312,25 @@ export default class OdooEditor {
         this.historyCursor();
         let cb = () => {};
         // let sel = document.defaultView.getSelection();
-        try {
-            if (event.keyCode === 13) { // enter key
-                event.preventDefault();
-                if (! event.shiftKey) {
-                    try {
-                        callAnchor('oEnter');
-                    } catch (err) {
-                        if (err.message !== 'unbreakable') {
-                            throw err;
-                        }
-                        this.historyRollback();
-                        callAnchor('oShiftEnter');
-                    }
-                } else {
-                    callAnchor('oShiftEnter');
-                }
-            } else if (event.keyCode === 9 && event.shiftKey) { // tab key
-                if (callAnchor('oShiftTab')) {
-                    event.preventDefault();
-                }
-            } else if (event.keyCode === 9 && !event.shiftKey) { // tab key
-                if (callAnchor('oTab')) {
-                    event.preventDefault();
-                }
-            } else if (event.keyCode === 46) { // delete
-                event.preventDefault();
-                callAnchor('oDeleteForward');
-                // alert('delete not implemented yet');
-            } else if ((event.key === 'z') && event.ctrlKey) { // Ctrl Z: Undo
-                event.preventDefault();
-                this.historyUndo();
-            } else if ((event.key === 'y') && event.ctrlKey) { // Ctrl y: redo
-                event.preventDefault();
-                // alert('redo not implemented');
+        if (event.keyCode === 13) { // enter key
+            event.preventDefault();
+            if (event.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
+                this._applyCommand('oShiftEnter');
             }
-        } catch (err) {
-            if (err.message !== 'unbreakable') {
-                throw err;
+        } else if (event.keyCode === 9) { // tab key
+            if (this._applyCommand(event.shiftKey ? 'oShiftTab' : 'oTab')) {
+                event.preventDefault();
             }
-            this.historyRollback();
+        } else if (event.keyCode === 46) { // delete
+            event.preventDefault();
+            // TODO to implement
+            this._applyCommand('oDeleteForward');
+        } else if (event.key === 'z' && event.ctrlKey) { // Ctrl Z: Undo
+            event.preventDefault();
+            this.historyUndo();
+        } else if (event.key === 'y' && event.ctrlKey) { // Ctrl y: redo
+            event.preventDefault();
+            // TODO to implement
         }
 
         return new Promise((resolve) => {
@@ -603,6 +566,88 @@ export default class OdooEditor {
                 dom: [],
             });
         }
+    }
+
+    /**
+     * Same as @see _applyCommand, except that also simulates all the
+     * contenteditable behaviors we let happen, e.g. the backspace handling
+     * we then rollback.
+     *
+     * TODO this uses document.execCommand (which is deprecated) and relies on
+     * the fact that using a command through it leads to the same result as
+     * executing that command through a user keyboard on the unaltered editable
+     * section with standard contenteditable attribute. This is already a huge
+     * assomption.
+     *
+     * @param {string} method
+     * @returns {?}
+     */
+    execCommand(method) {
+        if (method === 'oDeleteBackward') {
+            // For backspace command, to execute the same operations as when
+            // using the editor, we have to rollback the input after the
+            // contentEditable management of the backspace event. For that, we
+            // ask for that management through the contentEditable execCommand
+            // and let our input event management handle the rest.
+            document.execCommand('delete');
+            return true;
+        }
+        return this._applyCommand(...arguments);
+    }
+
+    //--------------------------------------------------------------------------
+    // Private
+    //--------------------------------------------------------------------------
+
+    /**
+     * Applies the given command to the current selection. This does not protect
+     * the unbreakables nor follow the exact same operations that would be done
+     * following events that would lead to that command.
+     *
+     * To protect the unbreakables, @see _applyCommand
+     * For simulation of editor external commands, @see execCommand
+     *
+     * @private
+     * @param {string} method
+     * @returns {?}
+     */
+    _applyRawCommand(method) {
+        let sel = document.defaultView.getSelection();
+        if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
+            return sel.anchorNode[method](sel.anchorOffset);
+        }
+
+        let node = sel.anchorNode;
+        if (sel.anchorOffset) {
+            node = sel.anchorNode.childNodes[sel.anchorOffset - 1];
+        }
+        return node[method](node.nodeType === Node.TEXT_NODE ? node.length : undefined);
+    }
+    /**
+     * Same as @see _applyRawCommand but protects the unbreakables.
+     *
+     * @private
+     * @param {string} method
+     * @returns {?}
+     */
+    _applyCommand(method) {
+        return this._protectUnbreakable(() => this._applyRawCommand(...arguments));
+    }
+    /**
+     * @private
+     * @param {function} callback
+     * @returns {?}
+     */
+    _protectUnbreakable(callback) {
+        try {
+            return callback.call(this);
+        } catch (err) {
+            if (err !== UNBREAKABLE_ROLLBACK_CODE) {
+                throw err;
+            }
+        }
+        this.historyRollback();
+        return UNBREAKABLE_ROLLBACK_CODE;
     }
 }
 

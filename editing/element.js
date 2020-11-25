@@ -1,5 +1,7 @@
 "use strict";
 
+import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
+
 import {
     setCursor, setCursorEnd, isBlock, latestChild,
     isUnbreakable, fillEmpty, isInline,
@@ -13,8 +15,7 @@ HTMLElement.prototype.oEnter = function (nextSibling) {
     // if no block, or in an unbreackable: do a shiftEnter instead
     // this code could be removed to catch it at MutationObserver?
     if (isUnbreakable(this)) {
-        let error = new Error('unbreakable');
-        throw error;
+        throw UNBREAKABLE_ROLLBACK_CODE;
     }
 
     next = document.createElement(this.tagName);
