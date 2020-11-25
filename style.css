@@ -30,6 +30,7 @@ html, body {
 
 #dom {
     min-height: 500px;
+    padding: 5px;
 }
 span.btn {
     background-color: blue;

@@ -26,12 +26,6 @@ Text.prototype.oShiftEnter = function (offset) {
 
 Text.prototype.oEnter = function (offset) {
     console.log('oEnter Text');
-    // check if the next block is unbreackable: rollback will do a shiftEnter instead
-    let pnode = this;
-    while (!isBlock(pnode)) {
-        pnode = pnode.parentElement;
-    }
-
     if (!offset) {
         this.parentElement.oEnter(this);
     } else if (offset >= this.length) {

@@ -7,15 +7,11 @@ import {
 
 HTMLElement.prototype.oEnter = function (nextSibling) {
     console.log('oEnter Element');
-
-    let pnode = this;
-    let next = this.nextSibling;
-    while (!isBlock(pnode)) {
-        pnode = pnode.parentElement;
-    }
+    nextSibling = nextSibling || this.firstChild;
+    let next = nextSibling || this;
 
     // if no block, or in an unbreackable: do a shiftEnter instead
-    if (isUnbreakable(pnode)) {
+    if (isUnbreakable(this)) {
         let error = new Error('unbreakable');
         throw error;
     }
@@ -37,7 +33,7 @@ HTMLElement.prototype.oEnter = function (nextSibling) {
     } else {
         fillEmpty(this);
     }
-    setCursor(next || this, 0);
+    setCursor(next, 0);
     return next;
 };
 
