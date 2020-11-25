@@ -215,11 +215,15 @@ export function renderTextualSelection() {
 export async function testEditor(Editor = OdooEditor, spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
-    const editor = new Editor(testNode);
 
-    console.log('ici');
+    // Add the content to edit and remove the "[]" markers *before* initializing
+    // the editor as otherwise those would genererate mutations the editor would
+    // consider and the tests would make no sense.
     testNode.innerHTML = spec.contentBefore;
     let selection = _parseTextualSelection(testNode);
+
+    const editor = new Editor(testNode);
+
     if (selection) {
         setSelection(selection);
     } else {
@@ -230,9 +234,13 @@ export async function testEditor(Editor = OdooEditor, spec) {
         await spec.stepFunction(editor);
     }
 
+    // Same as above: disconnect mutation observers and other things, otherwise
+    // reading the "[]" markers would broke the test.
+    editor.destroy();
+
     if (spec.contentAfter) {
         renderTextualSelection();
-        const value = editor.dom.innerHTML;
+        const value = testNode.innerHTML;
         assert.equal(value, spec.contentAfter);
     }
     testNode.remove();

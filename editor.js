@@ -45,7 +45,7 @@ export default class OdooEditor {
         this.idSet(dom, this.vdom);
 
         dom.setAttribute("contentEditable", true);
-        this.observerActive(['characterData']);
+        this.observerActive();
 
         this.dom.addEventListener('keydown', this.keyDown.bind(this));
         this.dom.addEventListener('click', this.mouseClick.bind(this));
@@ -62,6 +62,14 @@ export default class OdooEditor {
         // used to check if we have to rollback an operation as an unbreakable is
         this.torollback = false; // unbreakable removed or added
         this.unbreaks = new Set(); // modified unbreakables from vDOM, should not be more than one per step
+    }
+    /**
+     * Releases anything that was initialized.
+     *
+     * TODO: properly implement this.
+     */
+    destroy() {
+        this.observerUnactive();
     }
 
     sanitize() {
@@ -139,7 +147,7 @@ export default class OdooEditor {
         let records = this.observer.takeRecords();
         this.observerApply(this.vdom, records);
     }
-    observerActive(mode) {
+    observerActive() {
         this.observer = new MutationObserver(records => {
             this.observerApply(this.vdom, records);
         });
