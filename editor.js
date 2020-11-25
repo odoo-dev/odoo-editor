@@ -36,15 +36,15 @@ export default class OdooEditor {
         dom.setAttribute("contentEditable", true);
         this.observerActive();
 
-        this.dom.addEventListener('keydown', this.keyDown.bind(this));
-        this.dom.addEventListener('click', this.mouseClick.bind(this));
-        this.dom.addEventListener('input', this.inputEvent.bind(this));
+        this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
+        this.dom.addEventListener('click', this._onClick.bind(this));
+        this.dom.addEventListener('input', this._onInput.bind(this));
 
-        document.onselectionchange = this.selectionChange.bind(this);
+        document.onselectionchange = this._onSelectionChange.bind(this);
+
         this.toolbar = document.querySelector('#toolbar');
-        this.toolbar.querySelectorAll('div.btn').forEach((item) => {
-            item.onmousedown = this.toolbarClick.bind(this);
-        });
+        this.toolbar.addEventListener('click', this._onToolbarClick.bind(this));
+
         this.collaborate = true;
         this.collaborate_last = null;
 
@@ -223,124 +223,6 @@ export default class OdooEditor {
                 }
             }
         }
-    }
-
-    // selection handling
-    selectionChange(event) {
-        let sel = document.defaultView.getSelection();
-        if (sel.isCollapsed) {
-            this.toolbar.style.visibility = 'hidden';
-            return true;
-        }
-        this.toolbar.style.visibility = 'visible';
-        this.toolbarUpdate();
-    }
-
-    toolbarUpdate() {
-        let sel = document.defaultView.getSelection();
-        this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
-        this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
-        this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
-        this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
-
-        let pnode = parentBlock(sel.anchorNode);
-        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
-        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
-        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
-        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
-        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
-        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "UL"));
-        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "OL"));
-        return true;
-    }
-
-    // toolbar handling
-    toolbarClick(event) {
-        const TAGS = {
-            'paragraph': 'P',
-            'heading1': 'H1',
-            'heading2': 'H2',
-            'heading3': 'H3',
-            'blockquote': 'BLOCKQUOTE',
-            'ordered': 'OL',
-            'unordered': 'UL'
-        };
-        this._protectUnbreakable(() => {
-            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(event.target.id)) {
-                document.execCommand(event.target.id);
-            } else if (['ordered', 'unordered'].includes(event.target.id)) {
-                let sel = document.defaultView.getSelection();
-                let pnode = parentBlock(sel.anchorNode);
-                if (pnode.tagName !== 'LI') {
-                    // TODO: better implementation
-                    let main = document.createElement(TAGS[event.target.id]);
-                    let li = document.createElement('LI');
-                    while (pnode.firstChild) {
-                        li.append(pnode.firstChild);
-                    }
-                    main.append(li);
-                    pnode.after(main);
-                    pnode.remove();
-                }
-            } else {
-                let sel = document.defaultView.getSelection();
-                let pnode = parentBlock(sel.anchorNode);
-                setTagName(pnode, TAGS[event.target.id]);
-                setCursor(sel.anchorNode, sel.anchorOffset);
-            }
-            this.toolbarUpdate();
-        });
-
-        event.preventDefault();
-    }
-
-    mouseClick(event) {
-        this.historyCursor();
-    }
-
-    // mobile keyboard, catch at input event
-    inputEvent(event) {
-        if (event.inputType === 'deleteContentBackward') {
-            this.historyRollback();
-            event.preventDefault();
-            this._applyCommand('oDeleteBackward');
-        }
-    }
-
-    keyDown(event) {
-        console.log(`Keyboard Event ${event.keyCode}`);
-        this.historyCursor();
-        let cb = () => {};
-        // let sel = document.defaultView.getSelection();
-        if (event.keyCode === 13) { // enter key
-            event.preventDefault();
-            if (event.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
-                this._applyCommand('oShiftEnter');
-            }
-        } else if (event.keyCode === 9) { // tab key
-            if (this._applyCommand(event.shiftKey ? 'oShiftTab' : 'oTab')) {
-                event.preventDefault();
-            }
-        } else if (event.keyCode === 46) { // delete
-            event.preventDefault();
-            // TODO to implement
-            this._applyCommand('oDeleteForward');
-        } else if (event.key === 'z' && event.ctrlKey) { // Ctrl Z: Undo
-            event.preventDefault();
-            this.historyUndo();
-        } else if (event.key === 'y' && event.ctrlKey) { // Ctrl y: redo
-            event.preventDefault();
-            // TODO to implement
-        }
-
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                this.sanitize();
-                cb();
-                this.historyStep();
-                resolve(this);
-            }, 0);
-        });
     }
 
     //
@@ -648,6 +530,141 @@ export default class OdooEditor {
         }
         this.historyRollback();
         return UNBREAKABLE_ROLLBACK_CODE;
+    }
+    /**
+     * @private
+     * @param {boolean} [show]
+     */
+    _updateToolbar(show) {
+        if (show !== undefined) {
+            this.toolbar.style.visibility = show ? 'visible' : 'hidden';
+        }
+
+        let sel = document.defaultView.getSelection();
+        this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
+        this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
+        this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
+        this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
+
+        let pnode = parentBlock(sel.anchorNode);
+        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
+        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
+        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
+        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
+        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
+        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "UL"));
+        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "OL"));
+    }
+
+    //--------------------------------------------------------------------------
+    // Handlers
+    //--------------------------------------------------------------------------
+
+    /**
+     * @private
+     */
+    _onClick() {
+        this.historyCursor();
+    }
+    /**
+     * If backspace input, rollback the operation and handle the operation
+     * ourself. Needed for mobile, used for desktop for consistency.
+     *
+     * @private
+     */
+    _onInput(ev) {
+        if (ev.inputType === 'deleteContentBackward') {
+            this.historyRollback();
+            ev.preventDefault();
+            this._applyCommand('oDeleteBackward');
+        }
+    }
+    /**
+     * @private
+     */
+    _onKeyDown(ev) {
+        console.log(`Keyboard Event ${ev.keyCode}`);
+
+        this.historyCursor();
+
+        if (ev.keyCode === 13) { // Enter
+            ev.preventDefault();
+            if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
+                this._applyCommand('oShiftEnter');
+            }
+        } else if (ev.keyCode === 9) { // Tab
+            if (this._applyCommand(ev.shiftKey ? 'oShiftTab' : 'oTab')) {
+                ev.preventDefault();
+            }
+        } else if (ev.keyCode === 46) { // Delete
+            ev.preventDefault();
+            // TODO to implement
+            this._applyCommand('oDeleteForward');
+        } else if (ev.key === 'z' && ev.ctrlKey) { // Ctrl-Z
+            ev.preventDefault();
+            this.historyUndo();
+        } else if (ev.key === 'y' && ev.ctrlKey) { // Ctrl-Y
+            ev.preventDefault();
+            // TODO to implement
+        }
+
+        return new Promise(resolve => setTimeout(() => {
+            this.sanitize();
+            this.historyStep();
+            resolve(this);
+        }, 0));
+    }
+    /**
+     * @private
+     */
+    _onSelectionChange() {
+        const sel = document.defaultView.getSelection();
+        this._updateToolbar(!sel.isCollapsed);
+    }
+    /**
+     * @private
+     */
+    _onToolbarClick(ev) {
+        const buttonEl = ev.target.closest('div.btn');
+        if (!buttonEl) {
+            return;
+        }
+
+        const TAGS = {
+            'paragraph': 'P',
+            'heading1': 'H1',
+            'heading2': 'H2',
+            'heading3': 'H3',
+            'blockquote': 'BLOCKQUOTE',
+            'ordered': 'OL',
+            'unordered': 'UL'
+        };
+        this._protectUnbreakable(() => {
+            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
+                document.execCommand(buttonEl.id);
+            } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
+                let sel = document.defaultView.getSelection();
+                let pnode = parentBlock(sel.anchorNode);
+                if (pnode.tagName !== 'LI') {
+                    // TODO: better implementation
+                    let main = document.createElement(TAGS[buttonEl.id]);
+                    let li = document.createElement('LI');
+                    while (pnode.firstChild) {
+                        li.append(pnode.firstChild);
+                    }
+                    main.append(li);
+                    pnode.after(main);
+                    pnode.remove();
+                }
+            } else {
+                let sel = document.defaultView.getSelection();
+                let pnode = parentBlock(sel.anchorNode);
+                setTagName(pnode, TAGS[buttonEl.id]);
+                setCursor(sel.anchorNode, sel.anchorOffset);
+            }
+            this._updateToolbar();
+        });
+        ev.preventDefault();
     }
 }
 
