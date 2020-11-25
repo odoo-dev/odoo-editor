@@ -25,7 +25,7 @@ export function callAnchor(method) {
     if (sel.anchorOffset) {
         node = sel.anchorNode.childNodes[sel.anchorOffset - 1];
     }
-    return node[method](node.nodeType === Node.TEXT_NODE ? node.length : 0);
+    return node[method](node.nodeType === Node.TEXT_NODE ? node.length : undefined);
 }
 
 export default class OdooEditor {

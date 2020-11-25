@@ -7,8 +7,10 @@ import {
 
 HTMLElement.prototype.oEnter = function (nextSibling) {
     console.log('oEnter Element');
-    nextSibling = nextSibling || this.firstChild;
-    let next = nextSibling || this;
+    if (nextSibling === undefined) {
+        nextSibling = this.firstChild;
+    }
+    let next = nextSibling;
 
     // if no block, or in an unbreackable: do a shiftEnter instead
     if (isUnbreakable(this)) {
@@ -33,7 +35,7 @@ HTMLElement.prototype.oEnter = function (nextSibling) {
     } else {
         fillEmpty(this);
     }
-    setCursor(next, 0);
+    setCursor(next || this, 0);
     return next;
 };
 
