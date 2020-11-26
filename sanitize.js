@@ -1,7 +1,6 @@
 "use strict";
 
-import {isBlock} from "./utils/isBlock.js";
-import {isSimilarNode} from "./utils/utils.js";
+import {isSimilarNode, isBlock} from "./utils/utils.js";
 
 class Sanitize {
     constructor(root) {
