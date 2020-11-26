@@ -4,6 +4,7 @@ import {
     testEditor,
     BasicEditor,
     deleteBackward,
+    insertParagraphBreak,
 } from './utils.js';
 
 describe('Editor', () => {
@@ -525,6 +526,291 @@ describe('Editor', () => {
                             await deleteBackward(editor);
                         },
                         contentAfter: '<p><span><b>ab<br>[]de</b></span></p>',
+                    });
+                });
+            });
+        });
+    });
+
+    describe('insertParagraphBreak', () => {
+        describe('Selection collapsed', () => {
+            describe('Basic', () => {
+                it('should duplicate an empty paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<br></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[<br>]</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br>[]</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p>[]<br></p>',
+                    });
+                });
+                it('should insert an empty paragraph before a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]abc</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p>[]abc</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[] abc</p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p><br></p><p>[]abc</p>',
+                    });
+                });
+                it('should split a paragraph in two', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]cd</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>ab</p><p>[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab []cd</p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p>ab&nbsp;</p><p>[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[] cd</p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p>ab</p><p>[]&nbsp;cd</p>',
+                    });
+                });
+                it('should insert an empty paragraph after a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>abc</p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[] </p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p>abc</p><p>[]<br></p>',
+                    });
+                });
+            });
+            describe('Consecutive', () => {
+                it('should duplicate an empty paragraph twice', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<br></p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[<br>]</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br>[]</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
+                    });
+                });
+                it('should insert two empty paragraphs before a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]abc</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p><br></p><p><br></p><p>[]abc</p>',
+                    });
+                });
+                it('should split a paragraph in three', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]cd</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p>ab</p><p><br></p><p>[]cd</p>',
+                    });
+                });
+                it('should split a paragraph in four', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]cd</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p>ab</p><p><br></p><p><br></p><p>[]cd</p>',
+                    });
+                });
+                it('should insert two empty paragraphs after a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]</p>',
+                        stepFunction: async (editor) => {
+                            await insertParagraphBreak(editor);
+                            await insertParagraphBreak(editor);
+                        },
+                        contentAfter: '<p>abc</p><p><br></p><p>[]<br></p>',
+                    });
+                });
+            });
+            describe('Format', () => {
+                it('should split a paragraph before a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]<b>def</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>abc</p><p><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to []<b>
+                        contentBefore: '<p>abc<b>[]def</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>abc</p><p><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc <b>[]def</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's after a
+                        // <br>).
+                        contentAfter: '<p>abc&nbsp;</p><p><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc<b>[] def </b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's before a
+                        // <br>).
+                        contentAfter: '<p>abc</p><p><b>[]&nbsp;def</b></p>',
+                    });
+                });
+                it('should split a paragraph after a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc</b>[]def</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><b>abc</b></p><p>[]def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to </b>[]
+                        contentBefore: '<p><b>abc[]</b>def</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><b>abc</b></p><p>[]def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc[]</b> def</p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p><b>abc</b></p><p>[]&nbsp;def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc []</b>def</p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's before a
+                        // <br>).
+                        contentAfter: '<p><b>abc&nbsp;</b></p><p>[]def</p>',
+                    });
+                });
+                it('should split a paragraph at the beginning of a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<b>abc</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p><b>[]abc</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to []<b>
+                        contentBefore: '<p><b>[]abc</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><br></p><p><b>[]abc</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>[] abc</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p><br></p><p><b>[]abc</b></p>',
+                    });
+                });
+                it('should split a paragraph within a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab[]cd</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><b>ab</b></p><p><b>[]cd</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab []cd</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p><b>ab&nbsp;</b></p><p><b>[]cd</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab[] cd</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p><b>ab</b></p><p><b>[]&nbsp;cd</b></p>',
+                    });
+                });
+                it('should split a paragraph at the end of a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc</b>[]</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><b>abc</b></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to </b>[]
+                        contentBefore: '<p><b>abc[]</b></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p><b>abc</b></p><p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc[] </b></p>',
+                        stepFunction: insertParagraphBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p><b>abc</b></p><p>[]<br></p>',
+                    });
+                });
+            });
+            describe('With attributes', () => {
+                it('should insert an empty paragraph before a paragraph with a span with a class', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<p><span class="a">ab</span></p><p><span class="b">[]cd</span></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter:
+                            '<p><span class="a">ab</span></p><p><br></p><p><span class="b">[]cd</span></p>',
+                    });
+                });
+                it('should split a paragraph with a span with a bold in two', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><span><b>ab[]cd</b></span></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter:
+                            '<p><span><b>ab</b></span></p><p><span><b>[]cd</b></span></p>',
+                    });
+                });
+                it('should split a paragraph at its end, with a paragraph after it, and both have the same class', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p class="a">a[]</p><p class="a"><br></p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter:
+                            '<p class="a">a</p><p class="a">[]<br></p><p class="a"><br></p>',
                     });
                 });
             });

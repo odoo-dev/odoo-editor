@@ -254,6 +254,10 @@ export let deleteBackward = async editor => {
     editor.execCommand('oDeleteBackward');
 };
 
+export async function insertParagraphBreak(editor) {
+    editor.execCommand('oEnter');
+}
+
 export class BasicEditor extends OdooEditor {
 
 }
