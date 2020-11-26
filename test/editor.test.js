@@ -541,5 +541,8 @@ startTestsButtonEl.addEventListener('click', () => {
     const mochaEl = document.createElement('div');
     mochaEl.id = 'mocha';
     document.body.appendChild(mochaEl);
-    mocha.run();
+    mocha.run(() => {
+        const reportEl = document.getElementById('mocha-report');
+        window.scrollTo(0, window.scrollY + reportEl.getBoundingClientRect().top);
+    });
 });
