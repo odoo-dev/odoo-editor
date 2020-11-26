@@ -488,7 +488,7 @@ export default class OdooEditor {
      * @returns {?}
      */
     _applyRawCommand(method) {
-        let sel = document.defaultView.getSelection();
+        const sel = document.defaultView.getSelection();
         if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
             return sel.anchorNode[method](sel.anchorOffset);
         }

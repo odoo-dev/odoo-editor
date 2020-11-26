@@ -8,7 +8,7 @@ import {
 // TextNode
 
 Text.prototype.oShiftEnter = function (offset) {
-    if (! offset) {
+    if (!offset) {
         let br = document.createElement('BR');
         this.before(br);
     } else if (offset >= this.length) {
@@ -149,7 +149,6 @@ Text.prototype.oMove = function (src) {
     }
     // setCursorEnd(this);
 };
-
 
 Text.prototype.oTab = function (offset) {
     return this.parentElement.oTab(0);

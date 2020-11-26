@@ -1,6 +1,7 @@
-- Test and fix Enter & Backspace on mobiles (uncomment keypress backspace to use input handler only)
+- Test and fix Enter & Backspace on mobiles
     - works on all tested chrome: samsung A9 gboard, huawei A7 gboard, & swipe
     - issues on Firefox for Android, with gboard
+- Fix `ab<br>[] cd` + backspace = `ab cd` problem -> remove *following* invisible space before backspace command
 - Implement ForwardDelete and refactor invisible space & empty blocks in the process
 - Fix known bugs
     - issue with "<p>te[]st</p>" then enter-backspace-enter-enter (the cursor is not set on the right node)
