@@ -4,7 +4,7 @@ import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 
 import {
     setCursor, setCursorEnd, isBlock, latestChild,
-    isUnbreakable, fillEmpty, isInline,
+    isUnbreakable, fillEmpty,
 } from "../utils/utils.js";
 
 HTMLElement.prototype.oEnter = function (nextSibling) {
@@ -27,7 +27,7 @@ HTMLElement.prototype.oEnter = function (nextSibling) {
     this.after(next);
 
     // escale only if inline block
-    if (isInline(this) && this.parentElement) {
+    if (!isBlock(this) && this.parentElement) {
         next = this.parentElement.oEnter(next);
     } else {
         fillEmpty(this);
@@ -67,14 +67,14 @@ HTMLElement.prototype.oDeleteForward = function () {
 };
 
 HTMLElement.prototype.oTab = function (offset = undefined) {
-    if (isInline(this)) {
+    if (!isBlock(this)) {
         return this.parentElement.oTab(offset);
     }
     return false;
 };
 
 HTMLElement.prototype.oShiftTab = function (offset = undefined) {
-    if (isInline(this)) {
+    if (!isBlock(this)) {
         return this.parentElement.oShiftTab(offset);
     }
     return false;
@@ -87,7 +87,7 @@ HTMLElement.prototype.oRemove = function () {
     let pe = this.parentElement;
 
     this.remove();
-    if (isInline(this)) {
+    if (!isBlock(this)) {
         pe.oRemove();
     }
 };

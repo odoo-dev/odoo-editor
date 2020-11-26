@@ -133,14 +133,6 @@ export function hasPreviousChar(node) {
     return (!isBlock(node.parentElement) && hasPreviousChar(node.previousSibling));
 }
 
-export function isInline(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-        return false;
-    }
-    let style = window.getComputedStyle(node).display;
-    return ['inline', 'inline-block'].includes(style);
-}
-
 export function isUnbreakable(node) {
     if (!node || node.nodeType === Node.TEXT_NODE) {
         return false;
