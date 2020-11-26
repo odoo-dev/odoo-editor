@@ -3,53 +3,91 @@
 import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 
 import {
-    setCursor, setCursorEnd, isBlock, latestChild,
-    isUnbreakable, fillEmpty,
+    childNodeIndex, fillEmpty, isBlock, isUnbreakable, latestChild,
+    setCursor, setCursorEnd
 } from "../utils/utils.js";
 
-HTMLElement.prototype.oEnter = function (nextSibling) {
-    console.log('oEnter Element');
-    nextSibling = (nextSibling === undefined)?this.firstChild:nextSibling;
-    let next = nextSibling;
-
-    // if no block, or in an unbreackable: do a shiftEnter instead
-    // this code could be removed to catch it at MutationObserver?
+/**
+ * The whole logic can pretty much be described by this example:
+ *
+ *     <p><span><b>[]xt</b>ab</span>cd</p> + ENTER
+ * <=> <p><span><b><br></b>[]<b>xt</b>ab</span>cd</p> + ENTER
+ * <=> <p><span><b><br></b></span>[]<span><b>xt</b>ab</span>cd</p> + ENTER
+ * <=> <p><span><b><br></b></span></p><p><span><b>[]xt</b>ab</span>cd</p>
+ *
+ * Propagate the split for as long as we split an inline node, then refocus the
+ * beginning of the first split node
+ */
+HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (isUnbreakable(this)) {
         throw UNBREAKABLE_ROLLBACK_CODE;
     }
 
-    next = document.createElement(this.tagName);
-    while (nextSibling) {
-        let oldnode = nextSibling;
-        nextSibling = nextSibling.nextSibling;
-        next.append(oldnode);
+    // First split the node in two and move half the children in the clone.
+    const splitEl = this.cloneNode(false);
+    while (offset < this.childNodes.length) {
+        splitEl.appendChild(this.childNodes[offset]);
     }
-    this.after(next);
+    this.after(splitEl);
 
-    // escale only if inline block
-    if (!isBlock(this) && this.parentElement) {
-        next = this.parentElement.oEnter(next);
-    } else {
+    // If required (first split), fill the original and clone node with a <br/>
+    // if they are empty
+    // TODO in the example above, the <b><br></b> would be removed by jabberwock
+    // to see if this is in fact needed or if we keep as it is here by
+    // simplicity: "the cursor was in the <b> so we split it in two no matter
+    // what", or maybe this should be done in sanitization code.
+    if (firstSplit) {
         fillEmpty(this);
+        fillEmpty(splitEl);
     }
-    fillEmpty(next);
-    setCursor(next || this, 0);
-    return next;
+
+    // Propagate the split until reaching a block element
+    if (!isBlock(this)) {
+        if (this.parentElement) {
+            this.parentElement.oEnter(childNodeIndex(this) + 1, false);
+        } else {
+            // There was no block parent element in the original chain, consider
+            // this unsplittable, like an unbreakable.
+            throw UNBREAKABLE_ROLLBACK_CODE;
+        }
+    }
+
+    // All split have been done, place the cursor at the right position
+    if (firstSplit) {
+        setCursor(splitEl, 0);
+    }
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
-    let br = document.createElement('BR');
-    this.before(br);
-    return true;
+    const brEl = document.createElement('BR'); // TODO check the addBr function ?
+    this.before(brEl);
+    if (offset >= this.childNodes.length) {
+        this.appendChild(brEl);
+    } else {
+        this.insertBefore(brEl, this.childNodes[offset]);
+    }
 };
 
-HTMLElement.prototype.oDeleteBackward = function () {
+HTMLElement.prototype.oDeleteBackward = function (offset) {
     console.log('oDeleteBackward Element');
+
+    // TODO this next block of code is just temporary after the "offset"
+    // refactoring the other methods were adapted but not the oDeleteBackward
+    // ones.
+    let node = this;
+    if (offset > 0) {
+        node = this.childNodes[offset - 1];
+        node.oDeleteBackward(node.nodeType === Node.TEXT_NODE ? node.length : undefined);
+        return;
+    } else {
+        offset = undefined;
+    }
+
     if (isUnbreakable(this)) {
         return false;
     }
     // merge with previous block
-    let node = this.previousSibling;
+    node = this.previousSibling;
     if (isBlock(this) || isBlock(node)) {
         node = this.previousSibling || this.parentElement;
         node.oMove(this);
@@ -66,7 +104,7 @@ HTMLElement.prototype.oDeleteForward = function () {
 
 };
 
-HTMLElement.prototype.oTab = function (offset = undefined) {
+HTMLElement.prototype.oTab = function (offset) {
     if (!isBlock(this)) {
         return this.parentElement.oTab(offset);
     }

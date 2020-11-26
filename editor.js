@@ -13,7 +13,6 @@ import {} from "./editing/br.js";
 import {} from "./editing/ul.js";
 import {} from "./editing/li.js";
 import {} from "./editing/text.js";
-import {} from "./editing/td.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 
@@ -489,15 +488,7 @@ export default class OdooEditor {
      */
     _applyRawCommand(method) {
         const sel = document.defaultView.getSelection();
-        if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
-            return sel.anchorNode[method](sel.anchorOffset);
-        }
-
-        let node = sel.anchorNode;
-        if (sel.anchorOffset) {
-            node = sel.anchorNode.childNodes[sel.anchorOffset - 1];
-        }
-        return node[method](node.nodeType === Node.TEXT_NODE ? node.length : undefined);
+        return sel.anchorNode[method](sel.anchorOffset);
     }
     /**
      * Same as @see _applyRawCommand but protects the unbreakables and updates

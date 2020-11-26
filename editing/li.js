@@ -2,11 +2,14 @@
 
 import {setCursor} from "../utils/utils.js";
 
+/**
+ * TODO review the whole logic of having to use oRemove instead of remove...
+ */
 HTMLLIElement.prototype.oRemove = function () {
-    let ul = this.parentElement;
+    const parentEl = this.parentElement;
     this.remove();
-    if (! ul.querySelector('li')) {
-        ul.remove();
+    if (!parentEl.children.length) {
+        parentEl.remove();
     }
 };
 
@@ -18,30 +21,42 @@ HTMLLIElement.prototype.oMove = function (src) {
     return HTMLElement.prototype.oMove.call(this, src);
 };
 
-HTMLLIElement.prototype.oEnter = function (nextSibling) {
-    console.log('oEnter LI');
-    // if not last bullet, regular block break
+HTMLLIElement.prototype.oEnter = function () {
+    // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
-        return HTMLElement.prototype.oEnter.call(this, nextSibling);
+        return HTMLElement.prototype.oEnter.call(this, ...arguments);
     }
 
-    // if nested LI, shiftTab
-    if (this.parentNode.parentNode.tagName === 'LI') {
-        return this.oShiftTab();
+    // If nested LI (empty and last), shiftTab
+    if (this.parentNode.closest('li')) {
+        this.oShiftTab();
+        return;
     }
 
-    // if latest LI at lowest level, convert to a paragraph
-    let p = document.createElement('p');
-    let br = document.createElement('br');
-    p.append(br);
-    this.closest('ul,ol').after(p);
+    // Otherwise, regular list item, empty and last: convert to a paragraph
+    const pEl = document.createElement('p');
+    const brEl = document.createElement('br');
+    pEl.appendChild(brEl);
+    this.closest('ul, ol').after(pEl);
     this.oRemove();
-    setCursor(br, 0);
-    return p;
+    setTimeout(() => setCursor(pEl, 0), 0); // FIXME investigate why setTimeout needed in this case...
 };
 
-HTMLLIElement.prototype.oDeleteBackward = function () {
+HTMLLIElement.prototype.oDeleteBackward = function (offset) {
     console.log('oDeleteBackward LI');
+
+    // TODO this next block of code is just temporary after the "offset"
+    // refactoring the other methods were adapted but not the oDeleteBackward
+    // ones.
+    let node = this;
+    if (offset > 0) {
+        node = this.childNodes[offset - 1];
+        node.oDeleteBackward(node.nodeType === Node.TEXT_NODE ? node.length : undefined);
+        return;
+    } else {
+        offset = undefined;
+    }
+
     let target = this.previousElementSibling;
     if (target) {
         return HTMLElement.prototype.oDeleteBackward.call(this);

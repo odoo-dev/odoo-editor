@@ -1,5 +1,37 @@
 "use strict";
 
+/**
+ * Returns the given node's position relative to its parent (= its index in the
+ * child nodes of its parent).
+ *
+ * @param {Node} node
+ * @returns {number}
+ */
+export function childNodeIndex(node) {
+    let i = 0;
+    while (node.previousSibling) {
+        i++;
+        node = node.previousSibling;
+    }
+    return i;
+}
+
+/**
+ * Splits a text node in two parts, forcing split whitespaces to stay visible.
+ *
+ * @param {Text} textNode
+ * @param {number} offset
+ * @returns {Text} The created left text node, the right one being the same as
+ *          the given one.
+ */
+export function splitText(textNode, offset) {
+    const newval = textNode.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
+    const nextTextNode = document.createTextNode(newval);
+    textNode.before(nextTextNode);
+    textNode.nodeValue = textNode.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
+    return nextTextNode;
+}
+
 // backward traversal: latestChild(el.previousSibling) || el.parentNode
 export function latestChild(el) {
     while (el && el.lastChild) {
@@ -33,8 +65,11 @@ export function setCursorEnd(node) {
     setCursor(node, node.nodeType === Node.TEXT_NODE ? node.length : node.children.length);
 }
 
+/**
+ * TODO review and improve
+ */
 export function fillEmpty(node) {
-    if (node && !node.innerText.replace(/[ \r\n\t]+/, '') && !node.querySelector('br')) { // to improve
+    if (node && !node.innerText.replace(/[ \r\n\t]+/, '') && !node.querySelector('br')) {
         node.append(document.createElement('br'));
     }
 }
@@ -223,6 +258,9 @@ export function hasForwardChar(node) {
     return false;
 }
 
+/**
+ * TODO review and improve
+ */
 export function addBr(node) {
     let br = document.createElement('BR');
     node.after(br);

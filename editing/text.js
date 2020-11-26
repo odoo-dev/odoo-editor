@@ -1,48 +1,36 @@
 "use strict";
 
 import {
-    setCursor, setCursorEnd, addBr, isBlock, isInvisible, isSpace, hasForwardChar,
+    childNodeIndex, splitText,
+    setCursor, setCursorEnd, isBlock, isInvisible, isSpace, hasForwardChar,
     hasBackwardVisibleSpace, hasForwardVisibleSpace, latestChild
 } from "../utils/utils.js";
 
 // TextNode
 
-Text.prototype.oShiftEnter = function (offset) {
-    if (!offset) {
-        let br = document.createElement('BR');
-        this.before(br);
-    } else if (offset >= this.length) {
-        addBr(this);
-    } else {
-        let newval = this.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
-        let newText = document.createTextNode(newval);
-        this.before(newText);
-        this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-        addBr(newText);
-        setCursor(this, 0);
+function baseTextEnter(offset) {
+    let parentOffset = childNodeIndex(this);
+
+    if (offset > 0) {
+        parentOffset++;
+
+        if (offset < this.length) {
+            splitText(this, offset);
+        }
     }
-    return true;
+
+    return parentOffset;
+}
+
+Text.prototype.oShiftEnter = function (offset) {
+    this.parentElement.oShiftEnter(baseTextEnter.call(this, offset), true);
 };
 
 Text.prototype.oEnter = function (offset) {
-    console.log('oEnter Text');
-    if (!offset) {
-        this.parentElement.oEnter(this);
-    } else if (offset >= this.length) {
-        let el = this.parentElement.oEnter(this.nextSibling);
-        setCursor(el, 0);
-        return true;
-    } else {
-        let newval = this.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
-        let newText = document.createTextNode(newval);
-        this.before(newText);
-        this.nodeValue = this.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-        this.parentElement.oEnter(this);
-    }
-    setCursor(this, 0);
+    this.parentElement.oEnter(baseTextEnter.call(this, offset), true);
 };
 
-Text.prototype.oDeleteBackward = function (offset = undefined) {
+Text.prototype.oDeleteBackward = function (offset) {
     console.log('oDeleteBackward Text');
     let space = false;
     let value = this.nodeValue;
