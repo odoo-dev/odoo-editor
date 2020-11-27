@@ -241,7 +241,7 @@ export async function testEditor(Editor = OdooEditor, spec) {
     if (spec.contentAfter) {
         renderTextualSelection();
         const value = testNode.innerHTML;
-        assert.equal(value, spec.contentAfter);
+        window.chai.expect(value).to.be.equal(spec.contentAfter);
     }
     testNode.remove();
 }

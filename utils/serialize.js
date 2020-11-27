@@ -1,3 +1,5 @@
+"use strict";
+
 // TODO: avoid empty keys when not necessary to reduce request size
 export function nodeToObject(node) {
     let result = {
@@ -5,8 +7,7 @@ export function nodeToObject(node) {
        oid: node.oid,
     };
     if (!node.oid) {
-        console.log('OID can not be false!');
-        // debugger;
+        console.warn('OID can not be falsy!');
     }
     if (node.nodeType === Node.TEXT_NODE) {
         result.textValue = node.nodeValue;
@@ -37,7 +38,7 @@ export function objectToNode(obj) {
         }
         obj.children.forEach(child => result.append(objectToNode(child)));
     } else {
-        alert('unknown node type');
+        console.warn('unknown node type');
     }
     result.oid = obj.oid;
     return result;

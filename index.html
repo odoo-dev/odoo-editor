@@ -2,13 +2,13 @@
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Odoo Editor</title>
+        <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
 
+        <title>Odoo Editor</title>
+
         <link rel="stylesheet" href="style.css"/>
-        <!--
-        <script src="https://use.fontawesome.com/80d52a392c.js"></script>
-        -->
+        <!-- <script src="https://use.fontawesome.com/80d52a392c.js"></script> -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous"/>
 
         <!-- add mocha -->
@@ -18,12 +18,9 @@
             mocha.setup('bdd');
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/3.5.0/chai.js"></script>
-        <script>
-            let assert = chai.assert;
-        </script>
 
         <script src="editor.js" type="module" defer></script>
-        <script src="test/editor.test.js" type="module" defer></script>
+        <script src="tests/editor.test.js" type="module" defer></script>
     </head>
     <body>
         <div id="control-panel">

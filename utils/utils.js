@@ -18,18 +18,30 @@ export function childNodeIndex(node) {
 
 /**
  * Splits a text node in two parts, forcing split whitespaces to stay visible.
+ * If the split occurs at the beginning or the end, the text node stays
+ * untouched and unsplit. If a split actually occurs, the original text node
+ * still exists and become the right part of the split.
  *
  * @param {Text} textNode
  * @param {number} offset
- * @returns {Text} The created left text node, the right one being the same as
- *          the given one.
+ * @returns {number} The parentOffset if the cursor was between the two text
+ *          node parts after the split.
  */
 export function splitText(textNode, offset) {
-    const newval = textNode.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
-    const nextTextNode = document.createTextNode(newval);
-    textNode.before(nextTextNode);
-    textNode.nodeValue = textNode.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
-    return nextTextNode;
+    let parentOffset = childNodeIndex(textNode);
+
+    if (offset > 0) {
+        parentOffset++;
+
+        if (offset < textNode.length) {
+            const newval = textNode.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
+            const nextTextNode = document.createTextNode(newval);
+            textNode.before(nextTextNode);
+            textNode.nodeValue = textNode.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
+        }
+    }
+
+    return parentOffset;
 }
 
 // backward traversal: latestChild(el.previousSibling) || el.parentNode

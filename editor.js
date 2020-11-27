@@ -1,18 +1,25 @@
 "use strict";
 
-import {sanitize} from "./sanitize.js";
-import {
-    commonParentGet, parentBlock, setTagName, setCursor,
-    containsUnbreakable, inUnbreakable
-} from "./utils/utils.js";
-import {nodeToObject, objectToNode} from "./utils/serialize.js";
+import {} from "./commands/deleteBackward.js";
+import {} from "./commands/deleteForward.js";
+import {} from "./commands/enter.js";
+import {} from "./commands/shiftEnter.js";
+import {} from "./commands/shiftTab.js";
+import {} from "./commands/tab.js";
 
-import {} from "./editing/element.js";
-import {} from "./editing/heading.js";
-import {} from "./editing/br.js";
-import {} from "./editing/ul.js";
-import {} from "./editing/li.js";
-import {} from "./editing/text.js";
+import {sanitize} from "./utils/sanitize.js";
+import {
+    nodeToObject,
+    objectToNode,
+} from "./utils/serialize.js";
+import {
+    commonParentGet,
+    containsUnbreakable,
+    inUnbreakable,
+    parentBlock,
+    setCursor,
+    setTagName,
+} from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 
@@ -300,54 +307,58 @@ export default class OdooEditor {
             headers: {'Content-Type': 'application/json;charset=utf-8'},
             method: 'GET',
         }).then(response => {
-            response.json().then(result => {
-                if (!result.length) {
-                    return false;
-                }
-                this.observerUnactive();
+            if (!response.ok) {
+                return Promise.reject();
+            }
+            return response.json();
+        }).then(result => {
+            if (!result.length) {
+                return false;
+            }
+            this.observerUnactive();
 
-                let index = this.history.length;
-                let updated = false;
-                while (index && (this.history[index - 1].id !== this.collaborate_last)) {
-                    index--;
-                }
+            let index = this.history.length;
+            let updated = false;
+            while (index && (this.history[index - 1].id !== this.collaborate_last)) {
+                index--;
+            }
 
-                for (let residx = 0; residx < result.length; residx++) {
-                    let record = result[residx];
-                    this.collaborate_last = record.id;
-                    if (index < this.history.length && record.id === this.history[index].id) {
-                        index++;
-                        continue;
-                    }
-                    updated = true;
-
-                    // we are not synched with the server anymore, rollback and replay
-                    while (this.history.length > index) {
-                        this.historyPop(false);
-                    }
-
-                    if (record.id === 1) {
-                        this.dom.innerHTML = '';
-                        this.vdom.innerHTML = '';
-                    }
-                    this.historyApply(this.dom, record.dom);
-                    this.historyApply(this.vdom, record.dom);
-
-                    // first record is not added in the history
-                    if (record.id !== 1) {
-                        this.history.push(record);
-                    }
+            for (let residx = 0; residx < result.length; residx++) {
+                let record = result[residx];
+                this.collaborate_last = record.id;
+                if (index < this.history.length && record.id === this.history[index].id) {
                     index++;
+                    continue;
                 }
-                if (updated) {
-                    this.historyStep();
+                updated = true;
+
+                // we are not synched with the server anymore, rollback and replay
+                while (this.history.length > index) {
+                    this.historyPop(false);
                 }
-                this.observerActive();
-                this.historyFetch();
-            }).catch(error => {
-                // if server unreachable, fault back to non collaborative mode
-                this.collaborate = false;
-            });
+
+                if (record.id === 1) {
+                    this.dom.innerHTML = '';
+                    this.vdom.innerHTML = '';
+                }
+                this.historyApply(this.dom, record.dom);
+                this.historyApply(this.vdom, record.dom);
+
+                // first record is not added in the history
+                if (record.id !== 1) {
+                    this.history.push(record);
+                }
+                index++;
+            }
+            if (updated) {
+                this.historyStep();
+            }
+            this.observerActive();
+            this.historyFetch();
+        }).catch(err => {
+            // If server unreachable or any error trying to fetch it, fault back
+            // to non collaborative mode.
+            this.collaborate = false;
         });
     }
 
