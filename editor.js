@@ -148,9 +148,6 @@ export default class OdooEditor {
         });
     }
 
-    // TODO: refactor this method to use history apply, in 2 steps:
-    //    1) transform observerRecord -> historyRecord
-    //    2) apply historyRecord
     observerApply(destel, records) {
         for (let record of records) {
             switch (record.type) {
@@ -198,10 +195,6 @@ export default class OdooEditor {
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
                             'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
-                        // let toremove = this.idFind(destel, removed.oid, record.target.oid);
-                        // if (toremove) {
-                        //     toremove.remove();
-                        // }
                     });
                     break;
                 }
@@ -280,7 +273,6 @@ export default class OdooEditor {
         }
     }
 
-
     // send changes to server
     historyFetch() {
         if (!this.collaborate) {
@@ -328,10 +320,8 @@ export default class OdooEditor {
                 this.historyApply(this.dom, record.dom);
                 this.historyApply(this.vdom, record.dom);
 
-                // first record is not added in the history
-                if (record.id !== 1) {
-                    this.history.push(record);
-                }
+                record.dom = (record.id==1)?[]:record.dom;
+                this.history.push(record);
                 index++;
             }
             if (updated) {
