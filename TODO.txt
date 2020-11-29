@@ -1,11 +1,7 @@
-- Test and fix Enter & Backspace on mobiles
-    - works on all tested chrome: samsung A9 gboard, huawei A7 gboard, & swipe
-    - issues on Firefox for Android, with gboard
-- Fix `ab<br>[] cd` + backspace = `ab cd` problem -> remove *following* invisible space before backspace command
-- Implement ForwardDelete and refactor invisible space & empty blocks in the process
-- Fix known bugs
-    - issue with "<p>te[]st</p>" then enter-backspace-enter-enter (the cursor is not set on the right node)
-    - cursor issue on rollback (ex: when Enter in empty <td> (works for shift-Enter, but not Enter that is similar: catched/rollbacked/shift-Enter)
-- fix undo: push the reverse operation in the history (instead of removing from history): that should fix collaborative undo too
-- Implement "attributes" in mutationRecords
+- fix `ab<br>[] cd` + backspace = `ab cd` problem -> remove *following* invisible space before backspace command
+- fix shiftEnter in empty <td>
+- implement "attributes" in mutationRecords
 - sanitizer: sanitize sibling <ul> (directly or indirectly): or handle that in backspace?
+- mobile support
+- implement ForwardDelete and refactor invisible space & empty blocks in the process
+- improve undos: use oid instead of indexes for collaborative mode
