@@ -35,7 +35,7 @@ export default class OdooEditor {
             dom: [],
             id: undefined
         }];
-        this.undo_index = 1;
+        this.undos = new Map();
         this.vdom = dom.cloneNode(true);
         this.idSet(dom, this.vdom);
 
@@ -55,7 +55,6 @@ export default class OdooEditor {
 
         // used to check if we have to rollback an operation as an unbreakable is
         this.torollback = false; // unbreakable removed or added
-        this.unbreaks = new Set(); // modified unbreakables from vDOM, should not be more than one per step
     }
     /**
      * Releases anything that was initialized.
@@ -82,22 +81,18 @@ export default class OdooEditor {
         sanitize(ca);
     }
 
-    //
-    // VDOM Processing
-    //
-    idSet(src, dest) {
-        if (src.oid) {
+    // Assign IDs to src, and dest if defined
+    idSet(src, dest=undefined) {
+        if (!src.oid)
+            src.oid = Math.random() * 2 ** 31 | 0;         // TODO: uuid4 or higher number
+        if (dest && !dest.oid)
             dest.oid = src.oid;
-        } else {
-            // TODO: use a real UUID4 generator
-            src.oid = dest.oid = Math.random() * 2 ** 31 | 0;
-        }
         let childsrc = src.firstChild;
-        let childdest = dest.firstChild;
+        let childdest = dest?dest.firstChild:undefined;
         while (childsrc) {
             this.idSet(childsrc, childdest);
             childsrc = childsrc.nextSibling;
-            childdest = childdest.nextSibling;
+            childdest = dest?childdest.nextSibling:undefined;
         }
     }
 
@@ -168,12 +163,32 @@ export default class OdooEditor {
                             "text": record.target.textContent,
                             "oldValue": node.textContent
                         });
-                        node.textContent = record.target.textContent;
-                        this.unbreaks.add(inUnbreakable(node));
                     }
                     break;
                 }
                 case "childList": {
+                    record.addedNodes.forEach((added, index) => {
+                        if (!record.target.oid || (added.oid && this.idFind(destel, added.oid) &&
+                                record.target.oid === this.idFind(destel, added.oid).parentNode.oid)) {
+                            return false;
+                        }
+                        let action = {
+                            'type': "add",
+                        };
+                        if (!record.nextSibling) {
+                            action['append'] = record.target.oid;
+                        } else if (record.nextSibling.oid) {
+                            action['before'] = record.nextSibling.oid;
+                        } else if (record.previousSibling.oid) {
+                            action['after'] = record.previousSibling.oid;
+                        } else {
+                            return false;
+                        }
+                        this.idSet(added);
+                        action['id'] = added.oid;
+                        action['node'] = this.serialize(added);
+                        this.history[this.history.length - 1].dom.push(action);
+                    });
                     record.removedNodes.forEach((removed, index) => {
                         this.history[this.history.length - 1].dom.push({
                             'type': "remove",
@@ -183,43 +198,10 @@ export default class OdooEditor {
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
                             'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
                         });
-                        let toremove = this.idFind(destel, removed.oid, record.target.oid);
-                        this.unbreaks.add(inUnbreakable(toremove));
-                        if (toremove) {
-                            toremove.remove();
-                        }
-                    });
-                    record.addedNodes.forEach((added, index) => {
-                        if (!record.target.oid) {
-                            return false;
-                        }
-                        if (added.oid && this.idFind(destel, added.oid)
-                                && record.target.oid === this.idFind(destel, added.oid).parentNode.oid) {
-                            return false;
-                        }
-                        this.torollback |= containsUnbreakable(added);
-
-                        let newnode = added.cloneNode(1);
-                        let action = {
-                            'type': "add",
-                        };
-                        if (!record.nextSibling) {
-                            this.idFind(destel, record.target.oid).append(newnode);
-                            action['append'] = record.target.oid;
-                        } else if (record.nextSibling.oid) {
-                            this.idFind(destel, record.nextSibling.oid).before(newnode);
-                            action['before'] = record.nextSibling.oid;
-                        } else if (record.previousSibling.oid) {
-                            this.idFind(destel, record.previousSibling.oid).after(newnode);
-                            action['after'] = record.previousSibling.oid;
-                        } else {
-                            return false;
-                        }
-                        this.idSet(added, newnode);
-                        this.unbreaks.add(inUnbreakable(newnode));
-                        action['id'] = added.oid;
-                        action['node'] = this.serialize(newnode);
-                        this.history[this.history.length - 1].dom.push(action);
+                        // let toremove = this.idFind(destel, removed.oid, record.target.oid);
+                        // if (toremove) {
+                        //     toremove.remove();
+                        // }
                     });
                     break;
                 }
@@ -234,15 +216,14 @@ export default class OdooEditor {
     // History
     //
 
-    // One operation of several changes completed, go to next one
+    // One step completed: apply to vDOM, setup next history step
     historyStep() {
+        this.observerFlush();
         // check that not two unBreakables modified
-        this.unbreaks.delete(null);
-        if (this.torollback || this.unbreaks.length > 1) {
+        if (this.torollback) {
             this.historyRollback();
+            this.torollback = false;
         }
-        this.torollback = false;
-        this.unbreaks = new Set();
 
         // push history
         let latest = this.history[this.history.length - 1];
@@ -251,6 +232,7 @@ export default class OdooEditor {
         }
 
         latest.id = Math.random() * 2 ** 31 | 0; // TODO: replace by uuid4 generator
+        this.historyApply(this.vdom, latest.dom);
         this.historySend(latest);
         this.history.push({
             cursor: {},
@@ -278,7 +260,8 @@ export default class OdooEditor {
                     break;
                 }
                 case "add": {
-                    let newnode = this.unserialize(record.node);
+                    let newnode = this.unserialize(record.node).cloneNode(1);
+                    this.idSet(record.node, newnode);
                     if (record.append) {
                         this.idFind(destel, record.append).append(newnode);
                     } else if (record.before) {
@@ -334,7 +317,8 @@ export default class OdooEditor {
 
                 // we are not synched with the server anymore, rollback and replay
                 while (this.history.length > index) {
-                    this.historyPop(false);
+                    this.historyRollback();
+                    this.history.pop();
                 }
 
                 if (record.id === 1) {
@@ -356,8 +340,7 @@ export default class OdooEditor {
             this.observerActive();
             this.historyFetch();
         }).catch(err => {
-            // If server unreachable or any error trying to fetch it, fault back
-            // to non collaborative mode.
+            // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
             this.collaborate = false;
         });
     }
@@ -377,29 +360,43 @@ export default class OdooEditor {
 
     historyRollback() {
         this.observerFlush();
-        this.historyPop(true);
+        this.historyRevert(this.history[this.history.length-1]);
+        this.observerFlush();
+        this.history[this.history.length-1].dom = [];
         this.torollback = false;
-        this.unbreaks = new Set();
     }
 
     historyUndo() {
-        this.observerFlush();
-        // remove the one in progress before removing the last step
-        if (this.history.length > 1) {
-            this.historyPop(false);
-        }
-        this.historyPop(true);
+        let pos = this.history.length-2;
+        while (this.undos.has(pos))
+            pos = this.undos.get(pos)-1;
+        if (pos<0)
+            return true;
+        this.undos.delete(this.history.length-2);
+        this.historyRevert(this.history[pos]);
+        this.undos.set(this.history.length-1, pos);
     }
-    historyPop(newStep = true) {
-        let step = this.history.pop();
-        let pos = this.history.length;
-        this.history.push({
-            cursor: {},
-            dom: [],
-        });
-        // aplly dom changes by reverting history
-        while (step.dom.length) {
-            let action = step.dom.pop();
+
+    historyRedo() {
+        this.historyStep();
+        let pos = this.history.length-2;
+        if (this.undos.has(pos)) {
+            this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
+            let step = this.history[this.undos.get(pos)+1];
+            if (step.cursor.anchorNode) {
+                let anchor = this.idFind(this.dom, step.cursor.anchorNode);
+                if (anchor)
+                    setCursor(anchor, step.cursor.anchorOffset);
+            }
+            this.undos.set(pos+1, this.undos.get(pos)+1);
+            this.undos.delete(pos);
+        }
+    }
+
+    historyRevert(step) {
+        // apply dom changes by reverting history steps
+        for (let i = step.dom.length - 1; i >= 0; i--) {
+            let action = step.dom[i];
             if (!action) {
                 break;
             }
@@ -433,18 +430,6 @@ export default class OdooEditor {
             if (anchor) {
                 setCursor(anchor, step.cursor.anchorOffset);
             }
-        }
-
-        this.observerFlush();
-        while (this.history.length > pos) {
-            this.history.pop();
-        }
-
-        if (newStep) {
-            this.history.push({
-                cursor: {},
-                dom: [],
-            });
         }
     }
 
@@ -633,9 +618,10 @@ export default class OdooEditor {
             this.historyUndo();
         } else if (ev.key === 'y' && ev.ctrlKey) { // Ctrl-Y
             ev.preventDefault();
-            // TODO to implement
+            this.historyRedo();
         }
 
+        // TODO: in case of preventDefault, we don't need to wait for the timeOut; that would probably fix some concurrency issues when backspace fast
         setTimeout(() => {
             this.sanitize();
             this.historyStep();
