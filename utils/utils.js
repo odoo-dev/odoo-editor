@@ -1,5 +1,7 @@
 "use strict";
 
+const INVISIBLE_REGEX = /\u200c/g;
+
 /**
  * Returns the given node's position relative to its parent (= its index in the
  * child nodes of its parent).
@@ -14,6 +16,18 @@ export function childNodeIndex(node) {
         node = node.previousSibling;
     }
     return i;
+}
+
+/**
+ * Returns the size of the node = the number of characters for text nodes and
+ * the number of child nodes for element nodes.
+ *
+ * @param {Node} node
+ * @returns {number}
+ */
+export function nodeSize(node) {
+    const isTextNode = node.nodeType === Node.TEXT_NODE;
+    return isTextNode ? node.length : node.childNodes.length;
 }
 
 /**
@@ -87,7 +101,7 @@ export function setCursorEnd(node) {
         setCursor(node.parentElement, childNodeIndex(node) + 1);
         return;
     }
-    setCursor(node, node.nodeType === Node.TEXT_NODE ? node.length : node.children.length);
+    setCursor(node, nodeSize(node));
 }
 
 /**
@@ -235,46 +249,58 @@ export function setTagName(el, newTagName) {
     return n;
 }
 
-export function hasBackwardVisibleSpace(node) {
-    let last = false;
+/**
+ * TODO review, not convinced all cases are handled, also share logic with
+ * @see findLeadingSpaceNextNode
+ *
+ * @param {Node} node
+ * @returns {Text|null}
+ */
+export function findTrailingSpacePrevNode(node) {
     do {
         node = latestChild(node.previousSibling) || node.parentElement;
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/\s/) > -1) {
-                last = node;
+            if (isVisibleStr(node)) {
+                if (/[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, ''))) {
+                    return node;
+                }
+                break;
             }
-            if (node.nodeValue.replace(/\s+/, '')) {
-                return last;
-            }
-        }
-        if (isBlock(node) || node.tagName === 'BR') {
-            return last;
+        } else if (isBlock(node) || node.tagName === 'BR') {
+            break;
         }
     } while (node);
-}
 
-export function hasForwardVisibleSpace(node) {
-    let last = false;
+    return null;
+}
+/**
+ * Same as @see findTrailingSpacePrevNode but for leading whitespace next nodes.
+ *
+ * @param {Node} node
+ * @returns {Text|null}
+ */
+export function findLeadingSpaceNextNode(node) {
     do {
         node = firstChild(node.nextSibling) || node.parentElement;
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/\s/) > -1) {
-                last = node;
+            if (isVisibleStr(node)) {
+                if (/^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, ''))) {
+                    return node;
+                }
+                break;
             }
-            if (node.nodeValue.replace(/\s+/, '')) {
-                return last;
-            }
-        }
-        if (isBlock(node) || node.tagName === 'BR') {
-            return false;
+        } else if (isBlock(node) || node.tagName === 'BR') {
+            break;
         }
     } while (node);
+
+    return null;
 }
 
 export function hasForwardChar(node) {
     while (node.nextSibling && !isBlock(node.nextSibling)) {
         node = node.nextSibling;
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')
+        if (node.nodeType === Node.TEXT_NODE && isVisibleStr(node)
                 || node.textContent
                 || node.tagName === 'BR') {
             return true;
@@ -297,12 +323,85 @@ export function addBr(node) {
     return br;
 }
 
-export function isInvisible(ch) {
-    return ['\u200c'].includes(ch);
+/**
+ * Returns whether the given node is a element that could be considered to be
+ * removed by itself = self closing tags or empty list items elements.
+ *
+ * @param {Node} node
+ * @returns {boolean}
+ */
+const selfClosingElementTags = ['BR', 'IMG', 'INPUT'];
+export function isVisibleEmpty(node) {
+    return selfClosingElementTags.includes(node.nodeName)
+        || node.nodeName === 'LI' && node.childNodes.length === 0;
 }
 
+/**
+ * Returns whether the given string (or given text node value) has
+ * non-whitespace characters in it.
+ */
+const nonWhitespacesRegex = /[\S\u00A0]/;
+export function isVisibleStr(value) {
+    const str = typeof value === 'string' ? value : value.nodeValue;
+    return nonWhitespacesRegex.test(str);
+}
+
+/**
+ * Returns whether removing the given node from the DOM will have a visible
+ * effect or not.
+ *
+ * Note: TODO this is not handling all cases right now, just the ones the
+ * caller needs at the moment. For example a space text node between two inlines
+ * will always return 'true' while it is sometimes invisible.
+ *
+ * @param {Node} node
+ * @returns {boolean}
+ */
+export function isVisible(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        // If empty text node: not visible
+        if (!node.length) {
+            return false;
+        }
+        // If contains non-whitespaces: visible
+        if (isVisibleStr(node)) {
+            return true;
+        }
+        // If only whitespaces, visible only if has inline content before and
+        // after the text node, so '___' is not visible in those cases:
+        // - <p>a</p>___<p>b</p>
+        // - <p>a</p>___b
+        // - a___<p>b</p>
+        // TODO see documentation comment
+        return (node.previousSibling && !isBlock(node.previousSibling) && node.nextSibling && !isBlock(node.nextSibling));
+    }
+    if (isBlock(node) || isVisibleEmpty(node)) {
+        return true;
+    }
+    return [...node.childNodes].some(n => isVisible(n));
+}
+
+/**
+ * Returns whether or not the given char is invisible = a character that the
+ * user should never have to remove himself.
+ *
+ * @param {string} ch
+ * @returns {boolean}
+ */
+const invisibleCharValues = ['\u200c'];
+export function isInvisibleChar(ch) {
+    return invisibleCharValues.includes(ch);
+}
+
+/**
+ * Returns whether or not the given char is a space.
+ *
+ * @param {string} ch
+ * @returns {boolean}
+ */
+const spaceValues = [' ', '\t', '\n', '\r'];
 export function isSpace(ch) {
-    return [' ', '\t', '\n', '\r'].includes(ch);
+    return spaceValues.includes(ch);
 }
 
 export function parentsGet(node, root = undefined) {
@@ -350,4 +449,16 @@ export function isSimilarNode(node, node2) {
         }
     }
     return ['b', 'u', 'i', 'strong', 'strong', 'em', 'strike'].includes(node.tagName);
+}
+
+export function prepareMergeLocation(el, sourceEl) {
+    // Remove unique BR as it will be replaced by content TODO improve
+    if (el.children.length === 1 && el.firstElementChild instanceof HTMLBRElement) {
+        el.firstElementChild.remove();
+    }
+    // For list elements, the proper location is that last list item
+    if (el.tagName === 'UL' || el.tagName === 'OL') {
+        return this.lastElementChild;
+    }
+    return el;
 }

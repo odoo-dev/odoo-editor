@@ -1,176 +1,185 @@
 "use strict";
 
 import {
-    hasBackwardVisibleSpace,
-    hasForwardChar,
-    hasForwardVisibleSpace,
+    childNodeIndex,
+    findTrailingSpacePrevNode,
+    findLeadingSpaceNextNode,
     isBlock,
-    isInvisible,
+    isInvisibleChar,
     isSpace,
     isUnbreakable,
-    latestChild,
+    isVisible,
+    isVisibleEmpty,
+    nodeSize,
+    prepareMergeLocation,
     setCursor,
     setCursorEnd,
+    isVisibleStr,
 } from "../utils/utils.js";
 
+const MERGE_SUCCESS = 100;
+const MERGE_NOTHING_TO_MERGE = 101;
+const MERGE_REMOVED_INVISIBLE_NODE = 102;
+const MERGE_REMOVED_VISIBLE_NODE = 103;
+
 Text.prototype.oDeleteBackward = function (offset) {
-    console.log('oDeleteBackward Text');
-    let space = false;
-    let value = this.nodeValue;
-    if (offset === undefined) {
-        offset = offset || value.length;
-    }
-    let from = offset - 1;
+    const value = this.nodeValue;
+    const textLength = this.length;
+    let firstExcludedCharIndex = offset - 1; // Start index of the characters to remove
+    let firstIncludedCharIndex = offset; // End index of the characters to remove + 1
 
-    // remove zero-width characters
-    while (isInvisible(value.charAt(from))) {
-        from--;
-    }
-    while (isInvisible(value.charAt(offset))) {
-        offset++;
-    }
-    if (from < 0) {
-        this.nodeValue = value.substring(offset);
-        return HTMLElement.prototype.oDeleteBackward.call(this);
+    const expandRemovalRange = callback => {
+        while (callback(value.charAt(firstExcludedCharIndex))) {
+            firstExcludedCharIndex--;
+        }
+        while (callback(value.charAt(firstIncludedCharIndex))) {
+            firstIncludedCharIndex++;
+        }
+    };
+
+    // Remove zero-width characters around the cursor position
+    expandRemovalRange(ch => isInvisibleChar(ch));
+
+    // If beginning of string, now simply remove the starting invisible
+    // characters we found and propagate the backspace to the text node parent.
+    if (firstExcludedCharIndex < 0) {
+        this.nodeValue = value.substring(firstIncludedCharIndex);
+        const parentOffset = childNodeIndex(this) + (this.length ? 0 : 1);
+        return this.parentElement.oDeleteBackward(parentOffset);
     }
 
-    // if char is space, remove multiple spaces: <p>abc   []</p>
-    space = isSpace(value.charAt(from));
-    if (space) {
-        while (from && (isSpace(value.charAt(from - 1)) || isInvisible(value.charAt(from - 1)))) {
-            from--;
-        }
-        // TODO: increase offset for this use case ___[]___
+    // 'firstExcludedCharIndex' now points at the character the user actually
+    // wants to remove. If it is a space removal, we have to remove the
+    // surrounding collapsed spaces too.
+    const spaceRemoval = isSpace(value.charAt(firstExcludedCharIndex));
+    if (spaceRemoval) {
+        firstExcludedCharIndex--;
+        expandRemovalRange(ch => isSpace(ch) || isInvisibleChar(ch));
+        firstExcludedCharIndex++;
     }
-    this.nodeValue = value.substring(0, from) + value.substring(offset);
 
-    // adapt space into &nbsp; and vice-versa, depending on context
-    let left = value.substring(0, from).replace(/\s+/, '');
-    let right = value.substring(offset).replace(/\s+/, '');
-    let leftSpace = hasBackwardVisibleSpace(this);
-    let rightSpace = hasForwardVisibleSpace(this);
-    if (!from) {
-        if (space) { // _</b>_[]  or  </p>_[]
-            return this.oDeleteBackward(0);
-        }
-        if (!space && !leftSpace) { // </p>a[]_
-            this.nodeValue = this.nodeValue.replace(/^\s+/, '\u00A0');
-        }
-        if (!space && leftSpace) { // _</b>a[]_
-            leftSpace.nodeValue = leftSpace.nodeValue.replace(/\s+$/, '\u00A0');
-        }
-    } else if (!right) {
-        if (space && rightSpace) { // _[]</b>_
-            return this.oDeleteBackward();
-        }
-        if (!space && !rightSpace) { // a_a[]</p>   || <p>___a[]_</p>
-            if (left || leftSpace) {
-                this.nodeValue = this.nodeValue.replace(/\s+$/, '\u00A0');
-            }
+    // Now remove all the characters that we found to remove
+    const leftStr = value.substring(0, firstExcludedCharIndex);
+    const rightStr = value.substring(firstIncludedCharIndex);
+    this.nodeValue = leftStr + rightStr;
+
+    // Now handle transformation of whitespaces into &nbsp; when collapsing two
+    // non-collapsed groups of whitespaces (in or out of the node) + propagate
+    // leading/trailing collapsed whitespace removal.
+    if (firstExcludedCharIndex > 0 && firstIncludedCharIndex < textLength) {
+        if (!spaceRemoval && /[^\S\u00A0]$/.test(leftStr) && /^[^\S\u00A0]/.test(rightStr)) {
+            // _a[]_ -> two non collapsed spaces would now be collapsed in the node
+            this.nodeValue = leftStr + rightStr.replace(/^[^\S\u00A0]+/, '\u00A0');
         }
     } else {
-        if (!right && !space) { // _a[]_</b>
-            this.nodeValue = value.substring(0, from).replace(/\s+$/, '\u00A0') + value.substring(offset);
+        // In the special case we removed the last character of the string, we
+        // could replace multiple spaces by nbsp if we consider both leading
+        // and trailing ones. This variable is there to ensure we only replace
+        // one space.
+        let alreadyTransformed = false;
+
+        // Leading character removal: special cases
+        if (firstExcludedCharIndex <= 0) {
+            const trailingSpacePrevNode = findTrailingSpacePrevNode(this);
+
+            if (trailingSpacePrevNode) {
+                if (spaceRemoval) {
+                    // <b>_</b>_[] -> propagate the backspace to originally collapsed spaces of siblings
+                    trailingSpacePrevNode.oDeleteBackward(trailingSpacePrevNode.length);
+                } else if (!alreadyTransformed) {
+                    // <b>_</b>a[]_ -> two non collapsed spaces would now be collapsed, accross different nodes
+                    trailingSpacePrevNode.nodeValue = trailingSpacePrevNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
+                    alreadyTransformed = true;
+                }
+            } else if (!alreadyTransformed && isVisibleStr(this)) {
+                // <b>a</b>a[]_a -> a single space would become invisible
+                this.nodeValue = this.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
+                alreadyTransformed = true;
+            }
         }
-        if (!left && !space) { // </p>_a[]_
-            this.nodeValue = value.substring(0, from) + value.substring(offset).replace(/^\s+/, '\u00A0');
+        // Trailing character removal: special cases
+        if (firstIncludedCharIndex >= textLength) {
+            const leadingSpaceNextNode = findLeadingSpaceNextNode(this);
+
+            if (leadingSpaceNextNode) {
+                if (spaceRemoval) {
+                    // _[]<b>_</b> -> propagate the backspace to originally collapsed spaces of siblings
+                    leadingSpaceNextNode.oDeleteBackward(leadingSpaceNextNode.nodeValue.search(/[^\S\u00A0]/) + 1);
+                } else if (!alreadyTransformed) {
+                    // _a[]<b>_</b> -> two non collapsed spaces would now be collapsed, accross different nodes
+                    leadingSpaceNextNode.nodeValue = leadingSpaceNextNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
+                }
+            } else if (!alreadyTransformed && isVisibleStr(this)) {
+                // a_a[]<b>a</b> -> a single visible space would become invisible
+                this.nodeValue = this.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
+            }
         }
     }
 
-    // // TODO: move this to utils?
-    // add a <br> if necessary: double a preceeding one, or inside an empty block
-    if (!this.nodeValue.replace(/\s+/, '') && !hasForwardChar(this)) {
-        let node = this;
-        do {
-            if (node.previousSibling) {
-                node = latestChild(node.previousSibling);
-                if (node.tagName === "BR") {
-                    node.before(document.createElement('BR'));
-                    break;
-                }
-            } else {
-                node = node.parentElement;
-                if (isBlock(node)) {
-                    node.append(document.createElement('BR'));
-                    break;
-                }
-            }
-        } while (!isBlock(node) && !(node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')));
-    }
-    setCursor(this, Math.min(from, this.nodeValue.length));
+    setCursor(this, Math.min(leftStr.length, this.length));
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset) {
-    console.log('oDeleteBackward Element');
-
-    // TODO this next block of code is just temporary after the "offset"
-    // refactoring the other methods were adapted but not the oDeleteBackward
-    // ones.
-    let node = this;
-    if (offset > 0) {
-        node = this.childNodes[offset - 1];
-        node.oDeleteBackward(node.nodeType === Node.TEXT_NODE ? node.length : undefined);
+    if (offset === 0) {
+        // We are at the start of a node, propagate to the parent, with the
+        // cursor on the right if the current node is empty, on the left
+        // otherwise. Except if unbreakable or the last child element of an
+        // unbreakable, in that case we do nothing.
+        const pEl = this.parentElement;
+        if (isUnbreakable(this)
+                || isUnbreakable(pEl) && pEl.childNodes.length === 1 && pEl.firstChild === this) {
+            // TODO review that logic, it made sense when AGE explained it but
+            // then they have an opposite test which removes the last p if there
+            // is surrounding text node ab<p>[]cd</p> should apparently drop the
+            // p but not if there is no ab...
+            return;
+        }
+        const parentOffset = childNodeIndex(this) + (this.childNodes.length ? 0 : 1);
+        pEl.oDeleteBackward(parentOffset);
         return;
-    } else {
-        offset = undefined;
     }
 
-    if (isUnbreakable(this)) {
-        return false;
+    // Now the cursor is on the right of a node. Merge adjacent nodes.
+    const node = this.childNodes[offset - 1];
+    const mergeResult = mergeNextNodeInto(node);
+    switch (mergeResult) {
+        // Merge succeeded, just set the cursor at the right place
+        case MERGE_SUCCESS: {
+            break;
+        }
+        // The merge resulted in removing the left node because it was invisible
+        // (empty span, empty text node, ...), continue propagation of the
+        // backspace command
+        case MERGE_REMOVED_INVISIBLE_NODE: {
+            this.oDeleteBackward(offset - 1);
+            break;
+        }
+        // The merge resulted in removind a visible node (like trying to merge
+        // a text into an image, a br, ...). The backspace command is finished.
+        case MERGE_REMOVED_VISIBLE_NODE: {
+            setCursor(this, offset - 1);
+            break;
+        }
+        // The merge was not possible to be performed as we tried to move
+        // block nodes into inline nodes -> propagate the backspace.
+        case MERGE_NOTHING_TO_MERGE: {
+            node.oDeleteBackward(nodeSize(node));
+        }
     }
-    // merge with previous block
-    node = this.previousSibling;
-    if (isBlock(this) || isBlock(node)) {
-        node = this.previousSibling || this.parentElement;
-        node.oMove(this);
-        return true;
-    }
-    let next = latestChild(this.previousSibling) || this.parentElement;
-    if (!this.textContent) {
-        this.remove();
-    }
-    return next.oDeleteBackward();
-};
-
-HTMLBRElement.prototype.oDeleteBackward = function () {
-    // propagate delete if we removed an invisible <br/>
-    if (!hasForwardChar(this)) {
-        (this.previousSibling || this.parentElement).oDeleteBackward();
-    }
-    this.remove();
 };
 
 HTMLLIElement.prototype.oDeleteBackward = function (offset) {
-    console.log('oDeleteBackward LI');
-
-    // TODO this next block of code is just temporary after the "offset"
-    // refactoring the other methods were adapted but not the oDeleteBackward
-    // ones.
-    let node = this;
-    if (offset > 0) {
-        node = this.childNodes[offset - 1];
-        node.oDeleteBackward(node.nodeType === Node.TEXT_NODE ? node.length : undefined);
-        return;
-    } else {
-        offset = undefined;
+    if (offset === 0) {
+        if (this.parentElement.closest('li')) {
+            // If backspace at the start of a unique indented list element, then
+            // unindented and that's it.
+            this.oShiftTab(offset);
+            return;
+        } else if (!this.previousElementSibling) {
+            // Outside of ul -> p ?
+        }
     }
-
-    let target = this.previousElementSibling;
-    if (target) {
-        return HTMLElement.prototype.oDeleteBackward.call(this);
-    }
-
-    if (this.parentElement.parentElement.tagName === 'LI') {
-        return this.oShiftTab();
-    }
-
-    target = document.createElement('p');
-    this.parentElement.before(target);
-    while (this.firstChild) {
-        target.append(this.firstChild);
-    }
-    this.oRemove();
-    setCursor(target.firstChild || target, 0);
+    HTMLElement.prototype.oDeleteBackward.call(this, offset);
 };
 
 // Utils
@@ -180,14 +189,12 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset) {
 /**
  * TODO review the whole logic of having to use oRemove instead of remove...
  */
-HTMLElement.prototype.oRemove = function () {
-    console.log('oRemove Element');
-    let pe = this.parentElement;
-
+Text.prototype.oRemove = function () {
     this.remove();
-    if (!isBlock(this)) {
-        pe.oRemove();
-    }
+};
+
+HTMLElement.prototype.oRemove = function () {
+    this.remove();
 };
 HTMLLIElement.prototype.oRemove = function () {
     const parentEl = this.parentElement;
@@ -197,75 +204,71 @@ HTMLLIElement.prototype.oRemove = function () {
     }
 };
 
-Text.prototype.oMove = function (src) {
-    this.nodeValue = this.nodeValue.replace(/\s+$/, '');
-    if (!this.nodeValue) {
-        return (this.previousSibling || this.parentElement).oMove(src);
+/**
+ * Merges the next sibling of the given node into that given node, the way it is
+ * done depending of the type of those nodes.
+ *
+ * @param {Node} node
+ * @returns {number} Merge type code
+ */
+function mergeNextNodeInto(node) {
+    const leftNode = node;
+    if (!isVisible(leftNode)) {
+        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        return MERGE_REMOVED_INVISIBLE_NODE;
     }
-    setCursorEnd(this);
-    if (isBlock(src)) {
-        while (src.firstChild) {
-            this.after(src.firstChild);
+
+    if (isVisibleEmpty(node)) {
+        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        return MERGE_REMOVED_VISIBLE_NODE;
+    }
+
+    const rightNode = node.nextSibling;
+    if (!rightNode) {
+        return MERGE_NOTHING_TO_MERGE;
+    }
+
+    const leftIsBlock = isBlock(leftNode);
+    const rightIsBlock = isBlock(rightNode);
+
+    if (rightIsBlock) {
+        // First case, the right side is block content: we have to unwrap that
+        // content in the proper location.
+        if (leftIsBlock) {
+            // If the left side is a block, find the right position to unwrap
+            // right content.
+            const positionEl = prepareMergeLocation(leftNode, rightNode);
+            setCursorEnd(positionEl);
+            while (rightNode.firstChild) {
+                positionEl.appendChild(rightNode.firstChild);
+            }
+            rightNode.oRemove(); // TODO review the use of 'oRemove' ...
+        } else {
+            // If the left side is inline, simply unwrap at current block location.
+            setCursorEnd(leftNode);
+            while (rightNode.lastChild) {
+                rightNode.after(rightNode.lastChild);
+            }
+            rightNode.oRemove(); // TODO review the use of 'oRemove' ...
         }
-        src.remove();
     } else {
-        let node = src;
-        while (node && !isBlock(node)) {
-            this.after(node);
-            node = node.nextSibling;
+        // Second case, the right side is inline content
+        if (leftIsBlock) {
+            // If the left side is a block, move that inline content and the
+            // one which follows in that left side.
+            const positionEl = prepareMergeLocation(leftNode, rightNode);
+            setCursorEnd(positionEl);
+            let node = rightNode;
+            do {
+                let nextNode = node.nextSibling;
+                positionEl.appendChild(node);
+                node = nextNode;
+            } while (node && !isBlock(node));
+        } else {
+            // If the left side is also inline, nothing to merge.
+            return MERGE_NOTHING_TO_MERGE;
         }
     }
-    // setCursorEnd(this);
-};
 
-HTMLElement.prototype.oMove = function (src) {
-    // TODO: check is this is unBreackable
-    if (isUnbreakable(src) || isUnbreakable(this)) {
-        return true;
-    }
-    setCursorEnd(this);
-    if (isBlock(src)) {
-        let node = latestChild(this);
-        // remove invisible stuff until block or text content found
-        while (!isBlock(node) && !(node.nodeType === Node.TEXT_NODE && (node.nodeValue.replace(/[ \n\t\r]/, '')))) {
-            let old = node;
-            node = latestChild(node.previousSibling) || node.parentNode;
-            old.remove();
-        }
-        while (src.firstChild) {
-            this.append(src.firstChild);
-        }
-        src.remove();
-     } else {
-        let node = src;
-        while (node && !isBlock(node)) {
-            let next = node.nextSibling;
-            this.append(node);
-            node = next;
-        }
-    }
-    // setCursorEnd(this);
-};
-
-HTMLBRElement.prototype.oMove = function (src) {
-    this.remove();
-};
-
-HTMLUListElement.prototype.oMove = function (src) {
-    let li = this.lastElementChild;
-    if (!li) {
-        li = document.createElement('li');
-        this.append(li);
-    }
-    li.oMove(src);
-};
-
-HTMLOListElement.prototype.oMove = HTMLUListElement.prototype.oMove;
-
-HTMLLIElement.prototype.oMove = function (src) {
-    let le = this.lastElementChild;
-    if (le && ['UL', 'OL'].includes(le.tagName)) {
-        return le.oMove(src);
-    }
-    return HTMLElement.prototype.oMove.call(this, src);
-};
+    return MERGE_SUCCESS;
+}
