@@ -1,6 +1,7 @@
 "use strict";
 
 import {
+    setCursorEnd,
     splitText,
 } from "../utils/utils.js";
 
@@ -15,4 +16,5 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     } else {
         this.insertBefore(brEl, this.childNodes[offset]);
     }
+    setCursorEnd(brEl);
 };
