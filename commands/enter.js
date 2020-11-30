@@ -8,6 +8,7 @@ import {
     isBlock,
     isUnbreakable,
     setCursor,
+    setCursorStart,
     setTagName,
     splitText,
 } from "../utils/utils.js";
@@ -62,7 +63,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
 
     // All split have been done, place the cursor at the right position
     if (firstSplit) {
-        setCursor(splitEl, 0);
+        setCursorStart(splitEl);
     }
 };
 /**

@@ -72,8 +72,21 @@ export function setCursor(node, offset = undefined) {
     sel.addRange(range);
 }
 
+export function setCursorStart(node) {
+    node = firstChild(node);
+    if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
+        setCursor(node.parentElement, childNodeIndex(node));
+        return;
+    }
+    setCursor(node, 0);
+}
+
 export function setCursorEnd(node) {
     node = latestChild(node);
+    if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
+        setCursor(node.parentElement, childNodeIndex(node) + 1);
+        return;
+    }
     setCursor(node, node.nodeType === Node.TEXT_NODE ? node.length : node.children.length);
 }
 
