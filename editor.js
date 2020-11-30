@@ -14,8 +14,6 @@ import {
 } from "./utils/serialize.js";
 import {
     commonParentGet,
-    containsUnbreakable,
-    inUnbreakable,
     parentBlock,
     setCursor,
     setTagName,
@@ -82,17 +80,19 @@ export default class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest=undefined) {
-        if (!src.oid)
-            src.oid = Math.random() * 2 ** 31 | 0;         // TODO: uuid4 or higher number
-        if (dest && !dest.oid)
+    idSet(src, dest = undefined) {
+        if (!src.oid) {
+            src.oid = Math.random() * 2 ** 31 | 0; // TODO: uuid4 or higher number
+        }
+        if (dest && !dest.oid) {
             dest.oid = src.oid;
+        }
         let childsrc = src.firstChild;
-        let childdest = dest?dest.firstChild:undefined;
+        let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
             this.idSet(childsrc, childdest);
             childsrc = childsrc.nextSibling;
-            childdest = dest?childdest.nextSibling:undefined;
+            childdest = dest ? childdest.nextSibling : undefined;
         }
     }
 
@@ -320,7 +320,7 @@ export default class OdooEditor {
                 this.historyApply(this.dom, record.dom);
                 this.historyApply(this.vdom, record.dom);
 
-                record.dom = (record.id==1)?[]:record.dom;
+                record.dom = record.id === 1 ? [] : record.dom;
                 this.history.push(record);
                 index++;
             }
@@ -350,35 +350,38 @@ export default class OdooEditor {
 
     historyRollback() {
         this.observerFlush();
-        this.historyRevert(this.history[this.history.length-1]);
+        this.historyRevert(this.history[this.history.length - 1]);
         this.observerFlush();
-        this.history[this.history.length-1].dom = [];
+        this.history[this.history.length - 1].dom = [];
         this.torollback = false;
     }
 
     historyUndo() {
-        let pos = this.history.length-2;
-        while (this.undos.has(pos))
-            pos = this.undos.get(pos)-1;
-        if (pos<0)
+        let pos = this.history.length - 2;
+        while (this.undos.has(pos)) {
+            pos = this.undos.get(pos) - 1;
+        }
+        if (pos < 0) {
             return true;
-        this.undos.delete(this.history.length-2);
+        }
+        this.undos.delete(this.history.length - 2);
         this.historyRevert(this.history[pos]);
-        this.undos.set(this.history.length-1, pos);
+        this.undos.set(this.history.length - 1, pos);
     }
 
     historyRedo() {
         this.historyStep();
-        let pos = this.history.length-2;
+        let pos = this.history.length - 2;
         if (this.undos.has(pos)) {
             this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
-            let step = this.history[this.undos.get(pos)+1];
+            let step = this.history[this.undos.get(pos) + 1];
             if (step.cursor.anchorNode) {
                 let anchor = this.idFind(this.dom, step.cursor.anchorNode);
-                if (anchor)
+                if (anchor) {
                     setCursor(anchor, step.cursor.anchorOffset);
+                }
             }
-            this.undos.set(pos+1, this.undos.get(pos)+1);
+            this.undos.set(pos + 1, this.undos.get(pos) + 1);
             this.undos.delete(pos);
         }
     }
