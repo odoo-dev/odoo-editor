@@ -463,13 +463,16 @@ export default class OdooEditor {
     // ===============
 
     /**
-     * Applies the given command to the current selection. This does not protect
-     * the unbreakables nor update the history cursor nor follow the exact same
-     * operations that would be done following events that would lead to that
-     * command.
+     * Applies the given command to the current selection. This does *NOT*:
+     * 1) update the history cursor
+     * 2) protect the unbreakables
+     * 3) sanitize the result
+     * 4) create new history entry
+     * 5) follow the exact same operations that would be done following events
+     *    that would lead to that command
      *
-     * To protect the unbreakables, @see _applyCommand
-     * For simulation of editor external commands, @see execCommand
+     * For points 1 -> 4, @see _applyCommand
+     * For points 1 -> 5, @see execCommand
      *
      * @private
      * @param {string} method
@@ -480,8 +483,8 @@ export default class OdooEditor {
         return sel.anchorNode[method](sel.anchorOffset);
     }
     /**
-     * Same as @see _applyRawCommand but protects the unbreakables and updates
-     * cursor position before execution with latest computed cursor.
+     * Same as @see _applyRawCommand but adapt history, protects unbreakables
+     * and sanitizes the result.
      *
      * @private
      * @param {string} method
@@ -489,7 +492,10 @@ export default class OdooEditor {
      */
     _applyCommand(method) {
         this._recordHistoryCursor(true);
-        return this._protectUnbreakable(() => this._applyRawCommand(...arguments));
+        const result = this._protectUnbreakable(() => this._applyRawCommand(...arguments));
+        this.sanitize();
+        this.historyStep();
+        return result;
     }
     /**
      * @private
@@ -581,6 +587,9 @@ export default class OdooEditor {
             this.historyRollback();
             ev.preventDefault();
             this._applyCommand('oDeleteBackward');
+        } else {
+            this.sanitize();
+            this.historyStep();
         }
     }
     /**
@@ -613,12 +622,6 @@ export default class OdooEditor {
             ev.preventDefault();
             this.historyRedo();
         }
-
-        // TODO: in case of preventDefault, we don't need to wait for the timeOut; that would probably fix some concurrency issues when backspace fast
-        setTimeout(() => {
-            this.sanitize();
-            this.historyStep();
-        }, 0);
     }
     /**
      * @private
