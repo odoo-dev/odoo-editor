@@ -132,6 +132,16 @@ export function fillEmpty(node) {
     }
 }
 
+export function clearEmpty(node) {
+    while (! isBlock(node) && (!node.innerText.replace(/[\s]+/, '') && !node.querySelector('br') )) {
+        let node2 = node;
+        node = node.parentNode;
+        node2.remove();
+    }
+    return node;
+}
+
+
 /**
  * The following is a complete list of all HTML "block-level" elements.
  *

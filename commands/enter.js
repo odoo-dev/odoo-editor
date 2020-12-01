@@ -5,6 +5,7 @@ import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 import {
     childNodeIndex,
     fillEmpty,
+    clearEmpty,
     isBlock,
     isUnbreakable,
     setCursor,
@@ -55,7 +56,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
 
     // All split have been done, place the cursor at the right position, and fill empty nodes
     if (firstSplit) {
-        fillEmpty(this);
+        fillEmpty(clearEmpty(this));
         fillEmpty(splitEl);
         setCursorStart(splitEl);
     }

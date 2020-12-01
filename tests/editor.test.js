@@ -680,8 +680,7 @@ describe('Editor', () => {
                         // That selection is equivalent to []<b>
                         contentBefore: '<p>abc<b>[]def</b></p>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<p>abc<b></b></p><p><b>[]def</b></p>',
-                        // JW: contentAfter: '<p>abc</p><p><b>[]def</b></p>',
+                        contentAfter: '<p>abc</p><p><b>[]def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc <b>[]def</b></p>',
@@ -689,8 +688,7 @@ describe('Editor', () => {
                         // The space is converted to a non-breaking
                         // space so it is visible (because it's after a
                         // <br>).
-                        // JW: contentAfter: '<p>abc&nbsp;</p><p><b>[]def</b></p>',
-                        contentAfter: '<p>abc&nbsp;<b></b></p><p><b>[]def</b></p>',
+                        contentAfter: '<p>abc&nbsp;</p><p><b>[]def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc<b>[] def </b></p>',
@@ -699,7 +697,7 @@ describe('Editor', () => {
                         // space so it is visible (because it's before a
                         // <br>).
                         // JW: contentAfter: '<p>abc</p><p><b>[]&nbsp;def</b></p>',
-                        contentAfter: '<p>abc<b></b></p><p><b>[]&nbsp;def </b></p>',
+                        contentAfter: '<p>abc</p><p><b>[]&nbsp;def </b></p>',
                     });
                 });
                 it('should split a paragraph after a format node', async () => {
@@ -743,15 +741,14 @@ describe('Editor', () => {
                         // That selection is equivalent to []<b>
                         contentBefore: '<p><b>[]abc</b></p>',
                         stepFunction: insertParagraphBreak,
-                        // JW: contentAfter: '<p><br></p><p><b>[]abc</b></p>',
-                        contentAfter: '<p><b><br></b></p><p><b>[]abc</b></p>',
+                        contentAfter: '<p><br></p><p><b>[]abc</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>[] abc</b></p>',
                         stepFunction: insertParagraphBreak,
                         // The space should have been parsed away.
                         // JW: contentAfter: '<p><br></p><p><b>[]abc</b></p>',
-                        contentAfter: '<p><b><br></b></p><p><b>[] abc</b></p>',
+                        contentAfter: '<p><br></p><p><b>[] abc</b></p>',
                     });
                 });
                 it('should split a paragraph within a format node', async () => {
@@ -804,8 +801,7 @@ describe('Editor', () => {
                             '<p><span class="a">ab</span></p><p><span class="b">[]cd</span></p>',
                         stepFunction: insertParagraphBreak,
                         contentAfter:
-                        // JW: '<p><span class="a">ab</span></p><p><br></p><p><span class="b">[]cd</span></p>',
-                            '<p><span class="a">ab</span></p><p><span class="b"><br></span></p><p><span class="b">[]cd</span></p>',
+                          '<p><span class="a">ab</span></p><p><br></p><p><span class="b">[]cd</span></p>',
                     });
                 });
                 it('should split a paragraph with a span with a bold in two', async () => {
