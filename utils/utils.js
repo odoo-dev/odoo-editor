@@ -31,10 +31,13 @@ export function nodeSize(node) {
 }
 
 /**
- * Splits a text node in two parts, forcing split whitespaces to stay visible.
+ * Splits a text node in two parts.
  * If the split occurs at the beginning or the end, the text node stays
  * untouched and unsplit. If a split actually occurs, the original text node
  * still exists and become the right part of the split.
+ *
+ * Note: if split after or before whitespace, that whitespace may become
+ * invisible, it is up to the caller to replace it by nbsp if needed.
  *
  * @param {Text} textNode
  * @param {number} offset
@@ -48,13 +51,12 @@ export function splitText(textNode, offset) {
         parentOffset++;
 
         if (offset < textNode.length) {
-            const newval = textNode.nodeValue.substring(0, offset).replace(/[ \t]+$/, '\u00A0');
+            const newval = textNode.nodeValue.substring(0, offset);
             const nextTextNode = document.createTextNode(newval);
             textNode.before(nextTextNode);
-            textNode.nodeValue = textNode.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
+            textNode.nodeValue = textNode.nodeValue.substring(offset);
         }
     }
-
     return parentOffset;
 }
 
@@ -105,12 +107,31 @@ export function setCursorEnd(node) {
 }
 
 /**
- * TODO review and improve
+ * Add a BR in the given node if its closest ancestor block has none to make
+ * it visible.
+ *
+ * @param {HTMLElement} el
  */
-export function fillEmpty(node) {
-    if (node && !node.innerText.replace(/[ \r\n\t]+/, '') && !node.querySelector('br')) {
-        node.append(document.createElement('br'));
+export function fillEmpty(el) {
+    const blockEl = closestBlock(el);
+    if (!isVisibleStr(blockEl.textContent) && !blockEl.querySelector('br')) {
+        el.appendChild(document.createElement('br'));
     }
+}
+
+/**
+ * Removes the given node if invisible and all its invisible ancestors.
+ *
+ * @param {Node} node
+ * @returns {Node} the first visible ancestor of node (or itself)
+ */
+export function clearEmpty(node) {
+    while (!isVisible(node)) {
+        const toRemove = node;
+        node = node.parentNode;
+        toRemove.remove();
+    }
+    return node;
 }
 
 /**
@@ -193,8 +214,8 @@ export function isBlock(node) {
     return blockTagNames.includes(tagName);
 }
 
-export function parentBlock(node) {
-    return isBlock(node) ? node : parentBlock(node.parentElement);
+export function closestBlock(node) {
+    return isBlock(node) ? node : closestBlock(node.parentElement);
 }
 
 export function hasPreviousChar(node) {
@@ -249,80 +270,104 @@ export function setTagName(el, newTagName) {
     return n;
 }
 
-/**
- * TODO review, not convinced all cases are handled, also share logic with
- * @see findLeadingSpaceNextNode
- *
- * @param {Node} node
- * @returns {Text|null}
- */
-export function findTrailingSpacePrevNode(node) {
-    do {
-        node = latestChild(node.previousSibling) || node.parentElement;
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (isVisibleStr(node)) {
-                if (/[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, ''))) {
-                    return node;
-                }
-                break;
-            }
-        } else if (isBlock(node) || node.tagName === 'BR') {
+export function findNode(node, iterationCallback = node => node.parentNode, findCallback = node => true, stopCallback = node => false) {
+    while (node) {
+        if (findCallback(node)) {
+            return node;
+        }
+        if (stopCallback(node)) {
             break;
         }
-    } while (node);
-
-    return null;
-}
-/**
- * Same as @see findTrailingSpacePrevNode but for leading whitespace next nodes.
- *
- * @param {Node} node
- * @returns {Text|null}
- */
-export function findLeadingSpaceNextNode(node) {
-    do {
-        node = firstChild(node.nextSibling) || node.parentElement;
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (isVisibleStr(node)) {
-                if (/^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, ''))) {
-                    return node;
-                }
-                break;
-            }
-        } else if (isBlock(node) || node.tagName === 'BR') {
-            break;
-        }
-    } while (node);
-
+        node = iterationCallback(node);
+    }
     return null;
 }
 
-export function hasForwardChar(node) {
-    while (node.nextSibling && !isBlock(node.nextSibling)) {
-        node = node.nextSibling;
-        if (node.nodeType === Node.TEXT_NODE && isVisibleStr(node)
-                || node.textContent
-                || node.tagName === 'BR') {
-            return true;
+export function findPrevious(anchorNode, offset, ...args) {
+    const node = anchorNode.childNodes[offset - 1] || anchorNode;
+    return findNode(node, node => latestChild(node.previousSibling) || node.parentElement, ...args);
+}
+
+export function findNext(anchorNode, offset, ...args) {
+    const node = anchorNode.childNodes[offset] || anchorNode;
+    return findNode(node, node => firstChild(node.nextSibling) || node.parentElement, ...args);
+}
+
+export function findPreviousInline(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
+    return findPrevious(
+        anchorNode,
+        offset,
+        findCallback,
+        node => isBlock(node) || node.tagName === 'BR' || stopCallback(node)
+    );
+}
+
+export function findNextInline(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
+    return findNext(
+        anchorNode,
+        offset,
+        findCallback,
+        node => isBlock(node) || node.tagName === 'BR' || stopCallback(node)
+    );
+}
+
+export function findVisibleTextPrevNode(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
+    return findPreviousInline(
+        anchorNode,
+        offset,
+        node => isContentTextNode(node) && findCallback(node),
+        node => isContentTextNode(node) && stopCallback(node),
+    );
+}
+
+export function findVisibleTextNextNode(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
+    return findNextInline(
+        anchorNode,
+        offset,
+        node => isContentTextNode(node) && findCallback(node),
+        node => isContentTextNode(node) && stopCallback(node),
+    );
+}
+
+export function findTrailingSpacePrevNode(anchorNode, offset) {
+    return findVisibleTextPrevNode(
+        anchorNode,
+        offset,
+        node => /[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
+    );
+}
+
+export function findLeadingSpaceNextNode(anchorNode, offset) {
+    return findVisibleTextNextNode(
+        anchorNode,
+        offset,
+        node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
+    );
+}
+/**
+ * Adapts left & right nodes to prepare for adding a <block> in anchor/offset
+ * position.
+ *
+ * @param {Node} anchorNode
+ * @param {number} offset
+ */
+export function blockify(anchorNode, offset) {
+    const leftTrailingSpaceNode = findTrailingSpacePrevNode(anchorNode, offset);
+    if (leftTrailingSpaceNode) {
+        if (findVisibleTextNextNode(anchorNode, offset)) {
+            leftTrailingSpaceNode.nodeValue = leftTrailingSpaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
+            return;
         }
     }
-    return false;
-}
 
-/**
- * TODO review and improve
- */
-export function addBr(node) {
-    let br = document.createElement('BR');
-    node.after(br);
-    if (!hasForwardChar(br)) {
-        node.after(document.createElement('BR'));
+    const rightLeadingSpaceNode = findLeadingSpaceNextNode(anchorNode, offset);
+    if (rightLeadingSpaceNode) {
+        if (findVisibleTextPrevNode(anchorNode, offset)) {
+            rightLeadingSpaceNode.nodeValue = rightLeadingSpaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
+            return;
+        }
     }
-    let index = Array.prototype.indexOf.call(br.parentNode.childNodes, br);
-    setCursor(br.parentNode, index + 1);
-    return br;
 }
-
 /**
  * Returns whether the given node is a element that could be considered to be
  * removed by itself = self closing tags or empty list items elements.
@@ -347,6 +392,14 @@ export function isVisibleStr(value) {
 }
 
 /**
+ * @param {Node} node
+ * @returns {boolean}
+ */
+export function isContentTextNode(node) {
+    return node.nodeType === Node.TEXT_NODE && isVisibleStr(node);
+}
+
+/**
  * Returns whether removing the given node from the DOM will have a visible
  * effect or not.
  *
@@ -359,10 +412,6 @@ export function isVisibleStr(value) {
  */
 export function isVisible(node) {
     if (node.nodeType === Node.TEXT_NODE) {
-        // If empty text node: not visible
-        if (!node.length) {
-            return false;
-        }
         // If contains non-whitespaces: visible
         if (isVisibleStr(node)) {
             return true;

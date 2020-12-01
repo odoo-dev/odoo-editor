@@ -3,7 +3,9 @@
 import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 
 import {
+    blockify,
     childNodeIndex,
+    clearEmpty,
     fillEmpty,
     isBlock,
     isUnbreakable,
@@ -22,7 +24,8 @@ Text.prototype.oEnter = function (offset) {
  *     <p><span><b>[]xt</b>ab</span>cd</p> + ENTER
  * <=> <p><span><b><br></b>[]<b>xt</b>ab</span>cd</p> + ENTER
  * <=> <p><span><b><br></b></span>[]<span><b>xt</b>ab</span>cd</p> + ENTER
- * <=> <p><span><b><br></b></span></p><p><span><b>[]xt</b>ab</span>cd</p>
+ * <=> <p><span><b><br></b></span></p><p><span><b>[]xt</b>ab</span>cd</p> + SANITIZE
+ * <=> <p><br></p><p><span><b>[]xt</b>ab</span>cd</p>
  *
  * Propagate the split for as long as we split an inline node, then refocus the
  * beginning of the first split node
@@ -31,6 +34,9 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (isUnbreakable(this)) {
         throw UNBREAKABLE_ROLLBACK_CODE;
     }
+    if (firstSplit) {
+        blockify(this, offset);
+    }
 
     // First split the node in two and move half the children in the clone.
     const splitEl = this.cloneNode(false);
@@ -38,17 +44,6 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
         splitEl.appendChild(this.childNodes[offset]);
     }
     this.after(splitEl);
-
-    // If required (first split), fill the original and clone node with a <br/>
-    // if they are empty
-    // TODO in the example above, the <b><br></b> would be removed by jabberwock
-    // to see if this is in fact needed or if we keep as it is here by
-    // simplicity: "the cursor was in the <b> so we split it in two no matter
-    // what", or maybe this should be done in sanitization code.
-    if (firstSplit) {
-        fillEmpty(this);
-        fillEmpty(splitEl);
-    }
 
     // Propagate the split until reaching a block element
     if (!isBlock(this)) {
@@ -61,8 +56,11 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
         }
     }
 
-    // All split have been done, place the cursor at the right position
+    // All split have been done, place the cursor at the right position, and
+    // fill/remove empty nodes.
     if (firstSplit) {
+        fillEmpty(clearEmpty(this));
+        fillEmpty(splitEl);
         setCursorStart(splitEl);
     }
 };

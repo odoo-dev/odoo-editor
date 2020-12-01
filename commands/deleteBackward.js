@@ -80,7 +80,7 @@ Text.prototype.oDeleteBackward = function (offset) {
 
         // Leading character removal: special cases
         if (firstExcludedCharIndex <= 0) {
-            const trailingSpacePrevNode = findTrailingSpacePrevNode(this);
+            const trailingSpacePrevNode = findTrailingSpacePrevNode(this.parentElement, childNodeIndex(this));
 
             if (trailingSpacePrevNode) {
                 if (spaceRemoval) {
@@ -99,7 +99,7 @@ Text.prototype.oDeleteBackward = function (offset) {
         }
         // Trailing character removal: special cases
         if (firstIncludedCharIndex >= textLength) {
-            const leadingSpaceNextNode = findLeadingSpaceNextNode(this);
+            const leadingSpaceNextNode = findLeadingSpaceNextNode(this.parentElement, childNodeIndex(this) + 1);
 
             if (leadingSpaceNextNode) {
                 if (spaceRemoval) {

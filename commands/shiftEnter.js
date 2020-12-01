@@ -1,16 +1,18 @@
 "use strict";
 
 import {
+    blockify,
     setCursorEnd,
     splitText,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftEnter = function (offset) {
-    this.parentElement.oShiftEnter(splitText(this, offset), true);
+    this.parentElement.oShiftEnter(splitText(this, offset));
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
-    const brEl = document.createElement('BR'); // TODO check the addBr function ?
+    blockify(this, offset);
+    const brEl = document.createElement('BR');
     if (offset >= this.childNodes.length) {
         this.appendChild(brEl);
     } else {

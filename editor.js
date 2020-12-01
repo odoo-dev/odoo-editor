@@ -14,7 +14,7 @@ import {
 } from "./utils/serialize.js";
 import {
     commonParentGet,
-    parentBlock,
+    closestBlock,
     setCursor,
     setTagName,
 } from "./utils/utils.js";
@@ -558,7 +558,7 @@ export default class OdooEditor {
         this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
         this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
 
-        let pnode = parentBlock(sel.anchorNode);
+        let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
         this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
         this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
@@ -653,7 +653,7 @@ export default class OdooEditor {
                 document.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
                 let sel = document.defaultView.getSelection();
-                let pnode = parentBlock(sel.anchorNode);
+                let pnode = closestBlock(sel.anchorNode);
                 if (pnode.tagName !== 'LI') {
                     // TODO: better implementation
                     let main = document.createElement(TAGS[buttonEl.id]);
@@ -667,7 +667,7 @@ export default class OdooEditor {
                 }
             } else {
                 let sel = document.defaultView.getSelection();
-                let pnode = parentBlock(sel.anchorNode);
+                let pnode = closestBlock(sel.anchorNode);
                 setTagName(pnode, TAGS[buttonEl.id]);
                 setCursor(sel.anchorNode, sel.anchorOffset);
             }
