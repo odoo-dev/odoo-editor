@@ -143,7 +143,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
     const node = this.childNodes[offset - 1];
     const mergeResult = mergeNextNodeInto(node);
     switch (mergeResult) {
-        // Merge succeeded, just set the cursor at the right place
+        // Merge succeeded, nothing more to be done.
         case MERGE_SUCCESS: {
             break;
         }
@@ -160,8 +160,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
             setCursor(this, offset - 1);
             break;
         }
-        // The merge was not possible to be performed as we tried to move
-        // block nodes into inline nodes -> propagate the backspace.
+        // The merge was not possible to be performed (example: mixing inline
+        // nodes) -> propagate the backspace.
         case MERGE_NOTHING_TO_MERGE: {
             node.oDeleteBackward(nodeSize(node));
         }
