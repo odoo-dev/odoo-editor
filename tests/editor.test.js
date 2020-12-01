@@ -599,6 +599,23 @@ describe('Editor', () => {
                         contentAfter: '<p>abc</p><p>[] <br></p>',
                     });
                 });
+                it('should preserve &nbsp;', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a&nbsp;[]abc</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>a&nbsp;</p><p>[]abc</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a[]&nbsp;def</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>a</p><p>[]&nbsp;def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a&nbsp;[]&nbsp;ghi</p>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<p>a&nbsp;</p><p>[]&nbsp;ghi</p>',
+                    });
+                });
             });
             describe('Consecutive', () => {
                 it('should duplicate an empty paragraph twice', async () => {

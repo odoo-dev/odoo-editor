@@ -283,10 +283,10 @@ export function hasBackwardVisibleSpace(node) {
     let last = false;
     while (node) {
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/\s$/) > -1) {
+            if (node.nodeValue.search(/[ \r\n\t]$/) > -1) {
                 last = node;
             }
-            if (node.nodeValue.replace(/\s+/, '')) {
+            if (node.nodeValue.replace(/[ \n\r\t]+/, '')) {
                 return last;
             }
         }
@@ -300,10 +300,10 @@ export function hasForwardVisibleSpace(node) {
     let last = false;
     while (node) {
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/^\s/) > -1) {
+            if (node.nodeValue.search(/^[ \r\n\t]/) > -1) {
                 last = node;
             }
-            if (node.nodeValue.replace(/\s+/, '')) {
+            if (node.nodeValue.replace(/[ \r\n\t]+/, '')) {
                 return last;
             }
         }
@@ -315,7 +315,7 @@ export function hasForwardVisibleSpace(node) {
 // returns: true if a visible character is forward, before a block
 export function hasForwardChar(node) {
     while (node) {
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')) {
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/[ \r\n\t]+/, '')) {
             return true;
         }
         node = forward(node, (el) => isBlock(el) || el.tagName === 'BR');
@@ -326,7 +326,7 @@ export function hasForwardChar(node) {
 // returns: true if a visible character is forward, before a block
 export function hasBackwardChar(node) {
     while (node) {
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')) {
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/[ \r\n\t]+/, '')) {
             return true;
         }
         node = backward(node, (el) => isBlock(el) || el.tagName === 'BR');
@@ -341,13 +341,13 @@ export function blockify(anchor, offset) {
     let sn = hasBackwardVisibleSpace(left);
     if (right && hasForwardChar(right)) {
         if (sn) {
-            sn.nodeValue = sn.nodeValue.replace(/\s+$/, '\u00A0');
+            sn.nodeValue = sn.nodeValue.replace(/[ \r\n\t]+$/, '\u00A0');
         }
     }
     if (!sn && hasBackwardChar(left)) {
         sn = right && hasForwardVisibleSpace(right);
         if (sn) {
-            sn.nodeValue = sn.nodeValue.replace(/^\s+/, '\u00A0');
+            sn.nodeValue = sn.nodeValue.replace(/^[ \r\n\t]+/, '\u00A0');
         }
     }
 }
