@@ -40,7 +40,22 @@ export function splitText(textNode, offset) {
             textNode.nodeValue = textNode.nodeValue.substring(offset).replace(/^[ \t]+/, '\u00A0');
         }
     }
+    return parentOffset;
+}
 
+// TODO: remove splitText, and replace by this one; but check where it's used in backspace
+export function splitTextSimple(textNode, offset) {
+    let parentOffset = childNodeIndex(textNode);
+
+    if (offset > 0) {
+        parentOffset++;
+        if (offset < textNode.length) {
+            const newval = textNode.nodeValue.substring(0, offset);
+            const nextTextNode = document.createTextNode(newval);
+            textNode.before(nextTextNode);
+            textNode.nodeValue = textNode.nodeValue.substring(offset);
+        }
+    }
     return parentOffset;
 }
 
@@ -57,6 +72,24 @@ export function firstChild(el) {
         el = el.firstChild;
     }
     return el;
+}
+
+export function backward(el, stop = (el)=>false) {
+    if (stop(el)) return false;
+    if (el.previousSibling) {
+        let result = latestChild(el.previousSibling);
+        return stop(result) ? null : result;
+    }
+    return backward(el.parentNode, stop);
+}
+
+export function forward(el, stop = (el)=>false) {
+    if (stop(el)) return false;
+    if (el.nextSibling) {
+        let result = firstChild(el.nextSibling);
+        return stop(result) ? null : result;
+    }
+    return forward(el.parentNode, stop);
 }
 
 export function setCursor(node, offset = undefined) {
@@ -94,7 +127,7 @@ export function setCursorEnd(node) {
  * TODO review and improve
  */
 export function fillEmpty(node) {
-    if (node && !node.innerText.replace(/[ \r\n\t]+/, '') && !node.querySelector('br')) {
+    if (!parentBlock(node).innerText.replace(/[\s]+/, '') && !node.querySelector('br') ) {
         node.append(document.createElement('br'));
     }
 }
@@ -235,66 +268,78 @@ export function setTagName(el, newTagName) {
     return n;
 }
 
+// returns: latest element having a trailing space
 export function hasBackwardVisibleSpace(node) {
     let last = false;
-    do {
-        node = latestChild(node.previousSibling) || node.parentElement;
+    while (node) {
         if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/\s/) > -1) {
+            if (node.nodeValue.search(/\s$/) > -1) {
                 last = node;
             }
             if (node.nodeValue.replace(/\s+/, '')) {
                 return last;
             }
         }
-        if (isBlock(node) || node.tagName === 'BR') {
-            return last;
-        }
-    } while (node);
-}
-
-export function hasForwardVisibleSpace(node) {
-    let last = false;
-    do {
-        node = firstChild(node.nextSibling) || node.parentElement;
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (node.nodeValue.search(/\s/) > -1) {
-                last = node;
-            }
-            if (node.nodeValue.replace(/\s+/, '')) {
-                return last;
-            }
-        }
-        if (isBlock(node) || node.tagName === 'BR') {
-            return false;
-        }
-    } while (node);
-}
-
-export function hasForwardChar(node) {
-    while (node.nextSibling && !isBlock(node.nextSibling)) {
-        node = node.nextSibling;
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')
-                || node.textContent
-                || node.tagName === 'BR') {
-            return true;
-        }
+        node = backward(node, (el) => isBlock(el) || el.tagName === 'BR');
     }
     return false;
 }
 
-/**
- * TODO review and improve
- */
-export function addBr(node) {
-    let br = document.createElement('BR');
-    node.after(br);
-    if (!hasForwardChar(br)) {
-        node.after(document.createElement('BR'));
+// returns: first element having a heading space
+export function hasForwardVisibleSpace(node) {
+    let last = false;
+    while (node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.nodeValue.search(/^\s/) > -1) {
+                last = node;
+            }
+            if (node.nodeValue.replace(/\s+/, '')) {
+                return last;
+            }
+        }
+        node = forward(node, (el) => isBlock(el) || el.tagName === 'BR');
     }
-    let index = Array.prototype.indexOf.call(br.parentNode.childNodes, br);
-    setCursor(br.parentNode, index + 1);
-    return br;
+    return false;
+}
+
+// returns: true if a visible character is forward, before a block
+export function hasForwardChar(node) {
+    while (node) {
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')) {
+            return true;
+        }
+        node = forward(node, (el) => isBlock(el) || el.tagName === 'BR');
+    };
+    return false;
+}
+
+// returns: true if a visible character is forward, before a block
+export function hasBackwardChar(node) {
+    while (node) {
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.replace(/\s+/, '')) {
+            return true;
+        }
+        node = backward(node, (el) => isBlock(el) || el.tagName === 'BR');
+    }
+    return false;
+}
+
+// adapt left & right nodes to prepare for adding a <block> in anchor/offset position
+export function blockify(anchor, offset) {
+    let left = offset ? anchor.childNodes[offset - 1] : backward(anchor, isBlock);
+    let right = (offset<anchor.childNodes.length) ? anchor.childNodes[offset] : forward(anchor, isBlock);
+    let sn = hasBackwardVisibleSpace(left);
+    if (right && hasForwardChar(right)) {
+        if (sn) {
+            sn.nodeValue = sn.nodeValue.replace(/\s+$/, '\u00A0');
+        }
+    }
+    if (!sn && hasBackwardChar(left)) {
+        sn = right && hasForwardVisibleSpace(right);
+        if (sn) {
+            sn.nodeValue = sn.nodeValue.replace(/^\s+/, '\u00A0');
+        }
+    }
 }
 
 export function isInvisible(ch) {

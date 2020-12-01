@@ -10,11 +10,12 @@ import {
     setCursor,
     setCursorStart,
     setTagName,
-    splitText,
+    splitTextSimple,
+    blockify
 } from "../utils/utils.js";
 
 Text.prototype.oEnter = function (offset) {
-    this.parentElement.oEnter(splitText(this, offset), true);
+    this.parentElement.oEnter(splitTextSimple(this, offset), true);
 };
 /**
  * The whole logic can pretty much be described by this example:
@@ -31,6 +32,9 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (isUnbreakable(this)) {
         throw UNBREAKABLE_ROLLBACK_CODE;
     }
+    if (firstSplit) {
+        blockify(this, offset);
+    }
 
     // First split the node in two and move half the children in the clone.
     const splitEl = this.cloneNode(false);
@@ -39,18 +43,6 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     }
     this.after(splitEl);
 
-    // If required (first split), fill the original and clone node with a <br/>
-    // if they are empty
-    // TODO in the example above, the <b><br></b> would be removed by jabberwock
-    // to see if this is in fact needed or if we keep as it is here by
-    // simplicity: "the cursor was in the <b> so we split it in two no matter
-    // what", or maybe this should be done in sanitization code.
-    if (firstSplit) {
-        fillEmpty(this);
-        fillEmpty(splitEl);
-    }
-
-    // Propagate the split until reaching a block element
     if (!isBlock(this)) {
         if (this.parentElement) {
             this.parentElement.oEnter(childNodeIndex(this) + 1, false);
@@ -61,8 +53,10 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
         }
     }
 
-    // All split have been done, place the cursor at the right position
+    // All split have been done, place the cursor at the right position, and fill empty nodes
     if (firstSplit) {
+        fillEmpty(this);
+        fillEmpty(splitEl);
         setCursorStart(splitEl);
     }
 };
