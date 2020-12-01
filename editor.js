@@ -48,7 +48,7 @@ export default class OdooEditor {
         this.toolbar = document.querySelector('#toolbar');
         this.toolbar.addEventListener('click', this._onToolbarClick.bind(this));
 
-        this.collaborate = true;
+        this.collaborate = false;
         this.collaborate_last = null;
 
         // used to check if we have to rollback an operation as an unbreakable is
