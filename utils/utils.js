@@ -486,26 +486,32 @@ export function commonParentGet(node1, node2, root = undefined) {
     return n1p[0];
 }
 
-export function isSimilarNode(node, node2) {
-    if (!node2 || node.nodeType !== node2.nodeType) {
+export function areSimilarElements(node, node2) {
+    if (!node || !node2 || node.nodeType !== Node.ELEMENT_NODE || node2.nodeType !== Node.ELEMENT_NODE) {
         return false;
     }
-    if (node.nodeType === node.ELEMENT_NODE) {
-        if (node.tagName !== node2.tagName) {
+    if (node.tagName !== node2.tagName) {
+        return false;
+    }
+    for (const att of node.attributes) {
+        const att2 = node2.attributes[att.name];
+        if ((att2 && att2.value) !== att.value) {
             return false;
         }
-        for (let att in node.attributes) {
-            if (node[att] !== node2[att]) {
-                return false;
-            }
-        }
-        for (let att in node2.attributes) {
-            if (node[att] !== node2[att]) {
-                return false;
-            }
+    }
+    for (const att of node2.attributes) {
+        const att2 = node.attributes[att.name];
+        if ((att2 && att2.value) !== att.value) {
+            return false;
         }
     }
-    return ['b', 'u', 'i', 'strong', 'strong', 'em', 'strike'].includes(node.tagName);
+    if (getComputedStyle(node, ':before').getPropertyValue('content') !== 'none'
+            || getComputedStyle(node, ':after').getPropertyValue('content') !== 'none'
+            || getComputedStyle(node2, ':before').getPropertyValue('content') !== 'none'
+            || getComputedStyle(node2, ':after').getPropertyValue('content') !== 'none') {
+        return false;
+    }
+    return !isBlock(node) && !isBlock(node2) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
 }
 
 /**

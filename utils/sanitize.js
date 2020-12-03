@@ -1,58 +1,57 @@
 "use strict";
 
-import {isSimilarNode, isBlock} from "./utils.js";
+import {
+    areSimilarElements,
+    closestBlock,
+    moveMergedNodes,
+} from "./utils.js";
 
 class Sanitize {
+    /**
+     * @constructor
+     */
     constructor(root) {
         this.root = root;
         this.parse(root);
     }
 
-    parse(node, cleanup = false) {
-        while (!isBlock(node)) {
-            node = node.parentNode;
-        }
-        this._parse(node, cleanup);
+    parse(node) {
+        this._parse(closestBlock(node));
     }
 
-    _parse(node, cleanup = false) {
+    _parse(node) {
         if (!node) {
             return;
         }
-        if (node.nodeType === node.ELEMENT_NODE) {
-            if (node.tagName in this.tags) {
-                this.tags[node.tagName](node, cleanup);
+
+        // Specific tag cleanup
+        if (node.nodeType === node.ELEMENT_NODE && node.tagName in this.tags) {
+            this.tags[node.tagName](node);
+        }
+
+        // Merge identical elements together
+        if (areSimilarElements(node, node.nextSibling)) {
+            const fragment = document.createDocumentFragment();
+            // FIXME forced to add a clone for the duration of moveMergedNodes
+            // so it can check the correct DOM state
+            const tempCloneEl = node.nextSibling.cloneNode(true);
+            node.nextSibling.after(tempCloneEl);
+            while (node.nextSibling.firstChild) {
+                fragment.appendChild(node.nextSibling.firstChild);
             }
+            node.nextSibling.remove();
+            // FIXME this handles the cursor but should probably only reposition
+            // it if the cursor was in the merged element or just before
+            moveMergedNodes(node, fragment);
+            tempCloneEl.remove();
         }
 
-        // merge identitcal nodes: not necessary, but a bit cleaner (it works fine without)
-        // not sure we should keep if collaborative as it's more transformation on network)
-        if (isSimilarNode(node, node.nextSibling)) {
-            if (node.nodeType === node.ELEMENT_NODE
-                    && !getComputedStyle(node, ':before').getPropertyValue('content')
-                    && !getComputedStyle(node, ':after').getPropertyValue('content')) {
-                let sel = document.defaultView.getSelection();
-                while (node.nextSibling.firstChild) {
-                    node.append(node.nextSibling.firstChild);
-                }
-
-                // move slection anchor if needed
-                if (sel.anchorNode === node.nextSibling) {
-                    // debugger;
-                }
-                node.nextSibling.remove();
-            }
-        }
-
-        // TOOD: <li> must be in a <ul> or <ol> as the code is not fault tolerant
-        // to implement: cleaning
-
-        if (node.nodeType === node.ELEMENT_NODE) {
-            this._parse(node.firstChild, cleanup);
-        }
-        this._parse(node.nextSibling, cleanup);
+        // FIXME not parse out of editable zone...
+        this._parse(node.firstChild);
+        this._parse(node.nextSibling);
     }
 
+    // Specific tag cleanup
     tags = {
         // example
         // P: (node, cleanup) => {
