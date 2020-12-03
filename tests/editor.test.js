@@ -474,7 +474,8 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p class="a"><br></p><p>[]abc</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<p>[]abc</p>',
+                        // JW cAfter: '<p>[]abc</p>',
+                        contentAfter: '<p class="a">[]abc</p>',
                     });
                 });
                 it('should merge two paragraphs with spans of same classes', async () => {

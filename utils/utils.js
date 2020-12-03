@@ -85,9 +85,8 @@ export function firstChild(el) {
 export function setCursor(node, offset = undefined) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
-    if (node.nodeType === Node.TEXT_NODE && !node.parentElement.textContent) {
-        node.nodeValue = '\u200c';
-        offset = 1;
+    if (node.childNodes.length === offset && node.lastChild instanceof HTMLBRElement) {
+        offset--;
     }
     range.setStart(node, Math.max(offset, 0));
     range.setEnd(node, Math.max(offset, 0));
@@ -104,10 +103,10 @@ export function setCursorStart(node) {
     setCursor(node, 0);
 }
 
-export function setCursorEnd(node, afterBR = true) {
+export function setCursorEnd(node) {
     node = latestChild(node);
     if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
-        setCursor(node.parentElement, childNodeIndex(node) + (afterBR ? 1 : 0));
+        setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
         return;
     }
     setCursor(node, nodeSize(node));
@@ -524,7 +523,36 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
     }
 
     if (isVisibleEmpty(leftNode)) {
-        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        const removedNode = leftNode;
+
+        const isBRRemoval = removedNode.nodeName === 'BR';
+        if (isBRRemoval) {
+            const parentEl = removedNode.parentElement;
+            const index = childNodeIndex(removedNode);
+            // TODO is this the right place for this? Not removing the last br
+            // of an empty node.
+            if (!parentEl.textContent && parentEl.children.length === 1) {
+                return MERGE_CODES.REMOVED_INVISIBLE_NODE;
+            }
+            // TODO this next rule should probably be handled another way or in a
+            // generic way, to see. The idea is "when merging two nodes, first
+            // remove leading invisible whitespace in the merge node".
+            const spaceNode = findLeadingSpaceNextNode(parentEl, index + 1);
+            if (spaceNode) {
+                spaceNode.nodeValue = spaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '');
+            }
+            // TODO review with Fabien's saveState/restoreState idea? Another case
+            // of using nbsp instead of whitespace in some case
+            const nextContentNode = findVisibleTextNextNode(parentEl, index + 1);
+            if (!nextContentNode) {
+                const spaceNode = findTrailingSpacePrevNode(parentEl, index);
+                if (spaceNode) {
+                    spaceNode.nodeValue = spaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
+                }
+            }
+        }
+
+        removedNode.oRemove(); // TODO review the use of 'oRemove' ...
         return MERGE_CODES.REMOVED_VISIBLE_NODE;
     }
 
@@ -586,19 +614,48 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
  * @returns {Element} The element where the elements where actually moved.
  */
 export function moveMergedNodes(destinationEl, sourceFragment) {
-    // Remove unique BR as it will be replaced by content (if any)
-    // TODO improve
-    if (sourceFragment.childNodes.length
-            && destinationEl.children.length === 1 && destinationEl.firstElementChild instanceof HTMLBRElement) {
-        destinationEl.firstElementChild.remove();
-    }
     // For list elements, the proper location is that last list item
     if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
         destinationEl = this.lastElementChild;
     }
 
-    setCursorEnd(destinationEl, false);
+    // Remove trailing BR at destination if its purpose changes after receiving
+    // the merged nodes.
+    const originalLastEl = destinationEl.lastElementChild;
+    const isOriginalLastElAFakeLineBreak = isFakeLineBreak(originalLastEl);
+
+    const latestChildEl = latestChild(destinationEl);
     destinationEl.appendChild(sourceFragment);
+    if (latestChildEl !== destinationEl) {
+        setCursorEnd(latestChildEl);
+    } else {
+        setCursorStart(destinationEl);
+    }
+
+    if (isOriginalLastElAFakeLineBreak !== isFakeLineBreak(originalLastEl)) {
+        originalLastEl.remove();
+    }
 
     return destinationEl;
+}
+
+/**
+ * Returns whether or not the given node is a BR element which really acts as a
+ * line break, not as a placeholder for the cursor.
+ */
+export function isRealLineBreak(node) {
+    return (node instanceof HTMLBRElement
+        && (findVisibleTextNextNode(node.parentNode, childNodeIndex(node) + 1)
+            || findNextInline(node.parentNode, childNodeIndex(node) + 1, node => node instanceof HTMLBRElement)));
+}
+
+/**
+ * Inverse as @see isRealLineBreak but also returns false if not a BR.
+ *
+ * (e.g. should be removed if content added after it:
+ * <p><br><br>[]</p> + TYPE 'a' -> <p><br>a</p> OR <p><br>a<br></p> but not
+ * <p><br><br>a</p>).
+ */
+export function isFakeLineBreak(node) {
+    return (node instanceof HTMLBRElement && !isRealLineBreak(node));
 }

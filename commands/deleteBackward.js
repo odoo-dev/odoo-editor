@@ -108,6 +108,13 @@ Text.prototype.oDeleteBackward = function (offset) {
         }
     }
 
+    if (!this.length) {
+        // TODO maybe this is not a good idea, to check: when a text node is
+        // emptied, automatically add a BR after it to make potential
+        // previous BR visible.
+        this.after(document.createElement('br'));
+    }
+
     setCursor(this, Math.min(leftStr.length, this.length));
 };
 
@@ -149,7 +156,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
         // The merge resulted in removind a visible node (like trying to merge
         // a text into an image, a br, ...). The backspace command is finished.
         case MERGE_CODES.REMOVED_VISIBLE_NODE: {
-            setCursor(this, offset - 1);
+            setCursor(this, Math.min(this.childNodes.length, offset - 1));
             break;
         }
         // The merge was not possible to be performed (example: mixing inline
