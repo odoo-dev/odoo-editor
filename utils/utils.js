@@ -418,6 +418,9 @@ export function isContentTextNode(node) {
  */
 export function isVisible(node) {
     if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.length) {
+            return false;
+        }
         // If contains non-whitespaces: visible
         if (isVisibleStr(node)) {
             return true;
