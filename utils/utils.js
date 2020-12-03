@@ -2,6 +2,13 @@
 
 const INVISIBLE_REGEX = /\u200c/g;
 
+export const MERGE_CODES = {
+    SUCCESS: 100,
+    NOTHING_TO_MERGE: 101,
+    REMOVED_INVISIBLE_NODE: 102,
+    REMOVED_VISIBLE_NODE: 103,
+};
+
 /**
  * Returns the given node's position relative to its parent (= its index in the
  * child nodes of its parent).
@@ -97,10 +104,10 @@ export function setCursorStart(node) {
     setCursor(node, 0);
 }
 
-export function setCursorEnd(node) {
+export function setCursorEnd(node, afterBR = true) {
     node = latestChild(node);
     if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
-        setCursor(node.parentElement, childNodeIndex(node) + 1);
+        setCursor(node.parentElement, childNodeIndex(node) + (afterBR ? 1 : 0));
         return;
     }
     setCursor(node, nodeSize(node));
@@ -370,15 +377,14 @@ export function blockify(anchorNode, offset) {
 }
 /**
  * Returns whether the given node is a element that could be considered to be
- * removed by itself = self closing tags or empty list items elements.
+ * removed by itself = self closing tags.
  *
  * @param {Node} node
  * @returns {boolean}
  */
 const selfClosingElementTags = ['BR', 'IMG', 'INPUT'];
 export function isVisibleEmpty(node) {
-    return selfClosingElementTags.includes(node.nodeName)
-        || node.nodeName === 'LI' && node.childNodes.length === 0;
+    return selfClosingElementTags.includes(node.nodeName);
 }
 
 /**
@@ -500,14 +506,96 @@ export function isSimilarNode(node, node2) {
     return ['b', 'u', 'i', 'strong', 'strong', 'em', 'strike'].includes(node.tagName);
 }
 
-export function prepareMergeLocation(el, sourceEl) {
-    // Remove unique BR as it will be replaced by content TODO improve
-    if (el.children.length === 1 && el.firstElementChild instanceof HTMLBRElement) {
-        el.firstElementChild.remove();
+/**
+ * Merges the next sibling of the given node into that given node, the way it is
+ * done depending of the type of those nodes.
+ *
+ * @param {Node} leftNode
+ * @param {Node} [rightNode=leftNode.nextSibling]
+ * @returns {number} Merge type code
+ */
+export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
+    if (!isVisible(leftNode)) {
+        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        return MERGE_CODES.REMOVED_INVISIBLE_NODE;
+    }
+
+    if (isVisibleEmpty(leftNode)) {
+        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        return MERGE_CODES.REMOVED_VISIBLE_NODE;
+    }
+
+    if (!rightNode) {
+        return MERGE_CODES.NOTHING_TO_MERGE;
+    }
+
+    const leftIsBlock = isBlock(leftNode);
+    const rightIsBlock = isBlock(rightNode);
+
+    if (rightIsBlock) {
+        // First case, the right side is block content: we have to unwrap that
+        // content in the proper location.
+        if (leftIsBlock) {
+            // If the left side is a block, find the right position to unwrap
+            // right content.
+            const fragmentEl = document.createDocumentFragment();
+            while (rightNode.firstChild) {
+                fragmentEl.appendChild(rightNode.firstChild);
+            }
+            moveMergedNodes(leftNode, fragmentEl);
+        } else {
+            // If the left side is inline, simply unwrap at current block location.
+            setCursorEnd(leftNode);
+            while (rightNode.lastChild) {
+                rightNode.after(rightNode.lastChild);
+            }
+        }
+        rightNode.oRemove(); // TODO review the use of 'oRemove' ...
+    } else {
+        // Second case, the right side is inline content
+        if (leftIsBlock) {
+            // If the left side is a block, move that inline content and the
+            // one which follows in that left side.
+            const fragmentEl = document.createDocumentFragment();
+            let node = rightNode;
+            do {
+                let nextNode = node.nextSibling;
+                fragmentEl.appendChild(node);
+                node = nextNode;
+            } while (node && !isBlock(node));
+            moveMergedNodes(leftNode, fragmentEl);
+        } else {
+            // If the left side is also inline, nothing to merge.
+            return MERGE_CODES.NOTHING_TO_MERGE;
+        }
+    }
+
+    return MERGE_CODES.SUCCESS;
+}
+
+/**
+ * Moves the given nodes in the given fragment to the given destination element.
+ * That destination element is prepared first and adapted if necessary. The
+ * cursor is then placed inside, before the moved elements.
+ *
+ * @param {Element} destinationEl
+ * @param {DocumentFragment} sourceFragment
+ * @returns {Element} The element where the elements where actually moved.
+ */
+export function moveMergedNodes(destinationEl, sourceFragment) {
+    // Remove unique BR as it will be replaced by content (if any)
+    // TODO improve
+    if (sourceFragment.childNodes.length
+            && destinationEl.children.length === 1 && destinationEl.firstElementChild instanceof HTMLBRElement) {
+        destinationEl.firstElementChild.remove();
     }
     // For list elements, the proper location is that last list item
-    if (el.tagName === 'UL' || el.tagName === 'OL') {
-        return this.lastElementChild;
+    if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
+        destinationEl = this.lastElementChild;
     }
-    return el;
+
+    setCursorEnd(destinationEl, false);
+    destinationEl.appendChild(sourceFragment);
+
+    return destinationEl;
 }

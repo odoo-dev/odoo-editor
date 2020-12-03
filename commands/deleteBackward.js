@@ -4,23 +4,15 @@ import {
     childNodeIndex,
     findTrailingSpacePrevNode,
     findLeadingSpaceNextNode,
-    isBlock,
     isInvisibleChar,
     isSpace,
     isUnbreakable,
-    isVisible,
-    isVisibleEmpty,
+    mergeNodes,
+    MERGE_CODES,
     nodeSize,
-    prepareMergeLocation,
     setCursor,
-    setCursorEnd,
     isVisibleStr,
 } from "../utils/utils.js";
-
-const MERGE_SUCCESS = 100;
-const MERGE_NOTHING_TO_MERGE = 101;
-const MERGE_REMOVED_INVISIBLE_NODE = 102;
-const MERGE_REMOVED_VISIBLE_NODE = 103;
 
 Text.prototype.oDeleteBackward = function (offset) {
     const value = this.nodeValue;
@@ -141,45 +133,56 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
 
     // Now the cursor is on the right of a node. Merge adjacent nodes.
     const node = this.childNodes[offset - 1];
-    const mergeResult = mergeNextNodeInto(node);
+    const mergeResult = mergeNodes(node);
     switch (mergeResult) {
         // Merge succeeded, nothing more to be done.
-        case MERGE_SUCCESS: {
+        case MERGE_CODES.SUCCESS: {
             break;
         }
         // The merge resulted in removing the left node because it was invisible
         // (empty span, empty text node, ...), continue propagation of the
         // backspace command
-        case MERGE_REMOVED_INVISIBLE_NODE: {
+        case MERGE_CODES.REMOVED_INVISIBLE_NODE: {
             this.oDeleteBackward(offset - 1);
             break;
         }
         // The merge resulted in removind a visible node (like trying to merge
         // a text into an image, a br, ...). The backspace command is finished.
-        case MERGE_REMOVED_VISIBLE_NODE: {
+        case MERGE_CODES.REMOVED_VISIBLE_NODE: {
             setCursor(this, offset - 1);
             break;
         }
         // The merge was not possible to be performed (example: mixing inline
         // nodes) -> propagate the backspace.
-        case MERGE_NOTHING_TO_MERGE: {
+        case MERGE_CODES.NOTHING_TO_MERGE: {
             node.oDeleteBackward(nodeSize(node));
         }
     }
 };
 
 HTMLLIElement.prototype.oDeleteBackward = function (offset) {
-    if (offset === 0) {
-        if (this.parentElement.closest('li')) {
-            // If backspace at the start of a unique indented list element, then
-            // unindented and that's it.
-            this.oShiftTab(offset);
-            return;
-        } else if (!this.previousElementSibling) {
-            // Outside of ul -> p ?
-        }
+    // FIXME On Firefox, backspace in LI at offset 0 is not detected if the LI
+    // still contains text as contentEditable does nothing so no 'input' event
+    // is fired and nothing can be rollbacked: how to handle that ??
+
+    if (offset > 0 || this.previousElementSibling) {
+        // If backspace inside li content or if the li is not the first one,
+        // it behaves just like a normal element.
+        HTMLElement.prototype.oDeleteBackward.call(this, offset);
+        return;
     }
-    HTMLElement.prototype.oDeleteBackward.call(this, offset);
+    // Backspace at the start of an LI element...
+    if (this.parentElement.closest('li')) {
+        // ... for sub-menus: unindented
+        this.oShiftTab(offset);
+        return;
+    }
+    // ... for main menus: move LI content to a new external <p/>
+    const pEl = document.createElement('p');
+    const brEl = document.createElement('br');
+    pEl.appendChild(brEl);
+    this.parentElement.before(pEl);
+    mergeNodes(pEl, this);
 };
 
 // Utils
@@ -203,72 +206,3 @@ HTMLLIElement.prototype.oRemove = function () {
         parentEl.remove();
     }
 };
-
-/**
- * Merges the next sibling of the given node into that given node, the way it is
- * done depending of the type of those nodes.
- *
- * @param {Node} node
- * @returns {number} Merge type code
- */
-function mergeNextNodeInto(node) {
-    const leftNode = node;
-    if (!isVisible(leftNode)) {
-        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
-        return MERGE_REMOVED_INVISIBLE_NODE;
-    }
-
-    if (isVisibleEmpty(node)) {
-        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
-        return MERGE_REMOVED_VISIBLE_NODE;
-    }
-
-    const rightNode = node.nextSibling;
-    if (!rightNode) {
-        return MERGE_NOTHING_TO_MERGE;
-    }
-
-    const leftIsBlock = isBlock(leftNode);
-    const rightIsBlock = isBlock(rightNode);
-
-    if (rightIsBlock) {
-        // First case, the right side is block content: we have to unwrap that
-        // content in the proper location.
-        if (leftIsBlock) {
-            // If the left side is a block, find the right position to unwrap
-            // right content.
-            const positionEl = prepareMergeLocation(leftNode, rightNode);
-            setCursorEnd(positionEl);
-            while (rightNode.firstChild) {
-                positionEl.appendChild(rightNode.firstChild);
-            }
-            rightNode.oRemove(); // TODO review the use of 'oRemove' ...
-        } else {
-            // If the left side is inline, simply unwrap at current block location.
-            setCursorEnd(leftNode);
-            while (rightNode.lastChild) {
-                rightNode.after(rightNode.lastChild);
-            }
-            rightNode.oRemove(); // TODO review the use of 'oRemove' ...
-        }
-    } else {
-        // Second case, the right side is inline content
-        if (leftIsBlock) {
-            // If the left side is a block, move that inline content and the
-            // one which follows in that left side.
-            const positionEl = prepareMergeLocation(leftNode, rightNode);
-            setCursorEnd(positionEl);
-            let node = rightNode;
-            do {
-                let nextNode = node.nextSibling;
-                positionEl.appendChild(node);
-                node = nextNode;
-            } while (node && !isBlock(node));
-        } else {
-            // If the left side is also inline, nothing to merge.
-            return MERGE_NOTHING_TO_MERGE;
-        }
-    }
-
-    return MERGE_SUCCESS;
-}
