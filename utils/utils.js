@@ -291,12 +291,12 @@ export function findNode(node, iterationCallback = node => node.parentNode, find
 }
 
 export function findPrevious(anchorNode, offset, ...args) {
-    const node = anchorNode.childNodes[offset - 1] || anchorNode;
+    const node = latestChild(anchorNode.childNodes[offset - 1]) || anchorNode;
     return findNode(node, node => latestChild(node.previousSibling) || node.parentElement, ...args);
 }
 
 export function findNext(anchorNode, offset, ...args) {
-    const node = anchorNode.childNodes[offset] || anchorNode;
+    const node = firstChild(anchorNode.childNodes[offset]) || anchorNode;
     return findNode(node, node => firstChild(node.nextSibling) || node.parentElement, ...args);
 }
 
