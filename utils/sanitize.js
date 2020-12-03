@@ -2,7 +2,12 @@
 
 import {
     areSimilarElements,
+    childNodeIndex,
     closestBlock,
+    findPreviousInline,
+    findVisibleTextPrevNode,
+    isFakeLineBreak,
+    isRealLineBreak,
     moveMergedNodes,
 } from "./utils.js";
 
@@ -53,11 +58,17 @@ class Sanitize {
 
     // Specific tag cleanup
     tags = {
-        // example
-        // P: (node, cleanup) => {
-        //     if (!node.firstChild)
-        //         node.innerHTML = '<br/>';
-        // }
+        BR: function (node) {
+            const parentEl = node.parentNode;
+            const index = childNodeIndex(node);
+            // Remove trailing line breaks which do not act as a placeholder for
+            // other BR or for container element.
+            if (isFakeLineBreak(node)
+                    && findVisibleTextPrevNode(parentEl, index)
+                    && !findPreviousInline(parentEl, index, node => isRealLineBreak(node))) {
+                node.remove();
+            }
+        }
     }
 }
 
