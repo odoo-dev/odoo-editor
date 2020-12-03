@@ -64,6 +64,8 @@ export default class OdooEditor {
     }
 
     sanitize() {
+        this.observerFlush();
+
         // find common ancestror in this.history[-1]
         let step = this.history[this.history.length - 1];
         let ca, record;
