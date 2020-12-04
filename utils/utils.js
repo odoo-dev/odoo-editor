@@ -322,7 +322,7 @@ export function findVisibleTextPrevNode(anchorNode, offset, findCallback = node 
         anchorNode,
         offset,
         node => isContentTextNode(node) && findCallback(node),
-        node => isContentTextNode(node) && stopCallback(node),
+        node => isContentTextNode(node) || stopCallback(node),
     );
 }
 
@@ -331,7 +331,7 @@ export function findVisibleTextNextNode(anchorNode, offset, findCallback = node 
         anchorNode,
         offset,
         node => isContentTextNode(node) && findCallback(node),
-        node => isContentTextNode(node) && stopCallback(node),
+        node => isContentTextNode(node) || stopCallback(node),
     );
 }
 
