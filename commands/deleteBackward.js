@@ -2,18 +2,22 @@
 
 import {
     childNodeIndex,
-    findTrailingSpacePrevNode,
+    closestBlock,
     findLeadingSpaceNextNode,
+    findPreviousInline,
+    findTrailingSpacePrevNode,
+    isBlock,
+    isContentTextNode,
+    isFakeLineBreak,
     isInvisibleChar,
+    isRealLineBreak,
     isSpace,
     isUnbreakable,
+    isVisibleStr,
     mergeNodes,
     MERGE_CODES,
     nodeSize,
     setCursor,
-    isVisibleStr,
-    isBlock,
-    findNextInline,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteBackward = function (offset) {
@@ -55,7 +59,17 @@ Text.prototype.oDeleteBackward = function (offset) {
     // Now remove all the characters that we found to remove
     const leftStr = value.substring(0, firstExcludedCharIndex);
     const rightStr = value.substring(firstIncludedCharIndex);
-    this.nodeValue = leftStr + rightStr;
+    const newNodeValue = leftStr + rightStr;
+
+    let realPrevBR = null;
+    if (textLength && !newNodeValue.length) {
+        // When a text node is emptied, automatically add a BR after it if there
+        // was a real line break before who would become a cursor placeholder
+        // line break (see **)
+        realPrevBR = findPreviousInline(this.parentNode, childNodeIndex(this), node => isRealLineBreak(node), node => isContentTextNode(node));
+    }
+
+    this.nodeValue = newNodeValue;
 
     // Now handle transformation of whitespaces into &nbsp; when collapsing two
     // non-collapsed groups of whitespaces (in or out of the node) + propagate
@@ -110,10 +124,10 @@ Text.prototype.oDeleteBackward = function (offset) {
         }
     }
 
-    if (!this.length) {
-        // TODO maybe this is not a good idea, to check: when a text node is
-        // emptied, automatically add a BR after it to make potential
-        // previous BR visible.
+    // Automatic BR addition
+    // 1°) See **
+    // 2°) The closest block now has no text content
+    if (realPrevBR && isFakeLineBreak(realPrevBR) || !isVisibleStr(closestBlock(this).textContent)) {
         this.after(document.createElement('br'));
     }
 
