@@ -622,7 +622,7 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
 export function moveMergedNodes(destinationEl, sourceFragment) {
     // For list elements, the proper location is that last list item
     if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
-        destinationEl = this.lastElementChild;
+        destinationEl = destinationEl.lastElementChild;
     }
 
     // Remove trailing BR at destination if its purpose changes after receiving
