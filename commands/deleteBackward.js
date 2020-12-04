@@ -126,8 +126,10 @@ Text.prototype.oDeleteBackward = function (offset) {
 
     // Automatic BR addition
     // 1°) See **
-    // 2°) The closest block now has no text content
-    if (realPrevBR && isFakeLineBreak(realPrevBR) || !isVisibleStr(closestBlock(this).textContent)) {
+    // 2°) The closest block now has no text content / other visible elements
+    if (realPrevBR && isFakeLineBreak(realPrevBR)
+            // FIXME that condition is not ok, should be improved
+            || !isVisibleStr(closestBlock(this).textContent) && !closestBlock(this).querySelector('br')) {
         this.after(document.createElement('br'));
     }
 
