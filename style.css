@@ -39,6 +39,7 @@ html, body {
     padding: 5px;
 }
 span.btn {
+    display: inline-block;
     background-color: blue;
     padding: 15px;
     color: white;
