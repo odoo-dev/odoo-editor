@@ -306,7 +306,7 @@ export function findPreviousInline(anchorNode, offset, findCallback = node => tr
         anchorNode,
         offset,
         findCallback,
-        node => isBlock(node) || node.tagName === 'BR' || stopCallback(node)
+        node => isBlock(node) || isVisibleEmpty(node) || stopCallback(node)
     );
 }
 
@@ -315,7 +315,7 @@ export function findNextInline(anchorNode, offset, findCallback = node => true, 
         anchorNode,
         offset,
         findCallback,
-        node => isBlock(node) || node.tagName === 'BR' || stopCallback(node)
+        node => isBlock(node) || isVisibleEmpty(node) || stopCallback(node)
     );
 }
 
