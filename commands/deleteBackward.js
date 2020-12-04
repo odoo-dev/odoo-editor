@@ -12,6 +12,8 @@ import {
     nodeSize,
     setCursor,
     isVisibleStr,
+    isBlock,
+    findNextInline,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteBackward = function (offset) {
@@ -143,12 +145,26 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
             return;
         }
 
-        // Backspace at the beginning of a non-empty node: convert to backspace
-        // between parent element and its previous sibling
+        // Backspace at the beginning of a non-empty node: first move the
+        // following *block* (if any) outside of its parent, then in any case
+        // convert to backspace between parent element and its previous sibling
         //
+        // 1°)
+        //     <div>ab</div><section>[]<p>cd</p>ef</section> + BACKSPACE
+        // <=> <div>ab</div>[]<p>cd</p><section>ef</section> + BACKSPACE
+        //
+        // 2°)
         //     <div>ab</div><section>[]cd<p>ef</p></section> + BACKSPACE
         // <=> <div>ab</div>[]<section>cd<p>ef</p></section> + BACKSPACE
         const parentOffset = childNodeIndex(this);
+        // TODO should ignore invisble text nodes at the beginning (review
+        // findNextInline and other methods to do that more easily).
+        if (isBlock(this.firstChild)) {
+            this.before(this.firstChild);
+            if (!this.childNodes.length) {
+                this.oRemove();
+            }
+        }
         pEl.oDeleteBackward(parentOffset);
         return;
     }

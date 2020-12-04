@@ -221,7 +221,7 @@ export function isBlock(node) {
 }
 
 export function closestBlock(node) {
-    return isBlock(node) ? node : closestBlock(node.parentElement);
+    return findNode(node, node => node.parentNode, node => isBlock(node));
 }
 
 export function hasPreviousChar(node) {
@@ -651,6 +651,12 @@ export function moveMergedNodes(destinationEl, sourceFragment) {
     if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
         destinationEl = destinationEl.lastElementChild;
     }
+    // Merge into deepest ending block
+    destinationEl = findNode(
+        latestChild(destinationEl),
+        node => node.parentNode,
+        node => node === destinationEl || isBlock(node)
+    );
 
     // Remove trailing BR at destination if its purpose changes after receiving
     // the merged nodes.
