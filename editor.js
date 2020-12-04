@@ -445,13 +445,16 @@ export default class OdooEditor {
     execCommand(method) {
         this._computeHistoryCursor();
 
+        // For backspace / delete command and execute the same operations as
+        // when using the editor, we have to rollback the input after the
+        // contentEditable management of the backspace/delete event. For that,
+        // we ask for that management through the contentEditable execCommand
+        // and let our input event management handle the rest.
         if (method === 'oDeleteBackward') {
-            // For backspace command, to execute the same operations as when
-            // using the editor, we have to rollback the input after the
-            // contentEditable management of the backspace event. For that, we
-            // ask for that management through the contentEditable execCommand
-            // and let our input event management handle the rest.
             document.execCommand('delete');
+            return true;
+        } else if (method === 'oDeleteForward') {
+            document.execCommand('forwardDelete');
             return true;
         }
         return this._applyCommand(...arguments);
@@ -575,8 +578,8 @@ export default class OdooEditor {
     //--------------------------------------------------------------------------
 
     /**
-     * If backspace input, rollback the operation and handle the operation
-     * ourself. Needed for mobile, used for desktop for consistency.
+     * If backspace/delete input, rollback the operation and handle the
+     * operation ourself. Needed for mobile, used for desktop for consistency.
      *
      * @private
      */
@@ -589,6 +592,10 @@ export default class OdooEditor {
             this.historyRollback();
             ev.preventDefault();
             this._applyCommand('oDeleteBackward');
+        } else if (ev.inputType === 'deleteContentForward') {
+            this.historyRollback();
+            ev.preventDefault();
+            this._applyCommand('oDeleteForward');
         } else {
             this.sanitize();
             this.historyStep();
@@ -613,10 +620,6 @@ export default class OdooEditor {
             if (this._applyCommand(ev.shiftKey ? 'oShiftTab' : 'oTab')) {
                 ev.preventDefault();
             }
-        } else if (ev.keyCode === 46) { // Delete
-            ev.preventDefault();
-            // TODO to implement
-            this._applyCommand('oDeleteForward');
         } else if (ev.key === 'z' && ev.ctrlKey) { // Ctrl-Z
             ev.preventDefault();
             this.historyUndo();

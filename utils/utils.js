@@ -1,6 +1,8 @@
 "use strict";
 
-import { UNBREAKABLE_ROLLBACK_CODE } from "../editor.js";
+import {
+    UNBREAKABLE_ROLLBACK_CODE,
+} from "../editor.js";
 
 const INVISIBLE_REGEX = /\u200c/g;
 
