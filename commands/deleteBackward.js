@@ -120,10 +120,8 @@ Text.prototype.oDeleteBackward = function (offset) {
 
 HTMLElement.prototype.oDeleteBackward = function (offset) {
     if (offset === 0) {
-        // We are at the start of a node, propagate to the parent, with the
-        // cursor on the right if the current node is empty, on the left
-        // otherwise. Except if unbreakable or the last child element of an
-        // unbreakable, in that case we do nothing.
+        // If backspace at the beginning of an unbreakable or the last child
+        // element of an unbreakable, in that case we do nothing.
         const pEl = this.parentElement;
         if (isUnbreakable(this)
                 || isUnbreakable(pEl) && pEl.childNodes.length === 1 && pEl.firstChild === this) {
@@ -133,36 +131,59 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
             // p but not if there is no ab...
             return;
         }
-        const parentOffset = childNodeIndex(this) + (this.childNodes.length ? 0 : 1);
+
+        if (!this.childNodes.length) {
+            // Backspace at the beginning of an empty node: convert to backspace
+            // after that empty node (propagate to parent node)
+            //
+            //     <p>abc<span>[]</span>def</p> + BACKSPACE
+            // <=> <p>abc<span></span>[]def</p> + BACKSPACE
+            const parentOffset = childNodeIndex(this) + 1;
+            pEl.oDeleteBackward(parentOffset);
+            return;
+        }
+
+        // Backspace at the beginning of a non-empty node: convert to backspace
+        // between parent element and its previous sibling
+        //
+        //     <div>ab</div><section>[]cd<p>ef</p></section> + BACKSPACE
+        // <=> <div>ab</div>[]<section>cd<p>ef</p></section> + BACKSPACE
+        const parentOffset = childNodeIndex(this);
         pEl.oDeleteBackward(parentOffset);
         return;
     }
 
-    // Now the cursor is on the right of a node. Merge adjacent nodes.
+    // Now the cursor is on the right of a node. Merge it with its next sibling
+    // node if any (node: mergeNodes also handle the case where is there is no
+    // next sibling or if the left node is something that cannot or should not
+    // receive content to merge: e.g. the removal of a <br> for instance).
     const node = this.childNodes[offset - 1];
     const mergeResult = mergeNodes(node);
     switch (mergeResult) {
-        // Merge succeeded, nothing more to be done.
+        // Merge succeeded, nothing more to be done, the backspace command
+        // visually removed something for the user.
         case MERGE_CODES.SUCCESS: {
             break;
         }
         // The merge resulted in removing the left node because it was invisible
         // (empty span, empty text node, ...), continue propagation of the
-        // backspace command
+        // backspace command as we did not remove anything visible to the user.
         case MERGE_CODES.REMOVED_INVISIBLE_NODE: {
             this.oDeleteBackward(offset - 1);
             break;
         }
-        // The merge resulted in removind a visible node (like trying to merge
-        // a text into an image, a br, ...). The backspace command is finished.
+        // The merge resulted in removing the left node alone (backspace after a
+        // <br> for instance). The backspace command is done, the cursor just
+        // have to be repositioned properly.
         case MERGE_CODES.REMOVED_VISIBLE_NODE: {
-            setCursor(this, Math.min(this.childNodes.length, offset - 1));
+            setCursor(this, offset - 1);
             break;
         }
         // The merge was not possible to be performed (example: mixing inline
         // nodes) -> propagate the backspace.
         case MERGE_CODES.NOTHING_TO_MERGE: {
             node.oDeleteBackward(nodeSize(node));
+            break;
         }
     }
 };
@@ -174,13 +195,13 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset) {
 
     if (offset > 0 || this.previousElementSibling) {
         // If backspace inside li content or if the li is not the first one,
-        // it behaves just like a normal element.
+        // it behaves just like in a normal element.
         HTMLElement.prototype.oDeleteBackward.call(this, offset);
         return;
     }
-    // Backspace at the start of an LI element...
+    // Backspace at the start of the first LI element...
     if (this.parentElement.closest('li')) {
-        // ... for sub-menus: unindented
+        // ... for sub-menus: unindent
         this.oShiftTab(offset);
         return;
     }

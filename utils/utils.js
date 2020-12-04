@@ -515,40 +515,63 @@ export function areSimilarElements(node, node2) {
 }
 
 /**
- * Merges the next sibling of the given node into that given node, the way it is
- * done depending of the type of those nodes.
+ * Merges the second given node or following sibling of the first given node
+ * into that first given node, the way it i done depending of the type of those
+ * nodes and their context.
  *
  * @param {Node} leftNode
  * @param {Node} [rightNode=leftNode.nextSibling]
- * @returns {number} Merge type code
+ * @returns {number} Merge type code @see MERGE_CODES
  */
 export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
+    // The given node is not visible. It should not accept new content as the
+    // user simply did not know it existed. We simply remove it and return the
+    // related merge code.
     if (!isVisible(leftNode)) {
-        leftNode.oRemove(); // TODO review the use of 'oRemove' ...
+        leftNode.oRemove();
         return MERGE_CODES.REMOVED_INVISIBLE_NODE;
     }
 
+    // The given node is visible but cannot accept contents (like a BR). We
+    // remove it and return the related merge code.
     if (isVisibleEmpty(leftNode)) {
         const removedNode = leftNode;
 
+        // Following code handles some specific cases for BR removals.
+        // TODO check if this is the right place for it.
         const isBRRemoval = removedNode.nodeName === 'BR';
         if (isBRRemoval) {
             const parentEl = removedNode.parentElement;
             const index = childNodeIndex(removedNode);
-            // TODO is this the right place for this? Not removing the last br
-            // of an empty node.
+
+            // 1°) Not removing the last BR of a visually empty node
+            // TODO review the condition.
             if (!parentEl.textContent && parentEl.children.length === 1) {
                 return MERGE_CODES.REMOVED_INVISIBLE_NODE;
             }
-            // TODO this next rule should probably be handled another way or in a
-            // generic way, to see. The idea is "when merging two nodes, first
-            // remove leading invisible whitespace in the merge node".
+
+            // 2°) Remove leading invisible whitespace in following text content
+            // as it would become visible because of BR removal.
+            //
+            //     <p>ab<br>[] cd</p> + BACKSPACE
+            // <=> <p>ab[]cd</p>
+            //
+            // TODO this may not be specific to BR removal only but to any
+            // backspace (to check saveState/restoreState Fabien's idea).
             const spaceNode = findLeadingSpaceNextNode(parentEl, index + 1);
             if (spaceNode) {
                 spaceNode.nodeValue = spaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '');
             }
-            // TODO review with Fabien's saveState/restoreState idea? Another case
-            // of using nbsp instead of whitespace in some case
+
+            // 3°) Convert trailing visible whitespace to nbsp in preceding text
+            // content as it would become invisible if there is no following
+            // text content.
+            //
+            //     <p>ab <br>[]</p> + BACKSPACE
+            // <=> <p>ab&nbsp;</p>
+            //
+            // TODO this may not be specific to BR removal only but to any
+            // backspace (to check saveState/restoreState Fabien's idea).
             const nextContentNode = findVisibleTextNextNode(parentEl, index + 1);
             if (!nextContentNode) {
                 const spaceNode = findTrailingSpacePrevNode(parentEl, index);
@@ -558,38 +581,42 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
             }
         }
 
-        removedNode.oRemove(); // TODO review the use of 'oRemove' ...
+        removedNode.oRemove();
         return MERGE_CODES.REMOVED_VISIBLE_NODE;
     }
 
+    // The given node can accept content but there is no content to receive,
+    // nothing can be merged.
     if (!rightNode) {
         return MERGE_CODES.NOTHING_TO_MERGE;
     }
 
+    // Now actually merge the left and right nodes, depending of if they are
+    // blocks or not.
     const leftIsBlock = isBlock(leftNode);
     const rightIsBlock = isBlock(rightNode);
 
     if (rightIsBlock) {
         // First case, the right side is block content: we have to unwrap that
         // content in the proper location.
+        const fragmentEl = document.createDocumentFragment();
+        while (rightNode.firstChild) {
+            fragmentEl.appendChild(rightNode.firstChild);
+        }
+        rightNode.oRemove();
+
         if (leftIsBlock) {
-            // If the left side is a block, find the right position to unwrap
-            // right content.
-            const fragmentEl = document.createDocumentFragment();
-            while (rightNode.firstChild) {
-                fragmentEl.appendChild(rightNode.firstChild);
-            }
+            // If the left side is a block too, find the right position to
+            // unwrap the content inside and reposition cursor the right way.
             moveMergedNodes(leftNode, fragmentEl);
         } else {
-            // If the left side is inline, simply unwrap at current block location.
+            // If the left side is inline, simply unwrap at current block
+            // location.
+            leftNode.after(fragmentEl);
             setCursorEnd(leftNode);
-            while (rightNode.lastChild) {
-                rightNode.after(rightNode.lastChild);
-            }
         }
-        rightNode.oRemove(); // TODO review the use of 'oRemove' ...
     } else {
-        // Second case, the right side is inline content
+        // Second case, the right side is inline content.
         if (leftIsBlock) {
             // If the left side is a block, move that inline content and the
             // one which follows in that left side.
