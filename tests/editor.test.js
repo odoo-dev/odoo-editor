@@ -418,7 +418,8 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><br></p><h1>[]ab</h1>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<h1>[]ab</h1>',
+                        // JW cAfter: '<h1>[]ab</h1>',
+                        contentAfter: '<p>[]ab</p>',
                     });
                 });
                 it('should merge with previous node (default behaviour)', async () => {
