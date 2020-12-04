@@ -1,5 +1,7 @@
 "use strict";
 
+import { UNBREAKABLE_ROLLBACK_CODE } from "../editor.js";
+
 const INVISIBLE_REGEX = /\u200c/g;
 
 export const MERGE_CODES = {
@@ -651,6 +653,12 @@ export function moveMergedNodes(destinationEl, sourceFragment) {
     if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
         destinationEl = destinationEl.lastElementChild;
     }
+    // For table elements, there just cannot be a meaningful move, add them
+    // after the table.
+    if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
+        throw UNBREAKABLE_ROLLBACK_CODE;
+    }
+
     // Merge into deepest ending block
     destinationEl = findNode(
         latestChild(destinationEl),
