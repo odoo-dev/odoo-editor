@@ -249,7 +249,7 @@ export default class OdooEditor {
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
-            } else if (record.type == "remove ") {
+            } else if (record.type == "remove") {
                 let toremove = this.idFind(destel, record.id, record.parentId);
                 if (toremove) {
                     toremove.remove();
