@@ -154,15 +154,22 @@ export default class OdooEditor {
         for (let record of records) {
             switch (record.type) {
                 case "characterData": {
-                    let node = this.idFind(destel, record.target.oid);
-                    if (node) {
-                        this.history[this.history.length - 1].dom.push({
-                            'type': "characterData",
-                            'id': record.target.oid,
-                            "text": record.target.textContent,
-                            "oldValue": node.textContent
-                        });
-                    }
+                    this.history[this.history.length - 1].dom.push({
+                        'type': "characterData",
+                        'id': record.target.oid,
+                        "text": record.target.textContent,
+                        "oldValue": record.oldValue,
+                    });
+                    break;
+                }
+                case "attributes": {
+                    this.history[this.history.length - 1].dom.push({
+                        'type': "attributes",
+                        'id': record.target.oid,
+                        "attributeName": record.attributeName,
+                        "value": record.target.getAttribute(record.attributeName),
+                        "oldValue": record.oldValue,
+                    });
                     break;
                 }
                 case "childList": {
@@ -195,9 +202,6 @@ export default class OdooEditor {
                         });
                     });
                     break;
-                }
-                default: {
-                    console.log(`Unknown mutation type: ${record.type}`);
                 }
             }
         }
@@ -235,42 +239,37 @@ export default class OdooEditor {
     // apply changes according to some records
     historyApply(destel, records) {
         for (let record of records) {
-            switch (record.type) {
-                case "characterData": {
-                    let node = this.idFind(destel, record.id);
-                    if (node) {
-                        node.textContent = record.text;
-                    }
-                    break;
+            if (record.type=='characterData') {
+                let node = this.idFind(destel, record.id);
+                if (node) {
+                    node.textContent = record.text;
                 }
-                case "remove": {
-                    let toremove = this.idFind(destel, record.id, record.parentId);
-                    if (toremove) {
-                        toremove.remove();
-                    }
-                    break;
+            } else if (record.type == "attributes") {
+                let node = this.idFind(destel, record.id);
+                if (node) {
+                    node.setAttribute(record.attributeName, record.value);
                 }
-                case "add": {
-                    let newnode = this.unserialize(record.node).cloneNode(1);
-                    let destnode = this.idFind(destel, record.node.oid);
-                    if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
-                        // TODO: optimization: remove record from the history to reduce collaboration bandwidth
-                        return false;
-                    }
-                    this.idSet(record.node, newnode);
-                    if (record.append) {
-                        this.idFind(destel, record.append).append(newnode);
-                    } else if (record.before) {
-                        this.idFind(destel, record.before).before(newnode);
-                    } else if (record.after) {
-                        this.idFind(destel, record.after).after(newnode);
-                    } else {
-                        return false;
-                    }
-                    break;
+            } else if (record.type == "remove ") {
+                let toremove = this.idFind(destel, record.id, record.parentId);
+                if (toremove) {
+                    toremove.remove();
                 }
-                default: {
-                    console.log(`Unknown history type: ${record.type}`);
+            } else if (record.type == "add") {
+                let newnode = this.unserialize(record.node).cloneNode(1);
+                let destnode = this.idFind(destel, record.node.oid);
+                if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
+                    // TODO: optimization: remove record from the history to reduce collaboration bandwidth
+                    return false;
+                }
+                this.idSet(record.node, newnode);
+                if (record.append) {
+                    this.idFind(destel, record.append).append(newnode);
+                } else if (record.before) {
+                    this.idFind(destel, record.before).before(newnode);
+                } else if (record.after) {
+                    this.idFind(destel, record.after).after(newnode);
+                } else {
+                    return false;
                 }
             }
         }
@@ -400,6 +399,10 @@ export default class OdooEditor {
             switch (action.type) {
                 case "characterData": {
                     this.idFind(this.dom, action.id).textContent = action.oldValue;
+                    break;
+                }
+                case "attributes": {
+                    this.idFind(this.dom, action.id).setAttribute(action.attributeName, action.oldValue);
                     break;
                 }
                 case "remove": {
