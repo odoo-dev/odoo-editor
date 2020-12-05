@@ -4,6 +4,7 @@ import {
     blockify,
     setCursorEnd,
     splitText,
+    isFakeLineBreak,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftEnter = function (offset) {
@@ -18,5 +19,7 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     } else {
         this.insertBefore(brEl, this.childNodes[offset]);
     }
+    if (isFakeLineBreak(brEl))
+        brEl.before(document.createElement('BR'));
     setCursorEnd(brEl);
 };
