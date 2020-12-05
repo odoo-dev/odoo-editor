@@ -370,6 +370,7 @@ export default class OdooEditor {
         this.undos.delete(this.history.length - 2);
         this.historyRevert(this.history[pos]);
         this.undos.set(this.history.length - 1, pos);
+        this.historyStep();
     }
 
     historyRedo() {
