@@ -31,9 +31,6 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
-    if (isUnbreakable(this)) {
-        throw UNBREAKABLE_ROLLBACK_CODE;
-    }
     if (firstSplit) {
         blockify(this, offset);
     }
@@ -80,23 +77,10 @@ HTMLHeadingElement.prototype.oEnter = function () {
 /**
  * Specific behavior for list items: deletion and unindentation in some cases.
  */
-HTMLLIElement.prototype.oEnter = function () {
+HTMLLIElement.prototype.oEnter = function (offset, firstSplit=true) {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
         return HTMLElement.prototype.oEnter.call(this, ...arguments);
     }
-
-    // If nested LI (empty and last), shiftTab
-    if (this.parentNode.closest('li')) {
-        this.oShiftTab();
-        return;
-    }
-
-    // Otherwise, regular list item, empty and last: convert to a paragraph
-    const pEl = document.createElement('p');
-    const brEl = document.createElement('br');
-    pEl.appendChild(brEl);
-    this.closest('ul, ol').after(pEl);
-    this.oRemove();
-    setTimeout(() => setCursor(pEl, 0), 0); // FIXME investigate why setTimeout needed in this case...
+    this.oShiftTab();
 };

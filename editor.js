@@ -119,10 +119,7 @@ export default class OdooEditor {
 
     // if not in collaboration mode, no need to serialize / unserialize
     serialize(node) {
-        if (this.collaborate) {
-            return nodeToObject(node);
-        }
-        return node;
+        return this.collaborate ? nodeToObject(node) : node;
     }
     unserialize(obj) {
         return this.collaborate ? objectToNode(obj) : obj;
@@ -518,6 +515,7 @@ export default class OdooEditor {
     _protectUnbreakable(callback) {
         try {
             let result = callback.call(this);
+            this.observerFlush();
             if (!this.torollback)
                 return result;
         } catch (err) {
