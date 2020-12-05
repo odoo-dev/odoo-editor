@@ -661,6 +661,9 @@ export default class OdooEditor {
         this._protectUnbreakable(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
+            } else if (['fontColor'].includes(buttonEl.id)) {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('foreColor', false, "red");
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
                 let sel = document.defaultView.getSelection();
                 let pnode = closestBlock(sel.anchorNode);
@@ -681,6 +684,7 @@ export default class OdooEditor {
                 setTagName(pnode, TAGS[buttonEl.id]);
                 setCursor(sel.anchorNode, sel.anchorOffset);
             }
+            this.historyStep();
             this._updateToolbar();
         });
         ev.preventDefault();
