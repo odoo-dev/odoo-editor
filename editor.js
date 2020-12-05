@@ -13,10 +13,9 @@ import {
     objectToNode,
 } from "./utils/serialize.js";
 import {
-    commonParentGet,
-    closestBlock,
-    setCursor,
-    setTagName,
+    commonParentGet, closestBlock,
+    setCursor, setTagName,
+    containsUnbreakable, inUnbreakable
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -174,6 +173,10 @@ export default class OdooEditor {
                 }
                 case "childList": {
                     record.addedNodes.forEach((added, index) => {
+                        let dest = this.idFind(destel, added.oid);
+                        this.torollback |= containsUnbreakable(added);
+                        // TODO: check that a node does not move from one unBreakable to another
+                        // this.torollback |= dest && (inUnbreakable(added).oid != inUnbreakable(dest).oid);
                         let action = {
                             'type': "add",
                         };
@@ -514,7 +517,9 @@ export default class OdooEditor {
      */
     _protectUnbreakable(callback) {
         try {
-            return callback.call(this);
+            let result = callback.call(this);
+            if (!this.torollback)
+                return result;
         } catch (err) {
             if (err !== UNBREAKABLE_ROLLBACK_CODE) {
                 throw err;
