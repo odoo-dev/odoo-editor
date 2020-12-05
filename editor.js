@@ -46,7 +46,7 @@ export default class OdooEditor {
         document.onselectionchange = this._onSelectionChange.bind(this);
 
         this.toolbar = document.querySelector('#toolbar');
-        this.toolbar.addEventListener('click', this._onToolbarClick.bind(this));
+        this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
 
         this.collaborate = false;
         this.collaborate_last = null;
