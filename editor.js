@@ -167,14 +167,10 @@ export default class OdooEditor {
                 }
                 case "childList": {
                     record.addedNodes.forEach((added, index) => {
-                        if (!record.target.oid || (added.oid && this.idFind(destel, added.oid) &&
-                                record.target.oid === this.idFind(destel, added.oid).parentNode.oid)) {
-                            return false;
-                        }
                         let action = {
                             'type': "add",
                         };
-                        if (!record.nextSibling) {
+                        if (!record.nextSibling  && record.target.oid) {
                             action['append'] = record.target.oid;
                         } else if (record.nextSibling.oid) {
                             action['before'] = record.nextSibling.oid;
@@ -256,6 +252,11 @@ export default class OdooEditor {
                 }
                 case "add": {
                     let newnode = this.unserialize(record.node).cloneNode(1);
+                    let destnode = this.idFind(destel, record.node.oid);
+                    if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
+                        // TODO: optimization: remove record from the history to reduce collaboration bandwidth
+                        return false;
+                    }
                     this.idSet(record.node, newnode);
                     if (record.append) {
                         this.idFind(destel, record.append).append(newnode);
