@@ -1120,7 +1120,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]<b>def</b></p>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<p>abc</p><p><b>[]def</b></p>',
+                        contentAfter: '<p>abc</p><p>[]<b>def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>

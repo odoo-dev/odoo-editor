@@ -1,7 +1,7 @@
 "use strict";
 
 import {
-    blockify,
+    changeNode,
     setCursorEnd,
     splitText,
     isFakeLineBreak,
@@ -12,7 +12,7 @@ Text.prototype.oShiftEnter = function (offset) {
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
-    blockify(this, offset);
+    let [leftCb, rightCb] = changeNode(this, offset);
     const brEl = document.createElement('BR');
     if (offset >= this.childNodes.length) {
         this.appendChild(brEl);
@@ -21,5 +21,7 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     }
     if (isFakeLineBreak(brEl))
         brEl.before(document.createElement('BR'));
+    leftCb();
+    rightCb();
     setCursorEnd(brEl);
 };

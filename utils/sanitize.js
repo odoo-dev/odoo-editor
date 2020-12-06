@@ -58,17 +58,6 @@ class Sanitize {
 
     // Specific tag cleanup
     tags = {
-        BR: function (node) {
-            const parentEl = node.parentNode;
-            const index = childNodeIndex(node);
-            // Remove trailing line breaks which do not act as a placeholder for
-            // other BR or for container element.
-            if (isFakeLineBreak(node)
-                    && findVisibleTextPrevNode(parentEl, index)
-                    && !findPreviousInline(parentEl, index, node => isRealLineBreak(node))) {
-                node.remove();
-            }
-        }
     }
 }
 

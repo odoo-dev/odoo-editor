@@ -71,6 +71,14 @@ export function splitText(textNode, offset) {
     return parentOffset;
 }
 
+export function splitTextNode(textNode, offset) {
+    const newval = textNode.nodeValue.substring(0, offset);
+    const nextTextNode = document.createTextNode(newval);
+    textNode.before(nextTextNode);
+    textNode.nodeValue = textNode.nodeValue.substring(offset);
+    return nextTextNode;
+}
+
 // backward traversal: latestChild(el.previousSibling) || el.parentNode
 export function latestChild(el) {
     while (el && el.lastChild) {
@@ -80,10 +88,24 @@ export function latestChild(el) {
 }
 
 export function firstChild(el) {
-    while (el && el.firstChild) {
+    while (el && (!isBlock(el)) && el.firstChild) {
         el = el.firstChild;
     }
     return el;
+}
+
+export function nextNode(el) {
+    if (el.firstChild)
+        return firstChild(el);
+    while (!el.nextSibling) {
+        el = el.parentElement;
+        if (isBlock(el)) return el;
+    }
+    return firstChild(el.nextSibling)
+}
+
+export function previousNode(el) {
+    return latestChild(el.previousSibling) || el.parentNode;
 }
 
 export function setCursor(node, offset = undefined) {
@@ -354,6 +376,115 @@ export function findLeadingSpaceNextNode(anchorNode, offset) {
         node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
     );
 }
+
+
+// @returns what's visible on the left of node: space | content | block
+export function getLeftState(node, lastSpace=null, direction=previousNode, expr=/[^\S\u00A0]$/) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        let value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+        if (isVisibleStr(node)) {
+            return (lastSpace || expr.test(value)) ? 'space' : 'content';
+        }
+        lastSpace = value.length ? node : lastSpace;
+    } else if (isBlock(node)) {
+        return 'block';
+    } else if (node.nodeName=='BR') {
+        return (direction==previousNode) ? 'block' : 'content';
+    }
+    return getLeftState(direction(node), lastSpace, direction, expr);
+}
+
+export function getRightState(node) {return getLeftState(node, null, nextNode, /^[^\S\u00A0]/)};
+
+export function replacePreviousSpace(node, replace='') {
+    const expr=/[^\S\u00A0]+$/;
+    let last = false;
+    if (isBlock(node)) {
+        return false;
+    } else if (node.nodeName=='BR') {
+        if (replace)
+            node.before(document.createElement('BR'));
+        if (!replace)
+            node.remove();
+        return false;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+        const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+        last = expr.test(value) ? node : last;
+    }
+
+    if ((node.nodeType != Node.TEXT_NODE) || ! isVisibleStr(node))
+        last = replacePreviousSpace(previousNode(node), replace) || last;
+
+    if (node.nodeType == Node.TEXT_NODE) {
+        const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+        node.nodeValue = value.replace(expr, (last==node) ? replace : '');
+        last = false;
+    }
+    return last;
+}
+
+export function replaceNextSpace(node, replace='', first=true) {
+    const expr = /^[^\S\u00A0]+/;
+    let tochange = false;
+    if (isBlock(node)) {
+        return false;
+    } else if (node.nodeName=='BR') {
+        if (replace && (getRightState(node) != 'block'))
+            node.before(document.createElement('BR'));
+        if (!replace)
+            node.remove();
+        return false;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+        const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+        tochange = first && expr.test(value);
+        first = false;
+    }
+    let visible = isVisibleStr(node) || replaceNextSpace(nextNode(node), replace, first);
+    if (visible && (node.nodeType === Node.TEXT_NODE)) {
+        const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+        node.nodeValue = value.replace(expr, tochange ? replace : '');
+    }
+    return visible;
+}
+
+
+export function updateNodeLeft(node) {
+    const init = getLeftState(previousNode(node));
+    return () => {
+        const end = getLeftState(previousNode(node));
+        let replace = '';
+        switch (init+end) {
+            case 'contentspace':
+            case 'contentblock':
+                replace = '\u00A0';
+            case 'blockcontent':
+            case 'spacecontent':
+                replaceNextSpace(node, replace);
+        }
+        return node;
+    }
+}
+
+export function updateNodeRight(node) {
+    const init = getRightState(nextNode(node));
+    return () => {
+        const end = getRightState(nextNode(node));
+        let replace = '';
+        switch (init+end) {
+            case 'contentblock':
+                replace = '\u00A0';
+            case 'blockcontent':
+                replacePreviousSpace(node, replace);
+        }
+        return node;
+    }
+}
+
+
 /**
  * Adapts left & right nodes to prepare for adding a <block> in anchor/offset
  * position.
@@ -361,23 +492,12 @@ export function findLeadingSpaceNextNode(anchorNode, offset) {
  * @param {Node} anchorNode
  * @param {number} offset
  */
-export function blockify(anchorNode, offset) {
-    const leftTrailingSpaceNode = findTrailingSpacePrevNode(anchorNode, offset);
-    if (leftTrailingSpaceNode) {
-        if (findVisibleTextNextNode(anchorNode, offset)) {
-            leftTrailingSpaceNode.nodeValue = leftTrailingSpaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-            return;
-        }
-    }
-
-    const rightLeadingSpaceNode = findLeadingSpaceNextNode(anchorNode, offset);
-    if (rightLeadingSpaceNode) {
-        if (findVisibleTextPrevNode(anchorNode, offset)) {
-            rightLeadingSpaceNode.nodeValue = rightLeadingSpaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
-            return;
-        }
-    }
+export function changeNode(anchorNode, offset) {
+    let left = findPrevious(anchorNode, offset);
+    let right = nextNode(left);
+    return [updateNodeRight(left), updateNodeLeft(right)];
 }
+
 /**
  * Returns whether the given node is a element that could be considered to be
  * removed by itself = self closing tags.
