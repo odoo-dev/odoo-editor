@@ -452,6 +452,31 @@ export function replaceNextSpace(node, replace='', first=true) {
 }
 
 
+// Preserve the visibility of 'br' & 'space' on the right of the node, if we update it's left elements
+// @returns callback to call once left changes have been done, it will update the node & it's right
+//
+// Example: <p><b>test</b><i> my</i></p>
+//
+//   cb = updateNodeLeft(i);
+//   b.remove();
+//   cb();
+//   // " my" -> transformed to "&nbsp;my"
+//
+// Example2: <p>This<br>  <i> my</i></p>
+//
+//   cb = updateNodeLeft(i);
+//   br.remove();
+//   cb();
+//   // " my" -> transformed to "my", and "  " -> ""
+//
+// Example3: <p>This<br>  <i> my</i></p>
+//
+//   cb = updateNodeLeft(i);
+//   br.remove();
+//   This.remove();
+//   cb();
+//   // nothing change on right: <p>  <i> my</i></p>
+//
 export function updateNodeLeft(node) {
     const init = getLeftState(previousNode(node));
     return () => {
