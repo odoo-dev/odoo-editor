@@ -827,6 +827,13 @@ describe('Editor', () => {
                         contentAfter: '<p>ab[]cd</p>',
                     });
                 });
+                it('should remove a br and remove trailing spaces', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab<br><b>[]   </b>cd</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab<b>[]</b>cd</p>',
+                    });
+                });
                 it('should merge a paragraph with formated text into a paragraph with text', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>aa</p><p>[]a<i>bbb</i></p>',
