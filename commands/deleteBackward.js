@@ -39,10 +39,11 @@ Text.prototype.oDeleteBackward = function (offset) {
     let rightCb = updateNodeLeft(this);
 
     let leftState = getLeftState(middle);
-    replacePreviousSpace(middle);
 
+    replacePreviousSpace(middle);
     if (leftState=='space') 
         return true;
+
     if (leftState=='block' || (!middle.length))
         return this.parentElement.oDeleteBackward(parentOffset);
 
@@ -51,9 +52,6 @@ Text.prototype.oDeleteBackward = function (offset) {
     middle.remove();
     rightCb();
     leftCb();
-
-    // TODO: check if we really need this
-    setCursorEnd(left);
 }
 
 HTMLLIElement.prototype.oDeleteBackward = function (offset) {
