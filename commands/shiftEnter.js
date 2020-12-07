@@ -2,7 +2,7 @@
 
 import {
     changeNode,
-    setCursorEnd,
+    setCursor,
     splitText,
     isFakeLineBreak,
 } from "../utils/utils.js";
@@ -23,5 +23,5 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
         brEl.before(document.createElement('BR'));
     leftCb();
     rightCb();
-    setCursorEnd(brEl);
+    setCursor(brEl);
 };

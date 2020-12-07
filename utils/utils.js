@@ -81,7 +81,7 @@ export function splitTextNode(textNode, offset) {
 
 // backward traversal: latestChild(el.previousSibling) || el.parentNode
 export function latestChild(el) {
-    while (el && el.lastChild) {
+    while (el && el.lastChild  && !isBlock(el)) {
         el = el.lastChild;
     }
     return el;
@@ -104,7 +104,7 @@ export function nextNode(el) {
     return firstChild(el.nextSibling)
 }
 
-export function previousNode(el) {
+export function previousNode(el, blocks=false) {
     return latestChild(el.previousSibling) || el.parentNode;
 }
 
@@ -361,22 +361,6 @@ export function findVisibleTextNextNode(anchorNode, offset, findCallback = node 
     );
 }
 
-export function findTrailingSpacePrevNode(anchorNode, offset) {
-    return findVisibleTextPrevNode(
-        anchorNode,
-        offset,
-        node => /[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
-
-export function findLeadingSpaceNextNode(anchorNode, offset) {
-    return findVisibleTextNextNode(
-        anchorNode,
-        offset,
-        node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
-
 
 // @returns what's visible on the left of node: space | content | block
 export function getLeftState(node, lastSpace=null, direction=previousNode, expr=/[^\S\u00A0]$/) {
@@ -478,6 +462,7 @@ export function replaceNextSpace(node, replace='', first=true) {
 //   // nothing change on right: <p>  <i> my</i></p>
 //
 export function updateNodeLeft(node) {
+    if (!node) return () => {};
     const init = getLeftState(previousNode(node));
     return () => {
         const end = getLeftState(previousNode(node));
@@ -495,6 +480,7 @@ export function updateNodeLeft(node) {
 }
 
 export function updateNodeRight(node) {
+    if (!node) return () => {};
     const init = getRightState(nextNode(node));
     return () => {
         const end = getRightState(nextNode(node));
@@ -599,17 +585,6 @@ export function isInvisibleChar(ch) {
     return invisibleCharValues.includes(ch);
 }
 
-/**
- * Returns whether or not the given char is a space.
- *
- * @param {string} ch
- * @returns {boolean}
- */
-const spaceValues = [' ', '\t', '\n', '\r'];
-export function isSpace(ch) {
-    return spaceValues.includes(ch);
-}
-
 export function parentsGet(node, root = undefined) {
     let parents = [];
     while (node) {
@@ -672,120 +647,6 @@ export function areSimilarElements(node, node2) {
  * @param {Node} [rightNode=leftNode.nextSibling]
  * @returns {number} Merge type code @see MERGE_CODES
  */
-export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
-    // The given node is not visible. It should not accept new content as the
-    // user simply did not know it existed. We simply remove it and return the
-    // related merge code.
-    if (!isVisible(leftNode)) {
-        leftNode.oRemove();
-        return MERGE_CODES.REMOVED_INVISIBLE_NODE;
-    }
-
-    // The given node is visible but cannot accept contents (like a BR). We
-    // remove it and return the related merge code.
-    if (isVisibleEmpty(leftNode)) {
-        const removedNode = leftNode;
-
-        // Following code handles some specific cases for BR removals.
-        // TODO check if this is the right place for it.
-        const isBRRemoval = removedNode.nodeName === 'BR';
-        if (isBRRemoval) {
-            const parentEl = removedNode.parentElement;
-            const index = childNodeIndex(removedNode);
-
-            // 1°) Not removing the last BR of a visually empty node
-            // TODO review the condition.
-            if (!parentEl.textContent && parentEl.children.length === 1) {
-                return MERGE_CODES.REMOVED_INVISIBLE_NODE;
-            }
-
-            // 2°) Remove leading invisible whitespace in following text content
-            // as it would become visible because of BR removal.
-            //
-            //     <p>ab<br>[] cd</p> + BACKSPACE
-            // <=> <p>ab[]cd</p>
-            //
-            // TODO this may not be specific to BR removal only but to any
-            // backspace (to check saveState/restoreState Fabien's idea).
-            const spaceNode = findLeadingSpaceNextNode(parentEl, index + 1);
-            if (spaceNode) {
-                spaceNode.nodeValue = spaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '');
-            }
-
-            // 3°) Convert trailing visible whitespace to nbsp in preceding text
-            // content as it would become invisible if there is no following
-            // text content.
-            //
-            //     <p>ab <br>[]</p> + BACKSPACE
-            // <=> <p>ab&nbsp;</p>
-            //
-            // TODO this may not be specific to BR removal only but to any
-            // backspace (to check saveState/restoreState Fabien's idea).
-            const nextContentNode = findVisibleTextNextNode(parentEl, index + 1);
-            if (!nextContentNode) {
-                const spaceNode = findTrailingSpacePrevNode(parentEl, index);
-                if (spaceNode) {
-                    spaceNode.nodeValue = spaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-                }
-            }
-        }
-
-        removedNode.oRemove();
-        return MERGE_CODES.REMOVED_VISIBLE_NODE;
-    }
-
-    // The given node can accept content but there is no content to receive,
-    // nothing can be merged.
-    if (!rightNode) {
-        return MERGE_CODES.NOTHING_TO_MERGE;
-    }
-
-    // Now actually merge the left and right nodes, depending of if they are
-    // blocks or not.
-    const leftIsBlock = isBlock(leftNode);
-    const rightIsBlock = isBlock(rightNode);
-
-    if (rightIsBlock) {
-        // First case, the right side is block content: we have to unwrap that
-        // content in the proper location.
-        const fragmentEl = document.createDocumentFragment();
-        while (rightNode.firstChild) {
-            fragmentEl.appendChild(rightNode.firstChild);
-        }
-        rightNode.oRemove();
-
-        if (leftIsBlock) {
-            // If the left side is a block too, find the right position to
-            // unwrap the content inside and reposition cursor the right way.
-            moveMergedNodes(leftNode, fragmentEl);
-        } else {
-            // If the left side is inline, simply unwrap at current block
-            // location.
-            leftNode.after(fragmentEl);
-            setCursorEnd(leftNode);
-        }
-    } else {
-        // Second case, the right side is inline content.
-        if (leftIsBlock) {
-            // If the left side is a block, move that inline content and the
-            // one which follows in that left side.
-            const fragmentEl = document.createDocumentFragment();
-            let node = rightNode;
-            do {
-                let nextNode = node.nextSibling;
-                fragmentEl.appendChild(node);
-                node = nextNode;
-            } while (node && !isBlock(node));
-            moveMergedNodes(leftNode, fragmentEl);
-        } else {
-            // If the left side is also inline, nothing to merge.
-            return MERGE_CODES.NOTHING_TO_MERGE;
-        }
-    }
-
-    return MERGE_CODES.SUCCESS;
-}
-
 /**
  * Moves the given nodes in the given fragment to the given destination element.
  * That destination element is prepared first and adapted if necessary. The
