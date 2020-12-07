@@ -15,7 +15,7 @@ import {
 import {
     commonParentGet, closestBlock,
     setCursor, setTagName,
-    containsUnbreakable, inUnbreakable
+    containsUnbreakable,
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -170,14 +170,13 @@ export default class OdooEditor {
                 }
                 case "childList": {
                     record.addedNodes.forEach((added, index) => {
-                        let dest = this.idFind(destel, added.oid);
                         this.torollback |= containsUnbreakable(added);
                         // TODO: check that a node does not move from one unBreakable to another
                         // this.torollback |= dest && (inUnbreakable(added).oid != inUnbreakable(dest).oid);
                         let action = {
                             'type': "add",
                         };
-                        if (!record.nextSibling  && record.target.oid) {
+                        if (!record.nextSibling && record.target.oid) {
                             action['append'] = record.target.oid;
                         } else if (record.nextSibling.oid) {
                             action['before'] = record.nextSibling.oid;
@@ -239,22 +238,22 @@ export default class OdooEditor {
     // apply changes according to some records
     historyApply(destel, records) {
         for (let record of records) {
-            if (record.type=='characterData') {
+            if (record.type === 'characterData') {
                 let node = this.idFind(destel, record.id);
                 if (node) {
                     node.textContent = record.text;
                 }
-            } else if (record.type == "attributes") {
+            } else if (record.type === "attributes") {
                 let node = this.idFind(destel, record.id);
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
-            } else if (record.type == "remove") {
+            } else if (record.type === "remove") {
                 let toremove = this.idFind(destel, record.id, record.parentId);
                 if (toremove) {
                     toremove.remove();
                 }
-            } else if (record.type == "add") {
+            } else if (record.type === "add") {
                 let newnode = this.unserialize(record.node).cloneNode(1);
                 let destnode = this.idFind(destel, record.node.oid);
                 if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
@@ -516,8 +515,9 @@ export default class OdooEditor {
         try {
             let result = callback.call(this);
             this.observerFlush();
-            if (!this.torollback)
+            if (!this.torollback) {
                 return result;
+            }
         } catch (err) {
             if (err !== UNBREAKABLE_ROLLBACK_CODE) {
                 throw err;
