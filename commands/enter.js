@@ -8,8 +8,6 @@ import {
     clearEmpty,
     fillEmpty,
     isBlock,
-    isUnbreakable,
-    setCursor,
     setCursorStart,
     setTagName,
     splitText,
@@ -77,7 +75,7 @@ HTMLHeadingElement.prototype.oEnter = function () {
 /**
  * Specific behavior for list items: deletion and unindentation in some cases.
  */
-HTMLLIElement.prototype.oEnter = function (offset, firstSplit=true) {
+HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
         return HTMLElement.prototype.oEnter.call(this, ...arguments);
