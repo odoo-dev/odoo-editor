@@ -71,21 +71,6 @@ export function splitText(textNode, offset) {
     return parentOffset;
 }
 
-// backward traversal: latestChild(el.previousSibling) || el.parentNode
-export function latestChild(el) {
-    while (el && el.lastChild) {
-        el = el.lastChild;
-    }
-    return el;
-}
-
-export function firstChild(el) {
-    while (el && el.firstChild) {
-        el = el.firstChild;
-    }
-    return el;
-}
-
 export function setCursor(node, offset = undefined) {
     let sel = document.defaultView.getSelection();
     let range = new Range();
@@ -707,4 +692,104 @@ export function isRealLineBreak(node) {
  */
 export function isFakeLineBreak(node) {
     return (node instanceof HTMLBRElement && !isRealLineBreak(node));
+}
+
+export const DIRECTIONS = {
+    LEFT: 0,
+    RIGHT: 1,
+};
+
+export const leftDeepFirst = createDOMTraversalGenerator(DIRECTIONS.LEFT, false, false);
+export const leftDeepOnly = createDOMTraversalGenerator(DIRECTIONS.LEFT, true, false);
+export const leftDeepFirstInline = createDOMTraversalGenerator(DIRECTIONS.LEFT, false, true);
+export const leftDeepOnlyInline = createDOMTraversalGenerator(DIRECTIONS.LEFT, true, true);
+
+export const rightDeepFirst = createDOMTraversalGenerator(DIRECTIONS.RIGHT, false, false);
+export const rightDeepOnly = createDOMTraversalGenerator(DIRECTIONS.RIGHT, true, false);
+export const rightDeepFirstInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT, false, true);
+export const rightDeepOnlyInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT, true, true);
+
+/**
+ * Returns the deepest child in last position.
+ *
+ * @param {Node} node
+ * @param {boolean} [inline=false]
+ * @returns {Node}
+ */
+export function latestChild(node, inline = false) {
+    while (node && node.lastChild && (!inline || !isBlock(node))) {
+        node = node.lastChild;
+    }
+    return node;
+}
+
+/**
+ * Returns the deepest child in first position.
+ *
+ * @param {Node} node
+ * @param {boolean} [inline=false]
+ * @returns {Node}
+ */
+export function firstChild(node, inline = false) {
+    while (node && node.firstChild && (!inline || !isBlock(node))) {
+        node = node.firstChild;
+    }
+    return node;
+}
+
+/**
+ * Creates a generator function according to the given parameters. Pre-made
+ * generators to traverse the DOM are made using this function:
+ *
+ * @see leftDeepFirst
+ * @see leftDeepOnly
+ * @see leftDeepFirstInline
+ * @see leftDeepOnlyInline
+ *
+ * @see rightDeepFirst
+ * @see rightDeepOnly
+ * @see rightDeepFirstInline
+ * @see rightDeepOnlyInline
+ *
+ * @param {number} direction
+ * @param {boolean} deepOnly
+ * @param {boolean} inline
+ */
+export function createDOMTraversalGenerator(direction, deepOnly, inline) {
+    const nextDeepest = direction === DIRECTIONS.LEFT
+        ? node => latestChild(node.previousSibling, inline)
+        : node => firstChild(node.nextSibling, inline);
+
+    const firstNode = direction === DIRECTIONS.LEFT
+        ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
+        : (node, offset) => firstChild(node.childNodes[offset], inline);
+
+    return function* (node, offset) {
+        let movedUp = false;
+
+        let currentNode = node;
+        if (offset !== undefined) {
+            currentNode = firstNode(node, offset);
+            if (!currentNode) {
+                movedUp = true;
+                currentNode = node;
+            }
+        }
+
+        while (currentNode) {
+            if (inline && isBlock(currentNode)) {
+                break;
+            }
+            if (!deepOnly || !movedUp) {
+                yield currentNode;
+            }
+
+            movedUp = false;
+            currentNode = nextDeepest(currentNode);
+            if (!currentNode) {
+                movedUp = true;
+                currentNode = currentNode.parentNode;
+            }
+        }
+    };
 }
