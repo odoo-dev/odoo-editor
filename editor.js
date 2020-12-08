@@ -16,6 +16,7 @@ import {
     commonParentGet, closestBlock,
     setCursor, setTagName,
     containsUnbreakable,
+    prepareUpdate,
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -489,7 +490,10 @@ export default class OdooEditor {
      */
     _applyRawCommand(method) {
         const sel = document.defaultView.getSelection();
-        return sel.anchorNode[method](sel.anchorOffset);
+        const prepared = prepareUpdate(method, sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
+        const result = prepared.focusNode[method](prepared.focusOffset);
+        prepared.restoreStates();
+        return result;
     }
     /**
      * Same as @see _applyRawCommand but adapt history, protects unbreakables

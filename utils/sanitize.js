@@ -21,6 +21,7 @@ class Sanitize {
     }
 
     parse(node) {
+        node.normalize();
         this._parse(closestBlock(node));
     }
 
