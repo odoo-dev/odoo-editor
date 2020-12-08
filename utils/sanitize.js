@@ -4,10 +4,11 @@ import {
     areSimilarElements,
     childNodeIndex,
     closestBlock,
-    findPreviousInline,
-    findVisibleTextPrevNode,
+    findNode,
+    findVisibleTextNode,
     isFakeLineBreak,
     isRealLineBreak,
+    leftDeepOnlyInlinePath,
     moveMergedNodes,
 } from "./utils.js";
 
@@ -64,8 +65,8 @@ class Sanitize {
             // Remove trailing line breaks which do not act as a placeholder for
             // other BR or for container element.
             if (isFakeLineBreak(node)
-                    && findVisibleTextPrevNode(parentEl, index)
-                    && !findPreviousInline(parentEl, index, node => isRealLineBreak(node))) {
+                    && findVisibleTextNode(leftDeepOnlyInlinePath(parentEl, index))
+                    && !findNode(leftDeepOnlyInlinePath(parentEl, index), node => isRealLineBreak(node))) {
                 node.remove();
             }
         }

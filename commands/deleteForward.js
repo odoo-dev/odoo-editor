@@ -2,11 +2,12 @@
 
 import {
     childNodeIndex,
-    findNext,
-    findNextInline,
-    findVisibleTextNextNode,
+    findNode,
+    findVisibleTextNode,
     isContentTextNode,
     isVisibleEmpty,
+    rightDeepOnlyPath,
+    rightDeepOnlyInlinePath,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteForward = function (offset) {
@@ -18,19 +19,19 @@ Text.prototype.oDeleteForward = function (offset) {
 };
 
 HTMLElement.prototype.oDeleteForward = function (offset) {
-    const nextVisibleText = findVisibleTextNextNode(this, offset);
+    const nextVisibleText = findVisibleTextNode(rightDeepOnlyInlinePath(this, offset));
     if (nextVisibleText) {
         nextVisibleText.oDeleteBackward(1);
         return;
     }
 
-    const nextVisibleEmptyEl = findNextInline(this, offset, node => isVisibleEmpty(node));
+    const nextVisibleEmptyEl = findNode(rightDeepOnlyInlinePath(this, offset), node => isVisibleEmpty(node));
     if (nextVisibleEmptyEl) {
         nextVisibleEmptyEl.parentNode.oDeleteBackward(childNodeIndex(nextVisibleEmptyEl) + 1);
         return;
     }
 
-    const nextVisibleTextOutOfBlock = findNext(this, offset, node => isContentTextNode(node));
+    const nextVisibleTextOutOfBlock = findNode(rightDeepOnlyPath(this, offset), node => isContentTextNode(node));
     if (nextVisibleTextOutOfBlock) {
         nextVisibleTextOutOfBlock.oDeleteBackward(0);
         return;

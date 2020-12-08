@@ -4,7 +4,7 @@ import {
     childNodeIndex,
     closestBlock,
     findLeadingSpaceNextNode,
-    findPreviousInline,
+    findNode,
     findTrailingSpacePrevNode,
     isBlock,
     isContentTextNode,
@@ -14,6 +14,7 @@ import {
     isSpace,
     isUnbreakable,
     isVisibleStr,
+    leftDeepOnlyInlinePath,
     mergeNodes,
     MERGE_CODES,
     nodeSize,
@@ -66,7 +67,10 @@ Text.prototype.oDeleteBackward = function (offset) {
         // When a text node is emptied, automatically add a BR after it if there
         // was a real line break before who would become a cursor placeholder
         // line break (see **)
-        realPrevBR = findPreviousInline(this.parentNode, childNodeIndex(this), node => isRealLineBreak(node), node => isContentTextNode(node));
+        realPrevBR = findNode(
+            leftDeepOnlyInlinePath(this.parentNode, childNodeIndex(this)),
+            node => isRealLineBreak(node),
+            node => isContentTextNode(node));
     }
 
     this.nodeValue = newNodeValue;
@@ -173,8 +177,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
         //     <div>ab</div><section>[]cd<p>ef</p></section> + BACKSPACE
         // <=> <div>ab</div>[]<section>cd<p>ef</p></section> + BACKSPACE
         const parentOffset = childNodeIndex(this);
-        // TODO should ignore invisble text nodes at the beginning (review
-        // findNextInline and other methods to do that more easily).
+        // TODO should ignore invisible text nodes at the beginning (review
+        // findNode and other methods to do that more easily).
         if (isBlock(this.firstChild)) {
             this.before(this.firstChild);
             if (!this.childNodes.length) {

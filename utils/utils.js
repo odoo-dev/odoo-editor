@@ -41,6 +41,158 @@ export function nodeSize(node) {
     return isTextNode ? node.length : node.childNodes.length;
 }
 
+//------------------------------------------------------------------------------
+// DOM Path and node research functions
+//------------------------------------------------------------------------------
+
+export const DIRECTIONS = {
+    LEFT: 0,
+    RIGHT: 1,
+};
+
+export const closestPath = function* (node) {
+    while (node) {
+        yield node;
+        node = node.parentNode;
+    }
+};
+
+export const leftDeepFirstPath = createDOMPathGenerator(DIRECTIONS.LEFT, false, false);
+export const leftDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.LEFT, true, false);
+export const leftDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, false, true);
+export const leftDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, true, true);
+
+export const rightDeepFirstPath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, false);
+export const rightDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, false);
+export const rightDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, true);
+export const rightDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, true);
+
+export function findNode(domPath, findCallback = node => true, stopCallback = node => false) {
+    for (const node of domPath) {
+        if (findCallback(node)) {
+            return node;
+        }
+        if (stopCallback(node)) {
+            break;
+        }
+    }
+    return null;
+}
+
+export function findVisibleTextNode(domPath, findCallback = node => true, stopCallback = node => false) {
+    return findNode(
+        domPath,
+        node => isContentTextNode(node) && findCallback(node),
+        node => isContentTextNode(node) || stopCallback(node),
+    );
+}
+
+export function findTrailingSpacePrevNode(anchorNode, offset) {
+    return findVisibleTextNode(
+        leftDeepOnlyInlinePath(anchorNode, offset),
+        node => /[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
+    );
+}
+
+export function findLeadingSpaceNextNode(anchorNode, offset) {
+    return findVisibleTextNode(
+        rightDeepOnlyInlinePath(anchorNode, offset),
+        node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
+    );
+}
+
+export function closestBlock(node) {
+    return findNode(closestPath(node), node => isBlock(node));
+}
+
+/**
+ * Returns the deepest child in last position.
+ *
+ * @param {Node} node
+ * @param {boolean} [inline=false]
+ * @returns {Node}
+ */
+export function latestChild(node, inline = false) {
+    while (node && node.lastChild && (!inline || !isBlock(node))) {
+        node = node.lastChild;
+    }
+    return node;
+}
+
+/**
+ * Returns the deepest child in first position.
+ *
+ * @param {Node} node
+ * @param {boolean} [inline=false]
+ * @returns {Node}
+ */
+export function firstChild(node, inline = false) {
+    while (node && node.firstChild && (!inline || !isBlock(node))) {
+        node = node.firstChild;
+    }
+    return node;
+}
+
+/**
+ * Creates a generator function according to the given parameters. Pre-made
+ * generators to traverse the DOM are made using this function:
+ *
+ * @see leftDeepFirstPath
+ * @see leftDeepOnlyPath
+ * @see leftDeepFirstInlinePath
+ * @see leftDeepOnlyInlinePath
+ *
+ * @see rightDeepFirstPath
+ * @see rightDeepOnlyPath
+ * @see rightDeepFirstInlinePath
+ * @see rightDeepOnlyInlinePath
+ *
+ * @param {number} direction
+ * @param {boolean} deepOnly
+ * @param {boolean} inline
+ */
+export function createDOMPathGenerator(direction, deepOnly, inline) {
+    const nextDeepest = direction === DIRECTIONS.LEFT
+        ? node => latestChild(node.previousSibling, inline)
+        : node => firstChild(node.nextSibling, inline);
+
+    const firstNode = direction === DIRECTIONS.LEFT
+        ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
+        : (node, offset) => firstChild(node.childNodes[offset], inline);
+
+    return function* (node, offset) {
+        let movedUp = false;
+
+        let currentNode = node;
+        if (offset !== undefined) {
+            currentNode = firstNode(node, offset);
+            if (!currentNode) {
+                movedUp = true;
+                currentNode = node;
+            }
+        }
+
+        while (currentNode) {
+            if (inline && isBlock(currentNode)) {
+                break;
+            }
+            if (!deepOnly || !movedUp) {
+                yield currentNode;
+            }
+
+            movedUp = false;
+            let nextNode = nextDeepest(currentNode);
+            if (!nextNode) {
+                movedUp = true;
+                nextNode = currentNode.parentNode;
+            }
+            currentNode = nextNode;
+        }
+    };
+}
+
+//------------------------------------------------------------------------------
+
 /**
  * Splits a text node in two parts.
  * If the split occurs at the beginning or the end, the text node stays
@@ -69,21 +221,6 @@ export function splitText(textNode, offset) {
         }
     }
     return parentOffset;
-}
-
-// backward traversal: latestChild(el.previousSibling) || el.parentNode
-export function latestChild(el) {
-    while (el && el.lastChild) {
-        el = el.lastChild;
-    }
-    return el;
-}
-
-export function firstChild(el) {
-    while (el && el.firstChild) {
-        el = el.firstChild;
-    }
-    return el;
 }
 
 export function setCursor(node, offset = undefined) {
@@ -224,10 +361,6 @@ export function isBlock(node) {
     return blockTagNames.includes(tagName);
 }
 
-export function closestBlock(node) {
-    return findNode(node, node => node.parentNode, node => isBlock(node));
-}
-
 export function hasPreviousChar(node) {
     if (!node) {
         return false;
@@ -280,80 +413,6 @@ export function setTagName(el, newTagName) {
     return n;
 }
 
-export function findNode(node, iterationCallback = node => node.parentNode, findCallback = node => true, stopCallback = node => false) {
-    while (node) {
-        if (findCallback(node)) {
-            return node;
-        }
-        if (stopCallback(node)) {
-            break;
-        }
-        node = iterationCallback(node);
-    }
-    return null;
-}
-
-export function findPrevious(anchorNode, offset, ...args) {
-    const node = latestChild(anchorNode.childNodes[offset - 1]) || anchorNode;
-    return findNode(node, node => latestChild(node.previousSibling) || node.parentElement, ...args);
-}
-
-export function findNext(anchorNode, offset, ...args) {
-    const node = firstChild(anchorNode.childNodes[offset]) || anchorNode;
-    return findNode(node, node => firstChild(node.nextSibling) || node.parentElement, ...args);
-}
-
-export function findPreviousInline(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
-    return findPrevious(
-        anchorNode,
-        offset,
-        findCallback,
-        node => isBlock(node) || isVisibleEmpty(node) || stopCallback(node)
-    );
-}
-
-export function findNextInline(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
-    return findNext(
-        anchorNode,
-        offset,
-        findCallback,
-        node => isBlock(node) || isVisibleEmpty(node) || stopCallback(node)
-    );
-}
-
-export function findVisibleTextPrevNode(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
-    return findPreviousInline(
-        anchorNode,
-        offset,
-        node => isContentTextNode(node) && findCallback(node),
-        node => isContentTextNode(node) || stopCallback(node),
-    );
-}
-
-export function findVisibleTextNextNode(anchorNode, offset, findCallback = node => true, stopCallback = node => false) {
-    return findNextInline(
-        anchorNode,
-        offset,
-        node => isContentTextNode(node) && findCallback(node),
-        node => isContentTextNode(node) || stopCallback(node),
-    );
-}
-
-export function findTrailingSpacePrevNode(anchorNode, offset) {
-    return findVisibleTextPrevNode(
-        anchorNode,
-        offset,
-        node => /[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
-
-export function findLeadingSpaceNextNode(anchorNode, offset) {
-    return findVisibleTextNextNode(
-        anchorNode,
-        offset,
-        node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
 /**
  * Adapts left & right nodes to prepare for adding a <block> in anchor/offset
  * position.
@@ -364,7 +423,7 @@ export function findLeadingSpaceNextNode(anchorNode, offset) {
 export function blockify(anchorNode, offset) {
     const leftTrailingSpaceNode = findTrailingSpacePrevNode(anchorNode, offset);
     if (leftTrailingSpaceNode) {
-        if (findVisibleTextNextNode(anchorNode, offset)) {
+        if (findVisibleTextNode(rightDeepOnlyInlinePath(anchorNode, offset))) {
             leftTrailingSpaceNode.nodeValue = leftTrailingSpaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
             return;
         }
@@ -372,7 +431,7 @@ export function blockify(anchorNode, offset) {
 
     const rightLeadingSpaceNode = findLeadingSpaceNextNode(anchorNode, offset);
     if (rightLeadingSpaceNode) {
-        if (findVisibleTextPrevNode(anchorNode, offset)) {
+        if (findVisibleTextNode(leftDeepOnlyInlinePath(anchorNode, offset))) {
             rightLeadingSpaceNode.nodeValue = rightLeadingSpaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
             return;
         }
@@ -576,7 +635,7 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
             //
             // TODO this may not be specific to BR removal only but to any
             // backspace (to check saveState/restoreState Fabien's idea).
-            const nextContentNode = findVisibleTextNextNode(parentEl, index + 1);
+            const nextContentNode = findVisibleTextNode(rightDeepOnlyInlinePath(parentEl, index + 1));
             if (!nextContentNode) {
                 const spaceNode = findTrailingSpacePrevNode(parentEl, index);
                 if (spaceNode) {
@@ -663,8 +722,7 @@ export function moveMergedNodes(destinationEl, sourceFragment) {
 
     // Merge into deepest ending block
     destinationEl = findNode(
-        latestChild(destinationEl),
-        node => node.parentNode,
+        closestPath(latestChild(destinationEl)),
         node => node === destinationEl || isBlock(node)
     );
 
@@ -694,8 +752,8 @@ export function moveMergedNodes(destinationEl, sourceFragment) {
  */
 export function isRealLineBreak(node) {
     return (node instanceof HTMLBRElement
-        && (findVisibleTextNextNode(node.parentNode, childNodeIndex(node) + 1)
-            || findNextInline(node.parentNode, childNodeIndex(node) + 1, node => node instanceof HTMLBRElement)));
+        && (findVisibleTextNode(rightDeepOnlyInlinePath(node.parentNode, childNodeIndex(node) + 1))
+            || findNode(rightDeepOnlyInlinePath(node.parentNode, childNodeIndex(node) + 1), node => node instanceof HTMLBRElement)));
 }
 
 /**
