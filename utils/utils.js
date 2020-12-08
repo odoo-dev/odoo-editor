@@ -723,24 +723,62 @@ export const rightDeepOnlyInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT,
  * Note: the method has been made generic enough to work with non-collapsed
  * selection but can be used for an unique cursor position.
  *
- * @param {Node} anchorEl
+ * @param {Node} anchorNode
  * @param {number} anchorOffset
- * @param {Node} [focusEl=anchorEl]
+ * @param {Node} [focusNode=anchorNode]
  * @param {number} [focusOffset=anchorOffset]
  * @returns {function}
  */
-export function prepareUpdate(anchorEl, anchorOffset, focusEl = anchorEl, focusOffset = anchorOffset) {
+export function prepareUpdate(anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset) {
+    // Prepare individual positions.
+    [anchorNode, anchorOffset, focusNode, focusOffset]
+        = prepareSelection(anchorNode, anchorOffset, focusNode, focusOffset);
+
     // Check the left state of the selection and the right state of the
     // selection.
-    const [leftState, leftNode] = getState(anchorEl, anchorOffset, DIRECTIONS.LEFT);
-    const [rightState, rightNode] = getState(focusEl, focusOffset, DIRECTIONS.RIGHT);
+    const [leftState, leftNode] = getState(anchorNode, anchorOffset, DIRECTIONS.LEFT);
+    const [rightState, rightNode] = getState(focusNode, focusOffset, DIRECTIONS.RIGHT);
 
     // Create the callback that will be able to restore the state on the left
     // and right nodes after any command processing in-between.
-    return function restoreStates() {
-        restoreState(leftNode, leftState, DIRECTIONS.LEFT);
-        restoreState(rightNode, rightState, DIRECTIONS.RIGHT);
+    return {
+        restoreStates: function restoreStates() {
+            restoreState(leftNode, leftState, DIRECTIONS.LEFT);
+            restoreState(rightNode, rightState, DIRECTIONS.RIGHT);
+        },
+        anchorNode,
+        anchorOffset,
+        focusNode,
+        focusOffset,
     };
+}
+
+/**
+ * Prepares the individual positions as boundaries for a command. For instance,
+ * if the position is inside a text node, we have to split it. This is what most
+ * command will need anyway and this will allow to follow the evolution of the
+ * individual parts post command (instead of following in-text position as an
+ * exception).
+ *
+ * @param {Node} node1
+ * @param {number} offset1
+ * @param {Node} [node2]
+ * @param {number} [offset2]
+ * @return {Array<Node, number>}
+ */
+export function prepareSelection(node1, offset1, node2, offset2) {
+    if (node1.nodeType === Node.TEXT_NODE) {
+        if (node2 === node1) {
+            offset2 -= offset1;
+        }
+
+        offset1 = splitText(node1, offset1);
+        node1 = node1.parentNode;
+    }
+    if (node2) {
+        [node2, offset2] = prepareSelection(node2, offset2);
+    }
+    return [node1, offset1, node2, offset2];
 }
 
 const STATES = {
