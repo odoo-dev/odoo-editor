@@ -770,3 +770,257 @@ export function isRealLineBreak(node) {
 export function isFakeLineBreak(node) {
     return (node instanceof HTMLBRElement && !isRealLineBreak(node));
 }
+
+//------------------------------------------------------------------------------
+// Prepare / Save / Restore state utilities
+//------------------------------------------------------------------------------
+
+/**
+ * Any editor command is applied to a selection (collapsed or not). After the
+ * command, the content type before that selection and after that selection
+ * should be the same (some whitespace should disappear as went from collapsed
+ * to non collapsed, or converted to &nbsp; as went from non collapsed to
+ * collapsed, there also <br> to remove/duplicate, etc).
+ *
+ * This function returns a callback which allows to do that after the command
+ * has been done. It also prepares the DOM to receive the command in a way
+ * the callback will be able to work on.
+ *
+ * Note: the method has been made generic enough to work with non-collapsed
+ * selection but can be used for an unique cursor position.
+ *
+ * @param {Node} el
+ * @param {number} offset
+ * @param {number} [direction=DIRECTIONS.BOTH]
+ * @returns {function}
+ */
+export function prepareUpdate(el, offset, direction = DIRECTIONS.BOTH) {
+    // Check the state in the given direction starting from the position.
+    const directions = direction === DIRECTIONS.BOTH ? [DIRECTIONS.LEFT, DIRECTIONS.RIGHT] : [direction];
+    const restoreData = [];
+    for (const direction of directions) {
+        const [state, node] = getState(el, offset, direction);
+        restoreData.push({state: state, node: node, direction: direction});
+    }
+
+    // Create the callback that will be able to restore the state in the given
+    // direction wherever the node in the opposite direction has landed.
+    return function restoreStates() {
+        for (const data of restoreData) {
+            restoreState(data.node, data.state, data.direction);
+        }
+    };
+}
+
+export const STATES = {
+    CONTENT: 0,
+    SPACE: 1,
+    BLOCK: 2,
+};
+
+/**
+ * Retrieves the "state" from a given position looking at the given direction.
+ * The "state" is the type of content. The functions also returns the first
+ * meaninful node looking in the opposite direction = the first node we trust
+ * will not disappear if a command is played in the given direction.
+ *
+ * Note: only work for in-between nodes positions. If the position is inside a
+ * text node, first split it @see splitText.
+ *
+ * @param {HTMLElement} el
+ * @param {number} offset
+ * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
+ * @returns {Array<number, Node>} @see STATES
+ */
+export function getState(el, offset, direction) {
+    const leftDOMPath = leftDeepOnlyInlinePath(el, offset);
+    const rightDOMPath = rightDeepOnlyInlinePath(el, offset);
+
+    let domPath;
+    let inverseDOMPath;
+    let expr;
+    if (direction === DIRECTIONS.LEFT) {
+        domPath = leftDOMPath;
+        inverseDOMPath = rightDOMPath;
+        expr = /[^\S\u00A0]$/;
+    } else {
+        domPath = rightDOMPath;
+        inverseDOMPath = leftDOMPath;
+        expr = /^[^\S\u00A0]/;
+    }
+
+    // TODO I think sometimes, the node we have to consider as the
+    // anchor point to restore the state is not the first one of the inverse
+    // path (like for example, empty text nodes that may disappear
+    // after the command so we would not want to get those ones).
+    const boundaryNode = inverseDOMPath.next().value;
+
+    // We only traverse through deep inline nodes. If we cannot find a
+    // meanfingful state between them, that means we hit a block.
+    let state = STATES.BLOCK;
+
+    // Traverse the DOM in the given direction to check what type of content
+    // there is.
+    let lastSpace = null;
+    let leftState;
+    for (const node of domPath) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+            // If we hit a text node, the state depends on the path direction:
+            // any space encountered backwards is a visible space if we hit
+            // visible content afterwards. If going forward, spaces are only
+            // visible if we have content backwards.
+            if (direction === DIRECTIONS.LEFT) {
+                if (isVisibleStr(value)) {
+                    state = (lastSpace || expr.test(value)) ? STATES.SPACE : STATES.CONTENT;
+                    break;
+                }
+                if (value.length) {
+                    lastSpace = node;
+                }
+            } else {
+                if (expr.test(value) && leftState === undefined) {
+                    [leftState] = getState(node.parentNode, childNodeIndex(node), DIRECTIONS.LEFT);
+                    if (leftState === STATES.CONTENT || leftState === STATES.SPACE) {
+                        state = STATES.SPACE;
+                        break;
+                    }
+                }
+                if (isVisibleStr(value)) {
+                    state = STATES.CONTENT;
+                    break;
+                }
+            }
+        } else if (node.nodeName === 'BR') {
+            state = direction === DIRECTIONS.LEFT ? STATES.BLOCK : STATES.CONTENT;
+            break;
+        }
+    }
+
+    return [state, boundaryNode];
+}
+
+/**
+ * Restores the given state starting before the given while looking in the given
+ * direction.
+ *
+ * @param {Node} oldNode
+ * @param {number} oldState @see STATES
+ * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
+ */
+export function restoreState(oldNode, oldState, direction) {
+    if (!oldNode || !oldNode.parentNode) {
+        // FIXME sometimes we want to restore the state starting from a node
+        // which has been removed by another restoreState call... Not sure if
+        // it is a problem or not, to investigate.
+        return;
+    }
+    const parentNode = oldNode.parentNode;
+    const parentOffset = childNodeIndex(oldNode) + (direction === DIRECTIONS.LEFT ? 0 : 1);
+    const [newState] = getState(parentNode, parentOffset, direction);
+    if (oldState === newState) {
+        return;
+    }
+
+    // Either: There was content in the given direction before and now there is
+    // space or a block, we have to enforce the potential space in the opposite
+    // direction.
+    // Or: There was space or block in the given direction before and now there
+    // is content, we have to get rid of the potential space in the opposite
+    // direction.
+    const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
+    enforceWhitespace(parentNode, parentOffset, inverseDirection, oldState === STATES.CONTENT || oldState === STATES.SPACE);
+}
+
+/**
+ * Enforces the whitespace and BR visibility in the given direction starting
+ * from the given position.
+ *
+ * @param {HTMLElement} el
+ * @param {number} offset
+ * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
+ * @param {boolean} visible
+ */
+export function enforceWhitespace(el, offset, direction, visible) {
+    let domPath;
+    let expr;
+    if (direction === DIRECTIONS.LEFT) {
+        domPath = leftDeepOnlyInlinePath(el, offset);
+        expr = /[^\S\u00A0]+$/;
+    } else {
+        domPath = rightDeepOnlyInlinePath(el, offset);
+        expr = /^[^\S\u00A0]+/;
+    }
+
+    const invisibleSpaceTextNodes = [];
+    let foundVisibleSpaceTextNode = null;
+    for (const node of domPath) {
+        if (node.nodeName === 'BR') {
+            if (visible) {
+                // FIXME review this
+                if (direction === DIRECTIONS.LEFT
+                        || getState(node.parentNode, childNodeIndex(node) + 1, DIRECTIONS.RIGHT)[0] !== STATES.BLOCK) {
+                    node.before(document.createElement('br'));
+                }
+            // FIXME review this
+            } else if (direction === DIRECTIONS.LEFT
+                    || getState(node.parentNode, childNodeIndex(node) + 1, DIRECTIONS.RIGHT)[0] === STATES.BLOCK) {
+                // Tricky case: even the BR removal/duplication during
+                // restoreState must be protected. Probably only because of
+                // chrome: <p>abc <br><br>[]</p> + BACKSPACE -> <p>abc </p>
+                // Fine on Firefox but on Chrome, the space is now invisible.
+                // Removing the second BR, the space has to be transformed into
+                // &nbsp; for this case on Chrome.
+                const index = childNodeIndex(node);
+                const restoreLeft = prepareUpdate(node.parentNode, index, DIRECTIONS.RIGHT);
+                const restoreRight = prepareUpdate(node.parentNode, index + 1, DIRECTIONS.LEFT);
+                node.remove();
+                restoreLeft();
+                restoreRight();
+            }
+            break;
+        } else if (node.nodeType === Node.TEXT_NODE) {
+            if (expr.test(node.nodeValue)) {
+                // If we hit spaces going in the direction, either they are in a
+                // visible text node and we have to change the visibility of
+                // those spaces, or it is in an invisible text node. In that
+                // last case, we either remove the spaces if there are spaces in
+                // a visible text node going further in the direction or we
+                // change the visiblity or those spaces.
+                if (isVisibleStr(node)) {
+                    foundVisibleSpaceTextNode = node;
+                    break;
+                } else {
+                    invisibleSpaceTextNodes.push(node);
+                }
+            } else if (isVisibleStr(node)) {
+                break;
+            }
+        }
+    }
+
+    if (!visible) {
+        for (const node of invisibleSpaceTextNodes) {
+            // Empty and not remove to not mess with offset-based positions in
+            // commands implementation, also remove non-block empty parents.
+            node.nodeValue = '';
+            const ancestorPath = closestPath(node.parentNode);
+            let toRemove = null;
+            for (const pNode of ancestorPath) {
+                if (toRemove) {
+                    toRemove.remove();
+                }
+                if (pNode.childNodes.length === 1 && !isBlock(pNode)) {
+                    pNode.after(node);
+                    toRemove = pNode;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    const spaceNode = (foundVisibleSpaceTextNode || invisibleSpaceTextNodes[0]);
+    if (spaceNode) {
+        spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, visible ? '\u00A0' : '');
+    }
+}
