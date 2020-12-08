@@ -527,11 +527,20 @@ describe('Editor', () => {
                             contentAfter: '<p>[]abc</p>',
                         });
                         await testEditor(BasicEditor, {
-                            contentBefore: '<p><br>[] abc</p>',
+                            contentBefore: '<p><br>[] def</p>',
                             stepFunction: deleteBackward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
-                            contentAfter: '<p>[]abc</p>',
+                            // JW cAfter: '<p>[]def</p>',
+                            contentAfter: '<p>[] def</p>',
+                        });
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc<br>[] def</p>',
+                            stepFunction: deleteBackward,
+                            // The space after the <br> is expected to be parsed
+                            // away, like it is in the DOM.
+                            // JW cAfter: '<p>[]def</p>',
+                            contentAfter: '<p>abc[]def</p>',
                         });
                     });
                     it('should delete a line break within a paragraph', async () => {
@@ -568,17 +577,29 @@ describe('Editor', () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>abc <br><br>[]</p>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<p>abc&nbsp;[]</p>',
+                            // JW cAfter: '<p>abc&nbsp;[]</p>',
+                            contentAfter: '<p>abc []<br></p>',
                         });
                     });
                     it('should delete a character and a line break, emptying a paragraph', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>bbb</p><p><br>a[]</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<p>bbb</p><p><br><br>[]</p>',
+                        });
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>ccc</p><p><br><br>[]</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<p>ccc</p><p>[]<br></p>',
+                        });
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>aaa</p><p><br>a[]</p>',
                             stepFunction: async (editor) => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
-                            contentAfter: '<p>aaa</p><p>[]<br></p>',
+                            // JW cAfter: '<p>aaa</p><p>[]<br></p>',
+                            contentAfter: '<p>aaa</p><p><br>[]</p>',
                         });
                     });
                     it('should delete a character after a trailing line break', async () => {
@@ -587,7 +608,8 @@ describe('Editor', () => {
                             stepFunction: deleteBackward,
                             // A new <br> should be insterted, to make the first one
                             // visible.
-                            contentAfter: '<p>ab<br>[]<br></p>',
+                            // JW cAfter: '<p>ab<br>[]<br></p>',
+                            contentAfter: '<p>ab<br><br>[]</p>',
                         });
                     });
                 });
@@ -1129,7 +1151,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]<b>def</b></p>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<p>abc</p><p><b>[]def</b></p>',
+                        contentAfter: '<p>abc</p><p>[]<b>def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
@@ -1190,7 +1212,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]<b>abc</b></p>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<p><br></p><p><b>[]abc</b></p>',
+                        contentAfter: '<p><br></p><p>[]<b>abc</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
