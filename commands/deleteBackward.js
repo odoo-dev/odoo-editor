@@ -86,15 +86,11 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
         if (isBlock(this)) {
             let leftState = getLeftState(previousNode(this));
             let cb1 = updateNodeLeft(this.firstChild);
-            let cb2 = updateNodeRight(null);
-            while (this.firstChild && !isBlock(this.firstChild)) {
-                cb2 = updateNodeRight(this.firstChild);                // TODO: improve efficiency
+            while (this.firstChild && !isBlock(this.firstChild))
                 this.before(this.firstChild);
-            }
             if (!this.childNodes.length)
                 this.remove();
             cb1();
-            cb2();
             if (leftState!='block') {
                 setCursor(pEl, parentOffset);
                 return;
