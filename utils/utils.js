@@ -723,13 +723,20 @@ export const rightDeepOnlyInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT,
  * Note: the method has been made generic enough to work with non-collapsed
  * selection but can be used for an unique cursor position.
  *
+ * @param {string} command
  * @param {Node} anchorNode
  * @param {number} anchorOffset
  * @param {Node} [focusNode=anchorNode]
  * @param {number} [focusOffset=anchorOffset]
  * @returns {function}
  */
-export function prepareUpdate(anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset) {
+export function prepareUpdate(command, anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset) {
+    // Normalize the selection according to the command. Note: commands are
+    // still to work with any selection, this only ensures the states will be
+    // computed properly (see below).
+    [anchorNode, anchorOffset, focusNode, focusOffset]
+        = normalizeSelection(command, anchorNode, anchorOffset, focusNode, focusOffset);
+
     // Prepare individual positions.
     [anchorNode, anchorOffset, focusNode, focusOffset]
         = prepareSelection(anchorNode, anchorOffset, focusNode, focusOffset);
@@ -751,6 +758,44 @@ export function prepareUpdate(anchorNode, anchorOffset, focusNode = anchorNode, 
         focusNode,
         focusOffset,
     };
+}
+
+/**
+ * Normalizes a selection given as two individual positions, according to the
+ * given command. Only useful for the @see prepareUpdate @see getStates
+ * functions to work efficiently.
+ *
+ * E.g. <p>ab[]c</p> + BACKSPACE <=> <p>a[b]c</p> + BACKSPACE
+ *
+ * Note: could also force the selection around inline invisible characters
+ * here.
+ *
+ * @param {string} command
+ * @param {Node} anchorNode
+ * @param {number} anchorOffset
+ * @param {Node} [focusNode=anchorNode]
+ * @param {number} [focusOffset=anchorOffset]
+ * @returns {Array<Node, number, Node, number>}
+ */
+export function normalizeSelection(command, anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset) {
+    if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
+        return [anchorNode, anchorOffset, focusNode, focusOffset];
+    }
+    switch (command) {
+        case 'oDeleteBackward': {
+            if (anchorNode.nodeType === Node.TEXT_NODE && anchorOffset > 0) {
+                anchorOffset--;
+            }
+            break;
+        }
+        case 'oDeleteForward': {
+            if (focusNode.nodeType === Node.TEXT_NODE && focusOffset < focusNode.length) {
+                focusOffset++;
+            }
+            break;
+        }
+    }
+    return [anchorNode, anchorOffset, focusNode, focusOffset];
 }
 
 /**
