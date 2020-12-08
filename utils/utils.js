@@ -710,6 +710,120 @@ export const rightDeepFirstInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT
 export const rightDeepOnlyInline = createDOMTraversalGenerator(DIRECTIONS.RIGHT, true, true);
 
 /**
+ * Any editor command is applied to a selection (collapsed or not). After the
+ * command, the content type before that selection and after that selection
+ * should be the same (some whitespace should disappear as went from collapsed
+ * to non collapsed, or converted to &nbsp; as went from non collapsed to
+ * collapsed, there also <br> to remove/duplicate, etc).
+ *
+ * This function returns a callback which allows to do that after the command
+ * has been done. It also prepares the DOM to receive the command in a way
+ * the callback will be able to work on.
+ *
+ * Note: the method has been made generic enough to work with non-collapsed
+ * selection but can be used for an unique cursor position.
+ *
+ * @param {Node} anchorEl
+ * @param {number} anchorOffset
+ * @param {Node} [focusEl=anchorEl]
+ * @param {number} [focusOffset=anchorOffset]
+ * @returns {function}
+ */
+export function prepareUpdate(anchorEl, anchorOffset, focusEl = anchorEl, focusOffset = anchorOffset) {
+    // Check the left state of the selection and the right state of the
+    // selection.
+    const [leftState, leftNode] = getState(anchorEl, anchorOffset, DIRECTIONS.LEFT);
+    const [rightState, rightNode] = getState(focusEl, focusOffset, DIRECTIONS.RIGHT);
+
+    // Create the callback that will be able to restore the state on the left
+    // and right nodes after any command processing in-between.
+    return function restoreStates() {
+        restoreState(leftNode, leftState, DIRECTIONS.LEFT);
+        restoreState(rightNode, rightState, DIRECTIONS.RIGHT);
+    };
+}
+
+const STATES = {
+    CONTENT: 0,
+    SPACE: 1,
+    BLOCK: 2,
+};
+
+/**
+ * Retrieves the "state" from a given position looking at the given direction.
+ * The "state" is the type of content. The functions also returns the first
+ * meaninful node looking in the given direction = the first node we trust will
+ * not disappear if a command is played in the opposite direction.
+ *
+ * Note: only work for in-between nodes positions. If the position is inside a
+ * text node, first prepare it with @see prepareSelection.
+ *
+ * @param {HTMLElement} el
+ * @param {number} offset
+ * @param {number} direction @see DIRECTIONS
+ * @returns {Array<number, Node>} @see STATES
+ */
+export function getState(el, offset, direction) {
+    let domTraversal;
+    let expr;
+    if (direction === DIRECTIONS.LEFT) {
+        domTraversal = leftDeepOnlyInline(el, offset);
+        expr = /[^\S\u00A0]$/;
+    } else {
+        domTraversal = rightDeepOnlyInline(el, offset);
+        expr = /^[^\S\u00A0]/;
+    }
+
+    let lastSpace = null;
+
+    let state = STATES.BLOCK;
+    let boundaryNode;
+
+    for (const node of domTraversal) {
+        if (!boundaryNode) {
+            // TODO I think sometimes, the node we have to consider as the
+            // anchor point to restore the state is not the first one of the
+            // traversal (like for example, empty text nodes that may disappear
+            // after the command so we would not want to get those ones).
+            boundaryNode = node;
+        }
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
+            if (isVisibleStr(value)) {
+                state = (lastSpace || expr.test(value)) ? STATES.SPACE : STATES.CONTENT;
+                break;
+            }
+            if (value.length) {
+                lastSpace = node;
+            }
+        } else if (node.nodeName === 'BR') {
+            state = direction === DIRECTIONS.LEFT ? STATES.BLOCK : STATES.CONTENT;
+            break;
+        }
+    }
+
+    return [state, boundaryNode];
+}
+
+/**
+ * Restores the given state starting before the given while looking in the given
+ * direction.
+ *
+ * @param {Node} oldNode
+ * @param {number} oldState @see STATES
+ * @param {number} direction @see DIRECTIONS
+ */
+export function restoreState(oldNode, oldState, direction) {
+    if (!oldNode) {
+        return;
+    }
+    const parentOffset = childNodeIndex(oldNode) + (direction === DIRECTIONS.LEFT ? 1 : 0);
+    const [newState, newNode] = getState(oldNode.parentNode, parentOffset, direction); // Note: oldNode = newNode normally
+    // TODO
+}
+
+/**
  * Returns the deepest child in last position.
  *
  * @param {Node} node
