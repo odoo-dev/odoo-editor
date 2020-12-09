@@ -9,7 +9,7 @@ import {
 } from './utils.js';
 
 describe('Editor', () => {
-    describe('deleteForward', () => {
+    describe.skip('deleteForward', () => {
         describe('Selection collapsed', () => {
             describe('Basic', () => {
                 it('should do nothing', async () => {
