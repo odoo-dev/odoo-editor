@@ -973,7 +973,10 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab   </p>    <p>   []cd</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<p>ab[]cd</p>',
+                        // @FP: the spaces on the right of ab are actually
+                        // visible (but collapsed into one of course) so they
+                        // should stay untouched.
+                        contentAfter: '<p>ab   []cd</p>',
                     });
                 });
                 it('should remove a br and remove trailing spaces', async () => {
