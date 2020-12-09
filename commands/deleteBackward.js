@@ -231,18 +231,7 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset) {
         HTMLElement.prototype.oDeleteBackward.call(this, offset);
         return;
     }
-    // Backspace at the start of the first LI element...
-    if (this.parentElement.closest('li')) {
-        // ... for sub-menus: unindent
-        this.oShiftTab(offset);
-        return;
-    }
-    // ... for main menus: move LI content to a new external <p/>
-    const pEl = document.createElement('p');
-    const brEl = document.createElement('br');
-    pEl.appendChild(brEl);
-    this.parentElement.before(pEl);
-    mergeNodes(pEl, this);
+    this.oShiftTab(offset);
 };
 
 // Utils
