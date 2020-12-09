@@ -207,7 +207,7 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
  * @returns {number} The parentOffset if the cursor was between the two text
  *          node parts after the split.
  */
-export function splitText(textNode, offset) {
+export function splitTextNode(textNode, offset) {
     let parentOffset = childNodeIndex(textNode);
 
     if (offset > 0) {
@@ -825,7 +825,7 @@ export const STATES = {
  * will not disappear if a command is played in the given direction.
  *
  * Note: only work for in-between nodes positions. If the position is inside a
- * text node, first split it @see splitText.
+ * text node, first split it @see splitTextNode.
  *
  * @param {HTMLElement} el
  * @param {number} offset

@@ -2,142 +2,60 @@
 
 import {
     childNodeIndex,
-    closestBlock,
-    findLeadingSpaceNextNode,
-    findNode,
-    findTrailingSpacePrevNode,
+    DIRECTIONS,
+    getState,
     isBlock,
-    isContentTextNode,
-    isFakeLineBreak,
-    isInvisibleChar,
-    isRealLineBreak,
-    isSpace,
     isUnbreakable,
-    isVisibleStr,
-    leftDeepOnlyInlinePath,
     mergeNodes,
     MERGE_CODES,
     nodeSize,
+    prepareUpdate,
     setCursor,
+    splitTextNode,
+    STATES,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteBackward = function (offset) {
-    const value = this.nodeValue;
-    const textLength = this.length;
-    let firstExcludedCharIndex = offset - 1; // Start index of the characters to remove
-    let firstIncludedCharIndex = offset; // End index of the characters to remove + 1
+    const parentNode = this.parentNode;
 
-    const expandRemovalRange = callback => {
-        while (callback(value.charAt(firstExcludedCharIndex))) {
-            firstExcludedCharIndex--;
+    if (!offset) {
+        // Backspace at the beginning of a text node, we have to propagate
+        // the backspace to the parent.
+        const parentOffset = childNodeIndex(this);
+        if (!this.length) {
+            this.remove();
         }
-        while (callback(value.charAt(firstIncludedCharIndex))) {
-            firstIncludedCharIndex++;
-        }
-    };
-
-    // Remove zero-width characters around the cursor position
-    expandRemovalRange(ch => isInvisibleChar(ch));
-
-    // If beginning of string, now simply remove the starting invisible
-    // characters we found and propagate the backspace to the text node parent.
-    if (firstExcludedCharIndex < 0) {
-        this.nodeValue = value.substring(firstIncludedCharIndex);
-        const parentOffset = childNodeIndex(this) + (this.length ? 0 : 1);
-        return this.parentElement.oDeleteBackward(parentOffset);
+        parentNode.oDeleteBackward(parentOffset);
+        return;
     }
 
-    // 'firstExcludedCharIndex' now points at the character the user actually
-    // wants to remove. If it is a space removal, we have to remove the
-    // surrounding collapsed spaces too.
-    const spaceRemoval = isSpace(value.charAt(firstExcludedCharIndex));
-    if (spaceRemoval) {
-        firstExcludedCharIndex--;
-        expandRemovalRange(ch => isSpace(ch) || isInvisibleChar(ch));
-        firstExcludedCharIndex++;
+    // First, split after the character where the backspace occurs and prepare
+    // to restore the right part following that character removal.
+    const firstSplitOffset = splitTextNode(this, offset);
+    const restoreRight = prepareUpdate(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
+    const middleNode = parentNode.childNodes[firstSplitOffset - 1];
+
+    // Get the left state at the split location so that we know if the backspace
+    // must propagate after the character removal.
+    const [leftState] = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
+
+    // Then, split before the character where the backspace occurs and prepare
+    // to restore the left part following that character removal.
+    const secondSplitOffset = splitTextNode(middleNode, middleNode.length - 1);
+    const restoreLeft = prepareUpdate(parentNode, secondSplitOffset, DIRECTIONS.RIGHT);
+
+    // Do remove the character, then restore the state of the surrounding parts.
+    middleNode.remove();
+    restoreRight();
+    restoreLeft();
+
+    // If the removed element was not visible content, propagate the backspace.
+    if (leftState === STATES.BLOCK) {
+        parentNode.oDeleteBackward(secondSplitOffset);
+        return;
     }
 
-    // Now remove all the characters that we found to remove
-    const leftStr = value.substring(0, firstExcludedCharIndex);
-    const rightStr = value.substring(firstIncludedCharIndex);
-    const newNodeValue = leftStr + rightStr;
-
-    let realPrevBR = null;
-    if (textLength && !newNodeValue.length) {
-        // When a text node is emptied, automatically add a BR after it if there
-        // was a real line break before who would become a cursor placeholder
-        // line break (see **)
-        realPrevBR = findNode(
-            leftDeepOnlyInlinePath(this.parentNode, childNodeIndex(this)),
-            node => isRealLineBreak(node),
-            node => isContentTextNode(node));
-    }
-
-    this.nodeValue = newNodeValue;
-
-    // Now handle transformation of whitespaces into &nbsp; when collapsing two
-    // non-collapsed groups of whitespaces (in or out of the node) + propagate
-    // leading/trailing collapsed whitespace removal.
-    if (firstExcludedCharIndex > 0 && firstIncludedCharIndex < textLength) {
-        if (!spaceRemoval && /[^\S\u00A0]$/.test(leftStr) && /^[^\S\u00A0]/.test(rightStr)) {
-            // _a[]_ -> two non collapsed spaces would now be collapsed in the node
-            this.nodeValue = leftStr + rightStr.replace(/^[^\S\u00A0]+/, '\u00A0');
-        }
-    } else {
-        // In the special case we removed the last character of the string, we
-        // could replace multiple spaces by nbsp if we consider both leading
-        // and trailing ones. This variable is there to ensure we only replace
-        // one space.
-        let alreadyTransformed = false;
-
-        // Leading character removal: special cases
-        if (firstExcludedCharIndex <= 0) {
-            const trailingSpacePrevNode = findTrailingSpacePrevNode(this.parentElement, childNodeIndex(this));
-
-            if (trailingSpacePrevNode) {
-                if (spaceRemoval) {
-                    // <b>_</b>_[] -> propagate the backspace to originally collapsed spaces of siblings
-                    trailingSpacePrevNode.oDeleteBackward(trailingSpacePrevNode.length);
-                } else if (!alreadyTransformed) {
-                    // <b>_</b>a[]_ -> two non collapsed spaces would now be collapsed, accross different nodes
-                    trailingSpacePrevNode.nodeValue = trailingSpacePrevNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-                    alreadyTransformed = true;
-                }
-            } else if (!alreadyTransformed && isVisibleStr(this)) {
-                // <b>a</b>a[]_a -> a single space would become invisible
-                this.nodeValue = this.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
-                alreadyTransformed = true;
-            }
-        }
-        // Trailing character removal: special cases
-        if (firstIncludedCharIndex >= textLength) {
-            const leadingSpaceNextNode = findLeadingSpaceNextNode(this.parentElement, childNodeIndex(this) + 1);
-
-            if (leadingSpaceNextNode) {
-                if (spaceRemoval) {
-                    // _[]<b>_</b> -> propagate the backspace to originally collapsed spaces of siblings
-                    leadingSpaceNextNode.oDeleteBackward(leadingSpaceNextNode.nodeValue.search(/[^\S\u00A0]/) + 1);
-                } else if (!alreadyTransformed) {
-                    // _a[]<b>_</b> -> two non collapsed spaces would now be collapsed, accross different nodes
-                    leadingSpaceNextNode.nodeValue = leadingSpaceNextNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
-                }
-            } else if (!alreadyTransformed && isVisibleStr(this)) {
-                // a_a[]<b>a</b> -> a single visible space would become invisible
-                this.nodeValue = this.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-            }
-        }
-    }
-
-    // Automatic BR addition
-    // 1°) See **
-    // 2°) The closest block now has no text content / other visible elements
-    if (realPrevBR && isFakeLineBreak(realPrevBR)
-            // FIXME that condition is not ok, should be improved
-            || !isVisibleStr(closestBlock(this).textContent) && !closestBlock(this).querySelector('br')) {
-        this.after(document.createElement('br'));
-    }
-
-    setCursor(this, Math.min(leftStr.length, this.length));
+    setCursor(parentNode, secondSplitOffset);
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset) {

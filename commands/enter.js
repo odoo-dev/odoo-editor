@@ -10,11 +10,11 @@ import {
     isBlock,
     setCursorStart,
     setTagName,
-    splitText,
+    splitTextNode,
 } from "../utils/utils.js";
 
 Text.prototype.oEnter = function (offset) {
-    this.parentElement.oEnter(splitText(this, offset), true);
+    this.parentElement.oEnter(splitTextNode(this, offset), true);
 };
 /**
  * The whole logic can pretty much be described by this example:

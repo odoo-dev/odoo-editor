@@ -4,11 +4,11 @@ import {
     isFakeLineBreak,
     prepareUpdate,
     setCursorEnd,
-    splitText,
+    splitTextNode,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftEnter = function (offset) {
-    this.parentElement.oShiftEnter(splitText(this, offset));
+    this.parentElement.oShiftEnter(splitTextNode(this, offset));
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
