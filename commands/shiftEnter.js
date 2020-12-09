@@ -1,10 +1,10 @@
 "use strict";
 
 import {
-    blockify,
+    isFakeLineBreak,
+    prepareUpdate,
     setCursorEnd,
     splitText,
-    isFakeLineBreak,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftEnter = function (offset) {
@@ -12,7 +12,8 @@ Text.prototype.oShiftEnter = function (offset) {
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
-    blockify(this, offset);
+    const restoreStates = prepareUpdate(this, offset);
+
     const brEl = document.createElement('BR');
     if (offset >= this.childNodes.length) {
         this.appendChild(brEl);
@@ -22,5 +23,8 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     if (isFakeLineBreak(brEl)) {
         brEl.before(document.createElement('BR'));
     }
+
+    restoreStates();
+
     setCursorEnd(brEl);
 };
