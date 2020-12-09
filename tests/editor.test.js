@@ -969,6 +969,13 @@ describe('Editor', () => {
                 });
             });
             describe('POC extra tests', () => {
+                it('should delete an unique space between letters', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab []cd</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]cd</p>',
+                    });
+                });
                 it('should merge a paragraph with text into a paragraph with text removing spaces', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab   </p>    <p>   []cd</p>',
