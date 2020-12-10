@@ -58,19 +58,7 @@ class Sanitize {
     }
 
     // Specific tag cleanup
-    tags = {
-        BR: function (node) {
-            const parentEl = node.parentNode;
-            const index = childNodeIndex(node);
-            // Remove trailing line breaks which do not act as a placeholder for
-            // other BR or for container element.
-            if (isFakeLineBreak(node)
-                    && findVisibleTextNode(leftDeepOnlyInlinePath(parentEl, index))
-                    && !findNode(leftDeepOnlyInlinePath(parentEl, index), node => isRealLineBreak(node))) {
-                node.remove();
-            }
-        }
-    }
+    tags = {}
 }
 
 export function sanitize(root) {

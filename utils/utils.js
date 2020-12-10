@@ -602,53 +602,12 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
     // The given node is visible but cannot accept contents (like a BR). We
     // remove it and return the related merge code.
     if (isVisibleEmpty(leftNode)) {
-        const removedNode = leftNode;
-
-        // Following code handles some specific cases for BR removals.
-        // TODO check if this is the right place for it.
-        const isBRRemoval = removedNode.nodeName === 'BR';
-        if (isBRRemoval) {
-            const parentEl = removedNode.parentElement;
-            const index = childNodeIndex(removedNode);
-
-            // 1°) Not removing the last BR of a visually empty node
-            // TODO review the condition.
-            if (!parentEl.textContent && parentEl.children.length === 1) {
-                return MERGE_CODES.REMOVED_INVISIBLE_NODE;
-            }
-
-            // 2°) Remove leading invisible whitespace in following text content
-            // as it would become visible because of BR removal.
-            //
-            //     <p>ab<br>[] cd</p> + BACKSPACE
-            // <=> <p>ab[]cd</p>
-            //
-            // TODO this may not be specific to BR removal only but to any
-            // backspace (to check saveState/restoreState Fabien's idea).
-            const spaceNode = findLeadingSpaceNextNode(parentEl, index + 1);
-            if (spaceNode) {
-                spaceNode.nodeValue = spaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '');
-            }
-
-            // 3°) Convert trailing visible whitespace to nbsp in preceding text
-            // content as it would become invisible if there is no following
-            // text content.
-            //
-            //     <p>ab <br>[]</p> + BACKSPACE
-            // <=> <p>ab&nbsp;</p>
-            //
-            // TODO this may not be specific to BR removal only but to any
-            // backspace (to check saveState/restoreState Fabien's idea).
-            const nextContentNode = findVisibleTextNode(rightDeepOnlyInlinePath(parentEl, index + 1));
-            if (!nextContentNode) {
-                const spaceNode = findTrailingSpacePrevNode(parentEl, index);
-                if (spaceNode) {
-                    spaceNode.nodeValue = spaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-                }
-            }
-        }
-
-        removedNode.oRemove();
+        const index = childNodeIndex(leftNode);
+        const restoreLeft = prepareUpdate(leftNode.parentNode, index, DIRECTIONS.RIGHT);
+        const restoreRight = prepareUpdate(leftNode.parentNode, index + 1, DIRECTIONS.LEFT);
+        leftNode.oRemove();
+        restoreLeft();
+        restoreRight();
         return MERGE_CODES.REMOVED_VISIBLE_NODE;
     }
 
@@ -666,39 +625,51 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
     if (rightIsBlock) {
         // First case, the right side is block content: we have to unwrap that
         // content in the proper location.
+
+        const index = childNodeIndex(rightNode);
+        const restoreOriginLeft = prepareUpdate(rightNode.parentNode, index, DIRECTIONS.RIGHT);
+        const restoreOriginRight = prepareUpdate(rightNode.parentNode, index + 1, DIRECTIONS.LEFT);
+
         const fragmentEl = document.createDocumentFragment();
         while (rightNode.firstChild) {
             fragmentEl.appendChild(rightNode.firstChild);
         }
         rightNode.oRemove();
+        restoreOriginLeft();
+        restoreOriginRight();
 
-        if (leftIsBlock) {
-            // If the left side is a block too, find the right position to
-            // unwrap the content inside and reposition cursor the right way.
-            moveMergedNodes(leftNode, fragmentEl);
-        } else {
-            // If the left side is inline, simply unwrap at current block
-            // location.
-            leftNode.after(fragmentEl);
-            setCursorEnd(leftNode);
-        }
+        // If the left side is an inline node, simply unwrap at current location
+        // (= after the left side).
+        // If the left side is a block, find the right position to unwrap the
+        // content inside and reposition cursor the right way.
+        moveMergedNodes(leftNode, fragmentEl, leftIsBlock);
     } else {
         // Second case, the right side is inline content.
-        if (leftIsBlock) {
-            // If the left side is a block, move that inline content and the
-            // one which follows in that left side.
-            const fragmentEl = document.createDocumentFragment();
-            let node = rightNode;
-            do {
-                let nextNode = node.nextSibling;
-                fragmentEl.appendChild(node);
-                node = nextNode;
-            } while (node && !isBlock(node));
-            moveMergedNodes(leftNode, fragmentEl);
-        } else {
+
+        if (!leftIsBlock) {
             // If the left side is also inline, nothing to merge.
             return MERGE_CODES.NOTHING_TO_MERGE;
         }
+
+        // If the left side is a block, move that inline content and the
+        // one which follows in that left side.
+        const inlineNodes = [];
+        let node = rightNode;
+        do {
+            inlineNodes.push(node);
+            node = node.nextSibling;
+        } while (node && !isBlock(node));
+
+        const index = childNodeIndex(rightNode);
+        const restoreOriginLeft = prepareUpdate(rightNode.parentNode, index, DIRECTIONS.RIGHT);
+        const restoreOriginRight = prepareUpdate(rightNode.parentNode, index + inlineNodes.length, DIRECTIONS.LEFT);
+
+        const fragmentEl = document.createDocumentFragment();
+        inlineNodes.forEach(node => fragmentEl.appendChild(node));
+        restoreOriginLeft();
+        restoreOriginRight();
+
+        moveMergedNodes(leftNode, fragmentEl);
     }
 
     return MERGE_CODES.SUCCESS;
@@ -711,40 +682,59 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
  *
  * @param {Element} destinationEl
  * @param {DocumentFragment} sourceFragment
+ * @param {boolean} [inside=true]
  * @returns {Element} The element where the elements where actually moved.
  */
-export function moveMergedNodes(destinationEl, sourceFragment) {
-    // For list elements, the proper location is that last list item
-    if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
-        destinationEl = destinationEl.lastElementChild;
-    }
+export function moveMergedNodes(destinationEl, sourceFragment, inside = true) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
-        throw UNBREAKABLE_ROLLBACK_CODE;
+        inside = false;
     }
 
-    // Merge into deepest ending block
-    destinationEl = findNode(
-        closestPath(latestChild(destinationEl)),
-        node => node === destinationEl || isBlock(node)
-    );
+    if (inside) {
+        // For list elements, the proper location is that last list item
+        if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
+            destinationEl = destinationEl.lastElementChild;
+        }
 
-    // Remove trailing BR at destination if its purpose changes after receiving
-    // the merged nodes.
-    const originalLastEl = destinationEl.lastElementChild;
-    const isOriginalLastElAFakeLineBreak = isFakeLineBreak(originalLastEl);
+        // Merge into deepest ending block
+        destinationEl = findNode(
+            closestPath(latestChild(destinationEl)),
+            node => node === destinationEl || isBlock(node)
+        );
+    }
 
     const latestChildEl = latestChild(destinationEl);
-    destinationEl.appendChild(sourceFragment);
-    if (latestChildEl !== destinationEl) {
+
+    const restoreDestination = inside
+        ? prepareUpdate(destinationEl, destinationEl.childNodes.length)
+        : prepareUpdate(destinationEl.parentNode, childNodeIndex(destinationEl) + 1);
+    const restoreMovedLeft = prepareUpdate(sourceFragment, 0, DIRECTIONS.LEFT);
+    const restoreMovedRight = prepareUpdate(sourceFragment, sourceFragment.childNodes.length, DIRECTIONS.RIGHT);
+
+    if (inside) {
+        destinationEl.appendChild(sourceFragment);
+    } else {
+        destinationEl.after(sourceFragment);
+    }
+    // FIXME ideally setCursor after restore but restore may remove BR where
+    // we want to set the cursor... TODO: find a better way to reposition cursor
+    // in general.
+    if (latestChildEl !== destinationEl || !inside) {
         setCursorEnd(latestChildEl);
     } else {
         setCursorStart(destinationEl);
     }
-
-    if (isOriginalLastElAFakeLineBreak !== isFakeLineBreak(originalLastEl)) {
-        originalLastEl.remove();
+    restoreDestination();
+    restoreMovedLeft();
+    restoreMovedRight();
+    // FIXME sometimes restore mess up where the cursor was placed by the above
+    // code... so we reforce it here...
+    if (latestChildEl !== destinationEl || !inside) {
+        setCursorEnd(latestChildEl);
+    } else {
+        setCursorStart(destinationEl);
     }
 
     return destinationEl;
