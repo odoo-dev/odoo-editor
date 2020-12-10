@@ -980,9 +980,19 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab   </p>    <p>   []cd</p>',
                         stepFunction: deleteBackward,
-                        // @FP: the spaces on the right of ab are actually
-                        // visible (but collapsed into one of course) so they
-                        // should stay untouched.
+                        // This is a tricky case: the spaces after ab are
+                        // visible on Firefox but not on Chrome... to be
+                        // consistent we enforce the space removal here but
+                        // maybe not a good idea... see next case ->
+                        contentAfter: '<p>ab[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab   <br></p>    <p>   []cd</p>',
+                        stepFunction: deleteBackward,
+                        // This is the same visible case as the one above. The
+                        // difference is that here the space after ab is visible
+                        // on both Firefox and Chrome, so it should stay
+                        // visible.
                         contentAfter: '<p>ab   []cd</p>',
                     });
                 });
