@@ -986,11 +986,16 @@ describe('Editor', () => {
                         contentAfter: '<p>ab   []cd</p>',
                     });
                 });
-                it('should remove a br and remove trailing spaces', async () => {
+                it('should remove a br and remove following spaces', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab<br><b>[]   </b>cd</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<p>ab<b>[]</b>cd</p>',
+                        contentAfter: '<p>ab[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab<br><b>[]   x</b>cd</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]<b>x</b>cd</p>',
                     });
                 });
             });
