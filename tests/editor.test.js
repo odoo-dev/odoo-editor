@@ -903,7 +903,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: 'ab<p>[]cd</p>ef',
                         stepFunction: deleteBackward,
-                        contentAfter: 'ab[]cdef',
+                        contentAfter: 'ab[]cdef', // FIXME for me this is wrong, I would expect ab[]cd<p>ef</p> or something like that ?
                     });
                 });
             });
