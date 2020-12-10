@@ -3,11 +3,11 @@
 import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 
 import {
-    blockify,
     childNodeIndex,
     clearEmpty,
     fillEmpty,
     isBlock,
+    prepareUpdate,
     setCursorStart,
     setTagName,
     splitTextNode,
@@ -29,8 +29,9 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
+    let restoreStates;
     if (firstSplit) {
-        blockify(this, offset);
+        restoreStates = prepareUpdate(this, offset);
     }
 
     // First split the node in two and move half the children in the clone.
@@ -54,6 +55,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     // All split have been done, place the cursor at the right position, and
     // fill/remove empty nodes.
     if (firstSplit) {
+        restoreStates();
         fillEmpty(clearEmpty(this));
         fillEmpty(splitEl);
         setCursorStart(splitEl);

@@ -416,31 +416,6 @@ export function setTagName(el, newTagName) {
     }
     return n;
 }
-
-/**
- * Adapts left & right nodes to prepare for adding a <block> in anchor/offset
- * position.
- *
- * @param {Node} anchorNode
- * @param {number} offset
- */
-export function blockify(anchorNode, offset) {
-    const leftTrailingSpaceNode = findTrailingSpacePrevNode(anchorNode, offset);
-    if (leftTrailingSpaceNode) {
-        if (findVisibleTextNode(rightDeepOnlyInlinePath(anchorNode, offset))) {
-            leftTrailingSpaceNode.nodeValue = leftTrailingSpaceNode.nodeValue.replace(/[^\S\u00A0]+$/, '\u00A0');
-            return;
-        }
-    }
-
-    const rightLeadingSpaceNode = findLeadingSpaceNextNode(anchorNode, offset);
-    if (rightLeadingSpaceNode) {
-        if (findVisibleTextNode(leftDeepOnlyInlinePath(anchorNode, offset))) {
-            rightLeadingSpaceNode.nodeValue = rightLeadingSpaceNode.nodeValue.replace(/^[^\S\u00A0]+/, '\u00A0');
-            return;
-        }
-    }
-}
 /**
  * Returns whether the given node is a element that could be considered to be
  * removed by itself = self closing tags.
@@ -452,7 +427,6 @@ const selfClosingElementTags = ['BR', 'IMG', 'INPUT'];
 export function isVisibleEmpty(node) {
     return selfClosingElementTags.includes(node.nodeName);
 }
-
 /**
  * Returns whether the given string (or given text node value) has
  * non-whitespace characters in it.
