@@ -224,6 +224,10 @@ export function splitText(textNode, offset) {
 }
 
 export function setCursor(node, offset = undefined) {
+    if (!node || !node.parentElement || !node.parentElement.closest('body')) {
+        return;
+    }
+
     let sel = document.defaultView.getSelection();
     let range = new Range();
     if (node.childNodes.length === offset && node.lastChild instanceof HTMLBRElement) {
@@ -237,7 +241,7 @@ export function setCursor(node, offset = undefined) {
 
 export function setCursorStart(node) {
     node = firstChild(node);
-    if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
+    if (node.nodeName === 'BR' && node.parentNode) { // TODO improve / unify setCursorEnd
         setCursor(node.parentElement, childNodeIndex(node));
         return;
     }
@@ -246,7 +250,7 @@ export function setCursorStart(node) {
 
 export function setCursorEnd(node) {
     node = latestChild(node);
-    if (node.nodeName === 'BR') { // TODO improve / unify setCursorEnd
+    if (node.nodeName === 'BR' && node.parentNode) { // TODO improve / unify setCursorEnd
         setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
         return;
     }

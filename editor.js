@@ -536,6 +536,9 @@ export default class OdooEditor {
      */
     _computeHistoryCursor() {
         const sel = document.defaultView.getSelection();
+        if (!sel.anchorNode) {
+            return this._latestComputedCursor;
+        }
         this._latestComputedCursor = {
             anchorNode: sel.anchorNode.oid,
             anchorOffset: sel.anchorOffset,
@@ -561,11 +564,18 @@ export default class OdooEditor {
      * @param {boolean} [show]
      */
     _updateToolbar(show) {
+        let sel = document.defaultView.getSelection();
+        if (!sel.anchorNode) {
+            show = false;
+        }
+
         if (show !== undefined) {
             this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
+        if (show === false) {
+            return;
+        }
 
-        let sel = document.defaultView.getSelection();
         this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
         this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
         this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
