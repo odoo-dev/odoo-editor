@@ -622,27 +622,17 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
 
     if (rightIsBlock) {
         // First case, the right side is block content: we have to unwrap that
-        // content in the proper location.
-        // If the left side is an inline node, simply unwrap at current location
-        // (= after the left side).
-        // If the left side is a block, find the right position to unwrap the
-        // content inside and reposition cursor the right way.
+        // content in the proper location. Left side inline = current location,
+        // left side block = deepest block inside.
         const restore = prepareUpdate(...boundariesOut(rightNode));
         if (rightNode.childNodes.length) {
             moveMergedNodes(leftNode, [...rightNode.childNodes], leftIsBlock);
         }
         rightNode.oRemove();
         restore();
-    } else {
-        // Second case, the right side is inline content.
-
-        if (!leftIsBlock) {
-            // If the left side is also inline, nothing to merge.
-            return MERGE_CODES.NOTHING_TO_MERGE;
-        }
-
-        // If the left side is a block, move that inline content and the
-        // one which follows in that left side.
+    } else if (leftIsBlock) {
+        // If the left side is a block and right side is inline content, move
+        // that inline content and the one which follows in that left side.
         const inlineNodes = [];
         let node = rightNode;
         do {
@@ -653,6 +643,9 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
         const restore = prepareUpdate(...leftPos(inlineNodes[0]), ...rightPos(inlineNodes[inlineNodes.length - 1]));
         moveMergedNodes(leftNode, inlineNodes);
         restore();
+    } else {
+        // Both sides are inline content, nothing to merge.
+        return MERGE_CODES.NOTHING_TO_MERGE;
     }
 
     return MERGE_CODES.SUCCESS;
@@ -687,11 +680,8 @@ export function moveMergedNodes(destinationEl, nodes, inside = true) {
         );
     }
 
-    const latestChildEl = latestChild(destinationEl);
-
     const restoreDestination = prepareUpdate(...(inside ? endPos(destinationEl) : rightPos(destinationEl)));
     const restoreMoved = prepareUpdate(...leftPos(nodes[0]), ...rightPos(nodes[nodes.length - 1]));
-
     const fragment = document.createDocumentFragment();
     nodes.forEach(node => fragment.appendChild(node));
     if (inside) {
@@ -699,22 +689,20 @@ export function moveMergedNodes(destinationEl, nodes, inside = true) {
     } else {
         destinationEl.after(fragment);
     }
-    // FIXME ideally setCursor after restore but restore may remove BR where
-    // we want to set the cursor... TODO: find a better way to reposition cursor
-    // in general.
-    if (latestChildEl !== destinationEl || !inside) {
-        setCursorEnd(latestChildEl);
-    } else {
-        setCursorStart(destinationEl);
-    }
     restoreDestination();
     restoreMoved();
-    // FIXME sometimes restore mess up where the cursor was placed by the above
-    // code... so we reforce it here...
-    if (latestChildEl !== destinationEl || !inside) {
-        setCursorEnd(latestChildEl);
+
+    // Replace cursor before the first moved node that remains after restore.
+    const firstNode = nodes.find(node => !!node.parentNode);
+    if (firstNode) {
+        const leftNode = leftDeepOnlyInlinePath(...leftPos(firstNode)).next().value;
+        if (leftNode) {
+            setCursorEnd(leftNode);
+        } else {
+            setCursorStart(firstNode);
+        }
     } else {
-        setCursorStart(destinationEl);
+        setCursorEnd(destinationEl);
     }
 
     return destinationEl;
