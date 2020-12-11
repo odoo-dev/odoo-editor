@@ -667,15 +667,15 @@ export function moveMergedNodes(destinationEl, sourceFragment, inside = true) {
     }
 
     if (inside) {
-        // For list elements, the proper location is that last list item
-        if (destinationEl.tagName === 'UL' || destinationEl.tagName === 'OL') {
-            destinationEl = destinationEl.lastElementChild;
-        }
-
-        // Merge into deepest ending block
+        // Merge into deepest ending block, after visible content (also handle
+        // UL case automatically for example).
+        const visibleNode = findNode(
+            leftDeepFirstPath(destinationEl, destinationEl.childNodes.length),
+            node => node === destinationEl || isVisible(node)
+        );
         destinationEl = findNode(
-            closestPath(latestChild(destinationEl)),
-            node => node === destinationEl || isBlock(node)
+            closestPath(visibleNode),
+            node => node === destinationEl || isBlock(node),
         );
     }
 
