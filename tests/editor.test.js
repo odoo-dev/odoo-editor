@@ -668,18 +668,6 @@ describe('Editor', () => {
                             contentAfter: '<p>ab</p><p><br><br>[]<br></p><p>cd</p>',
                         });
                     });
-                    it('should merge in nested paragraphs and remove invisible inline content', async () => {
-                        await testEditor(BasicEditor, {
-                            contentBefore: '<div><p>ab</p> <i> </i> </div><p>[]c</p>',
-                            stepFunction: deleteBackward,
-                            contentAfter: '<div><p>ab[]c</p></div>',
-                        });
-                        await testEditor(BasicEditor, {
-                            contentBefore: '<div><p>ab</p>    </div><p>[]c</p>',
-                            stepFunction: deleteBackward,
-                            contentAfter: '<div><p>ab[]c</p></div>',
-                        });
-                    });
                     it('should delete two line breaks', async () => {
                         // 4-2
                         await testEditor(BasicEditor, {
@@ -1020,6 +1008,37 @@ describe('Editor', () => {
                         contentBefore: '<p>ab<br><b>[]   x</b>cd</p>',
                         stepFunction: deleteBackward,
                         contentAfter: '<p>ab[]<b>x</b>cd</p>',
+                    });
+                });
+                it('should ignore empty inline node between blocks being merged', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc</p><i> </i><p>[]def</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>abc[]def</p>',
+                    });
+                });
+                it('should merge in nested paragraphs and remove invisible inline content', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<div><p>ab</p>    </div><p>[]c</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<div><p>ab[]c</p></div>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<div><p>ab</p> <i> </i> </div><p>[]c</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<div><p>ab[]c</p></div>',
+                    });
+                });
+                it('should not merge in nested blocks if inline content afterwards', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<div><p>ab</p>de</div><p>[]fg</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<div><p>ab</p>de[]fg</div>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<div><p>ab</p><img></div><p>[]fg</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<div><p>ab</p><img>[]fg</div>',
                     });
                 });
             });
