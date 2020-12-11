@@ -668,6 +668,18 @@ describe('Editor', () => {
                             contentAfter: '<p>ab</p><p><br><br>[]<br></p><p>cd</p>',
                         });
                     });
+                    it('should merge in nested paragraphs and remove invisible inline content', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div><p>ab</p> <i> </i> </div><p>[]c</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<div><p>ab[]c</p></div>',
+                        });
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div><p>ab</p>    </div><p>[]c</p>',
+                            stepFunction: deleteBackward,
+                            contentAfter: '<div><p>ab[]c</p></div>',
+                        });
+                    });
                     it('should delete two line breaks', async () => {
                         // 4-2
                         await testEditor(BasicEditor, {
