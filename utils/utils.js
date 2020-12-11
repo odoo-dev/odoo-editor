@@ -241,7 +241,7 @@ export function setCursor(node, offset = undefined) {
 
 export function setCursorStart(node) {
     node = firstChild(node);
-    if (node.nodeName === 'BR' && node.parentNode) { // TODO improve / unify setCursorEnd
+    if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
         setCursor(node.parentElement, childNodeIndex(node));
         return;
     }
@@ -250,7 +250,7 @@ export function setCursorStart(node) {
 
 export function setCursorEnd(node) {
     node = latestChild(node);
-    if (node.nodeName === 'BR' && node.parentNode) { // TODO improve / unify setCursorEnd
+    if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
         setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
         return;
     }
