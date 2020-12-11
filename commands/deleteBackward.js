@@ -6,8 +6,6 @@ import {
     getState,
     isBlock,
     isUnbreakable,
-    mergeNodes,
-    MERGE_CODES,
     nodeSize,
     prepareUpdate,
     setCursor,
@@ -58,89 +56,65 @@ Text.prototype.oDeleteBackward = function (offset) {
     setCursor(parentNode, secondSplitOffset);
 };
 
+HTMLBRElement.prototype.oDeleteBackward = function (offset) {
+    const parentOffset = childNodeIndex(this);
+    const restoreLeft = prepareUpdate(this.parentElement, parentOffset+1, DIRECTIONS.LEFT);
+    const restoreRight = prepareUpdate(this.parentElement, parentOffset, DIRECTIONS.RIGHT);
+    this.remove();
+    restoreLeft();
+    restoreRight();
+}
+
+
 HTMLElement.prototype.oDeleteBackward = function (offset) {
-    if (offset === 0) {
-        // If backspace at the beginning of an unbreakable or the last child
-        // element of an unbreakable, in that case we do nothing.
-        const pEl = this.parentElement;
-        if (isUnbreakable(this)
-                || isUnbreakable(pEl) && pEl.childNodes.length === 1 && pEl.firstChild === this) {
-            // TODO review that logic, it made sense when AGE explained it but
-            // then they have an opposite test which removes the last p if there
-            // is surrounding text node ab<p>[]cd</p> should apparently drop the
-            // p but not if there is no ab...
-            return;
+    const parentOffset = childNodeIndex(this);
+    let moveDest;
+    let moveMethod;
+
+    if (offset) {
+        let el = this.childNodes[offset - 1];
+        if (! isBlock(el)) {
+            // <p>abc<i>def</i>[]</p> + BACKSPACE       =>  <p>abc<i>def[]</i></p> + BACKSPACE
+            return el.oDeleteBackward(el.length);
         }
 
-        if (!this.childNodes.length) {
-            // Backspace at the beginning of an empty node: convert to backspace
-            // after that empty node (propagate to parent node)
-            //
-            //     <p>abc<span>[]</span>def</p> + BACKSPACE
-            // <=> <p>abc<span></span>[]def</p> + BACKSPACE
-            const parentOffset = childNodeIndex(this) + 1;
-            pEl.oDeleteBackward(parentOffset);
-            return;
+        // <p>abc</p>[]de<i>f</i> + BACKSPACE   =>  <p>abcde<i>f</i>
+        moveDest = [el, el.childNodes.length];
+        moveMethod = el.append.bind(el);
+
+    } else {
+        if (!isBlock(this)) {
+            // <p>abc<i>[]def</i></p> + BACKSPACE       => <p>abc[]<i>def</i></p> + BACKSPACE
+            if (!this.childNodes.length)
+                this.remove();
+            return this.parentElement.oDeleteBackward(parentOffset);
         }
 
-        // Backspace at the beginning of a non-empty node: first move the
-        // following *block* (if any) outside of its parent, then in any case
-        // convert to backspace between parent element and its previous sibling
-        //
-        // 1°)
-        //     <div>ab</div><section>[]<p>cd</p>ef</section> + BACKSPACE
-        // <=> <div>ab</div>[]<p>cd</p><section>ef</section> + BACKSPACE
-        //
-        // 2°)
-        //     <div>ab</div><section>[]cd<p>ef</p></section> + BACKSPACE
-        // <=> <div>ab</div>[]<section>cd<p>ef</p></section> + BACKSPACE
-        const parentOffset = childNodeIndex(this);
-        // TODO should ignore invisible text nodes at the beginning (review
-        // findNode and other methods to do that more easily).
-        if (isBlock(this.firstChild)) {
-            this.before(this.firstChild);
-            if (!this.childNodes.length) {
-                this.oRemove();
-            }
-        }
-        pEl.oDeleteBackward(parentOffset);
-        return;
+        // <p>abc</p><p>[]def</p> + BACKSPACE       => <p>abc</p>[]def + BACKSPACE  (prev == block)
+        // abc<p>[]def</p> + BACKSPACE              => abc[]def                     (prev != block)
+        moveDest = [this.parentElement, parentOffset];
+        moveMethod = this.before.bind(this);
     }
 
-    // Now the cursor is on the right of a node. Merge it with its next sibling
-    // node if any (node: mergeNodes also handle the case where is there is no
-    // next sibling or if the left node is something that cannot or should not
-    // receive content to merge: e.g. the removal of a <br> for instance).
-    const node = this.childNodes[offset - 1];
-    const mergeResult = mergeNodes(node);
-    switch (mergeResult) {
-        // Merge succeeded, nothing more to be done, the backspace command
-        // visually removed something for the user.
-        case MERGE_CODES.SUCCESS: {
-            break;
-        }
-        // The merge resulted in removing the left node because it was invisible
-        // (empty span, empty text node, ...), continue propagation of the
-        // backspace command as we did not remove anything visible to the user.
-        case MERGE_CODES.REMOVED_INVISIBLE_NODE: {
-            this.oDeleteBackward(offset - 1);
-            break;
-        }
-        // The merge resulted in removing the left node alone (backspace after a
-        // <br> for instance). The backspace command is done, the cursor just
-        // have to be repositioned properly.
-        case MERGE_CODES.REMOVED_VISIBLE_NODE: {
-            setCursor(this, offset - 1);
-            break;
-        }
-        // The merge was not possible to be performed (example: mixing inline
-        // nodes) -> propagate the backspace.
-        case MERGE_CODES.NOTHING_TO_MERGE: {
-            node.oDeleteBackward(nodeSize(node));
-            break;
-        }
+    let restoreLeft = prepareUpdate(this, offset, DIRECTIONS.RIGHT);
+    let restoreRight = prepareUpdate(...moveDest, DIRECTIONS.LEFT);
+    setCursor(...moveDest)
+
+    while ( (this.childNodes.length>offset) && !isBlock(this.childNodes[offset]) ) {
+        moveMethod(this.childNodes[offset]);
     }
-};
+
+    restoreRight();
+    restoreLeft();
+
+    // propagate when block inside block
+    if (getState(...moveDest, DIRECTIONS.LEFT)[0] == STATES.BLOCK) {
+        moveDest[0].oDeleteBackward(moveDest[1]);
+    }
+    if (!this.childNodes.length)                    // improve isEmpty?
+        this.remove();
+}
+
 
 HTMLLIElement.prototype.oDeleteBackward = function (offset) {
     // FIXME On Firefox, backspace in LI at offset 0 is not detected if the LI

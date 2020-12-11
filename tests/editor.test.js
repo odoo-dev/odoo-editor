@@ -123,7 +123,7 @@ describe('Editor', () => {
                             contentAfter: '<p>ab []cd</p>',
                         });
                         await testEditor(BasicEditor, {
-                            contentBefore: '<p>ab[]<br> cd</p>',
+                            contentBefore: '<p>ab<br>[] cd</p>',
                             stepFunction: deleteForward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
