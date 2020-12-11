@@ -2,13 +2,7 @@
 
 import {
     areSimilarElements,
-    childNodeIndex,
     closestBlock,
-    findNode,
-    findVisibleTextNode,
-    isFakeLineBreak,
-    isRealLineBreak,
-    leftDeepOnlyInlinePath,
     moveMergedNodes,
 } from "./utils.js";
 

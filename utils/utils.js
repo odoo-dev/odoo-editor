@@ -1,9 +1,5 @@
 "use strict";
 
-import {
-    UNBREAKABLE_ROLLBACK_CODE,
-} from "../editor.js";
-
 const INVISIBLE_REGEX = /\u200c/g;
 
 export const MERGE_CODES = {
@@ -65,7 +61,6 @@ export function endPos(el) {
 export function boundariesIn(el) {
     return [el, 0, el, el.childNodes.length];
 }
-
 /**
  * Returns the given node's position relative to its parent (= its index in the
  * child nodes of its parent).
@@ -81,7 +76,6 @@ export function childNodeIndex(node) {
     }
     return i;
 }
-
 /**
  * Returns the size of the node = the number of characters for text nodes and
  * the number of child nodes for element nodes.
@@ -135,24 +129,9 @@ export function findVisibleTextNode(domPath, findCallback = node => true, stopCa
     );
 }
 
-export function findTrailingSpacePrevNode(anchorNode, offset) {
-    return findVisibleTextNode(
-        leftDeepOnlyInlinePath(anchorNode, offset),
-        node => /[^\S\u00A0]$/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
-
-export function findLeadingSpaceNextNode(anchorNode, offset) {
-    return findVisibleTextNode(
-        rightDeepOnlyInlinePath(anchorNode, offset),
-        node => /^[^\S\u00A0]/.test(node.nodeValue.replace(INVISIBLE_REGEX, '')),
-    );
-}
-
 export function closestBlock(node) {
     return findNode(closestPath(node), node => isBlock(node));
 }
-
 /**
  * Returns the deepest child in last position.
  *
@@ -166,7 +145,6 @@ export function latestChild(node, inline = false) {
     }
     return node;
 }
-
 /**
  * Returns the deepest child in first position.
  *
@@ -180,7 +158,6 @@ export function firstChild(node, inline = false) {
     }
     return node;
 }
-
 /**
  * Creates a generator function according to the given parameters. Pre-made
  * generators to traverse the DOM are made using this function:
@@ -240,36 +217,8 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
 }
 
 //------------------------------------------------------------------------------
-
-/**
- * Splits a text node in two parts.
- * If the split occurs at the beginning or the end, the text node stays
- * untouched and unsplit. If a split actually occurs, the original text node
- * still exists and become the right part of the split.
- *
- * Note: if split after or before whitespace, that whitespace may become
- * invisible, it is up to the caller to replace it by nbsp if needed.
- *
- * @param {Text} textNode
- * @param {number} offset
- * @returns {number} The parentOffset if the cursor was between the two text
- *          node parts after the split.
- */
-export function splitTextNode(textNode, offset) {
-    let parentOffset = childNodeIndex(textNode);
-
-    if (offset > 0) {
-        parentOffset++;
-
-        if (offset < textNode.length) {
-            const newval = textNode.nodeValue.substring(0, offset);
-            const nextTextNode = document.createTextNode(newval);
-            textNode.before(nextTextNode);
-            textNode.nodeValue = textNode.nodeValue.substring(offset);
-        }
-    }
-    return parentOffset;
-}
+// Cursor management
+//------------------------------------------------------------------------------
 
 export function setCursor(node, offset = undefined) {
     if (!node || !node.parentElement || !node.parentElement.closest('body')) {
@@ -305,33 +254,9 @@ export function setCursorEnd(node) {
     setCursor(node, nodeSize(node));
 }
 
-/**
- * Add a BR in the given node if its closest ancestor block has none to make
- * it visible.
- *
- * @param {HTMLElement} el
- */
-export function fillEmpty(el) {
-    const blockEl = closestBlock(el);
-    if (!isVisibleStr(blockEl.textContent) && !blockEl.querySelector('br')) {
-        el.appendChild(document.createElement('br'));
-    }
-}
-
-/**
- * Removes the given node if invisible and all its invisible ancestors.
- *
- * @param {Node} node
- * @returns {Node} the first visible ancestor of node (or itself)
- */
-export function clearEmpty(node) {
-    while (!isVisible(node)) {
-        const toRemove = node;
-        node = node.parentNode;
-        toRemove.remove();
-    }
-    return node;
-}
+//------------------------------------------------------------------------------
+// DOM Info utils
+//------------------------------------------------------------------------------
 
 /**
  * The following is a complete list of all HTML "block-level" elements.
@@ -413,16 +338,6 @@ export function isBlock(node) {
     return blockTagNames.includes(tagName);
 }
 
-export function hasPreviousChar(node) {
-    if (!node) {
-        return false;
-    }
-    if (hasPreviousChar(node.previousSibling)) {
-        return true;
-    }
-    return (!isBlock(node.parentElement) && hasPreviousChar(node.previousSibling));
-}
-
 export function isUnbreakable(node) {
     if (!node || node.nodeType === Node.TEXT_NODE) {
         return false;
@@ -447,23 +362,6 @@ export function inUnbreakable(node) {
     }
     return node || null;
 }
-
-export function setTagName(el, newTagName) {
-    var n = document.createElement(newTagName);
-    var attr = el.attributes;
-    for (var i = 0, len = attr.length; i < len; ++i) {
-        n.setAttribute(attr[i].name, attr[i].value);
-    }
-    while (el.firstChild) {
-        n.append(el.firstChild);
-    }
-    if (el.tagName === 'LI') {
-        el.append(n);
-    } else {
-        el.parentNode.replaceChild(n, el);
-    }
-    return n;
-}
 /**
  * Returns whether the given node is a element that could be considered to be
  * removed by itself = self closing tags.
@@ -484,7 +382,6 @@ export function isVisibleStr(value) {
     const str = typeof value === 'string' ? value : value.nodeValue;
     return nonWhitespacesRegex.test(str);
 }
-
 /**
  * @param {Node} node
  * @returns {boolean}
@@ -492,7 +389,6 @@ export function isVisibleStr(value) {
 export function isContentTextNode(node) {
     return node.nodeType === Node.TEXT_NODE && isVisibleStr(node);
 }
-
 /**
  * Returns whether removing the given node from the DOM will have a visible
  * effect or not.
@@ -526,7 +422,6 @@ export function isVisible(node) {
     }
     return [...node.childNodes].some(n => isVisible(n));
 }
-
 /**
  * Returns whether or not the given char is invisible = a character that the
  * user should never have to remove himself.
@@ -537,17 +432,6 @@ export function isVisible(node) {
 const invisibleCharValues = ['\u200c'];
 export function isInvisibleChar(ch) {
     return invisibleCharValues.includes(ch);
-}
-
-/**
- * Returns whether or not the given char is a space.
- *
- * @param {string} ch
- * @returns {boolean}
- */
-const spaceValues = [' ', '\t', '\n', '\r'];
-export function isSpace(ch) {
-    return spaceValues.includes(ch);
 }
 
 export function parentsGet(node, root = undefined) {
@@ -602,7 +486,102 @@ export function areSimilarElements(node, node2) {
     }
     return !isBlock(node) && !isBlock(node2) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
 }
+/**
+ * Returns whether or not the given node is a BR element which really acts as a
+ * line break, not as a placeholder for the cursor.
+ */
+export function isRealLineBreak(node) {
+    return (node instanceof HTMLBRElement
+        && (findVisibleTextNode(rightDeepOnlyInlinePath(...rightPos(node)))
+            || findNode(rightDeepOnlyInlinePath(...rightPos(node)), node => node instanceof HTMLBRElement)));
+}
+/**
+ * Inverse as @see isRealLineBreak but also returns false if not a BR.
+ *
+ * (e.g. should be removed if content added after it:
+ * <p><br><br>[]</p> + TYPE 'a' -> <p><br>a</p> OR <p><br>a<br></p> but not
+ * <p><br><br>a</p>).
+ */
+export function isFakeLineBreak(node) {
+    return (node instanceof HTMLBRElement && !isRealLineBreak(node));
+}
 
+//------------------------------------------------------------------------------
+// DOM Modification
+//------------------------------------------------------------------------------
+
+/**
+ * Splits a text node in two parts.
+ * If the split occurs at the beginning or the end, the text node stays
+ * untouched and unsplit. If a split actually occurs, the original text node
+ * still exists and become the right part of the split.
+ *
+ * Note: if split after or before whitespace, that whitespace may become
+ * invisible, it is up to the caller to replace it by nbsp if needed.
+ *
+ * @param {Text} textNode
+ * @param {number} offset
+ * @returns {number} The parentOffset if the cursor was between the two text
+ *          node parts after the split.
+ */
+export function splitTextNode(textNode, offset) {
+    let parentOffset = childNodeIndex(textNode);
+
+    if (offset > 0) {
+        parentOffset++;
+
+        if (offset < textNode.length) {
+            const newval = textNode.nodeValue.substring(0, offset);
+            const nextTextNode = document.createTextNode(newval);
+            textNode.before(nextTextNode);
+            textNode.nodeValue = textNode.nodeValue.substring(offset);
+        }
+    }
+    return parentOffset;
+}
+/**
+ * Add a BR in the given node if its closest ancestor block has none to make
+ * it visible.
+ *
+ * @param {HTMLElement} el
+ */
+export function fillEmpty(el) {
+    const blockEl = closestBlock(el);
+    if (!isVisibleStr(blockEl.textContent) && !blockEl.querySelector('br')) {
+        el.appendChild(document.createElement('br'));
+    }
+}
+/**
+ * Removes the given node if invisible and all its invisible ancestors.
+ *
+ * @param {Node} node
+ * @returns {Node} the first visible ancestor of node (or itself)
+ */
+export function clearEmpty(node) {
+    while (!isVisible(node)) {
+        const toRemove = node;
+        node = node.parentNode;
+        toRemove.remove();
+    }
+    return node;
+}
+
+export function setTagName(el, newTagName) {
+    var n = document.createElement(newTagName);
+    var attr = el.attributes;
+    for (var i = 0, len = attr.length; i < len; ++i) {
+        n.setAttribute(attr[i].name, attr[i].value);
+    }
+    while (el.firstChild) {
+        n.append(el.firstChild);
+    }
+    if (el.tagName === 'LI') {
+        el.append(n);
+    } else {
+        el.parentNode.replaceChild(n, el);
+    }
+    return n;
+}
 /**
  * Merges the second given node or following sibling of the first given node
  * into that first given node, the way it i done depending of the type of those
@@ -678,7 +657,6 @@ export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
 
     return MERGE_CODES.SUCCESS;
 }
-
 /**
  * Moves the given nodes to the given destination element.
  * That destination element is prepared first and adapted if necessary. The
@@ -742,27 +720,6 @@ export function moveMergedNodes(destinationEl, nodes, inside = true) {
     return destinationEl;
 }
 
-/**
- * Returns whether or not the given node is a BR element which really acts as a
- * line break, not as a placeholder for the cursor.
- */
-export function isRealLineBreak(node) {
-    return (node instanceof HTMLBRElement
-        && (findVisibleTextNode(rightDeepOnlyInlinePath(...rightPos(node)))
-            || findNode(rightDeepOnlyInlinePath(...rightPos(node)), node => node instanceof HTMLBRElement)));
-}
-
-/**
- * Inverse as @see isRealLineBreak but also returns false if not a BR.
- *
- * (e.g. should be removed if content added after it:
- * <p><br><br>[]</p> + TYPE 'a' -> <p><br>a</p> OR <p><br>a<br></p> but not
- * <p><br><br>a</p>).
- */
-export function isFakeLineBreak(node) {
-    return (node instanceof HTMLBRElement && !isRealLineBreak(node));
-}
-
 //------------------------------------------------------------------------------
 // Prepare / Save / Restore state utilities
 //------------------------------------------------------------------------------
@@ -809,13 +766,11 @@ export function prepareUpdate(el, offset, ...args) {
         }
     };
 }
-
 export const STATES = {
     CONTENT: 0,
     SPACE: 1,
     BLOCK: 2,
 };
-
 /**
  * Retrieves the "state" from a given position looking at the given direction.
  * The "state" is the type of content. The functions also returns the first
@@ -897,7 +852,6 @@ export function getState(el, offset, direction) {
 
     return [state, boundaryNode];
 }
-
 /**
  * Restores the given state starting before the given while looking in the given
  * direction.
@@ -928,7 +882,6 @@ export function restoreState(oldNode, oldState, direction) {
     const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
     enforceWhitespace(el, offset, inverseDirection, oldState === STATES.CONTENT || oldState === STATES.SPACE);
 }
-
 /**
  * Enforces the whitespace and BR visibility in the given direction starting
  * from the given position.
