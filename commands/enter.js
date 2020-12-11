@@ -29,9 +29,9 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
-    let restoreStates;
+    let restore;
     if (firstSplit) {
-        restoreStates = prepareUpdate(this, offset);
+        restore = prepareUpdate(this, offset);
     }
 
     // First split the node in two and move half the children in the clone.
@@ -55,9 +55,11 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     // All split have been done, place the cursor at the right position, and
     // fill/remove empty nodes.
     if (firstSplit) {
-        restoreStates();
         fillEmpty(clearEmpty(this));
         fillEmpty(splitEl);
+
+        restore();
+
         setCursorStart(splitEl);
     }
 };

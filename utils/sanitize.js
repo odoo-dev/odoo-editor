@@ -37,19 +37,10 @@ class Sanitize {
 
         // Merge identical elements together
         if (areSimilarElements(node, node.nextSibling)) {
-            const fragment = document.createDocumentFragment();
-            // FIXME forced to add a clone for the duration of moveMergedNodes
-            // so it can check the correct DOM state
-            const tempCloneEl = node.nextSibling.cloneNode(true);
-            node.nextSibling.after(tempCloneEl);
-            while (node.nextSibling.firstChild) {
-                fragment.appendChild(node.nextSibling.firstChild);
+            if (node.nextSibling.childNodes.length) {
+                moveMergedNodes(node, [...node.nextSibling.childNodes]);
             }
             node.nextSibling.remove();
-            // FIXME this handles the cursor but should probably only reposition
-            // it if the cursor was in the merged element or just before
-            moveMergedNodes(node, fragment);
-            tempCloneEl.remove();
         }
 
         // FIXME not parse out of editable zone...

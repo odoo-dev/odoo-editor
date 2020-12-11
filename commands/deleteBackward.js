@@ -29,25 +29,19 @@ Text.prototype.oDeleteBackward = function (offset) {
         return;
     }
 
-    // First, split after the character where the backspace occurs and prepare
-    // to restore the right part following that character removal.
+    // First, split around the character where the backspace occurs
     const firstSplitOffset = splitTextNode(this, offset);
-    const restoreRight = prepareUpdate(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
     const middleNode = parentNode.childNodes[firstSplitOffset - 1];
+    const secondSplitOffset = splitTextNode(middleNode, middleNode.length - 1);
 
-    // Get the left state at the split location so that we know if the backspace
-    // must propagate after the character removal.
+    // Get the left state at the first split location so that we know if the
+    // backspace must propagate after the character removal.
     const [leftState] = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
 
-    // Then, split before the character where the backspace occurs and prepare
-    // to restore the left part following that character removal.
-    const secondSplitOffset = splitTextNode(middleNode, middleNode.length - 1);
-    const restoreLeft = prepareUpdate(parentNode, secondSplitOffset, DIRECTIONS.RIGHT);
-
     // Do remove the character, then restore the state of the surrounding parts.
+    const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
     middleNode.remove();
-    restoreRight();
-    restoreLeft();
+    restore();
 
     // If the removed element was not visible content, propagate the backspace.
     if (leftState === STATES.BLOCK) {

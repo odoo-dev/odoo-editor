@@ -12,7 +12,7 @@ Text.prototype.oShiftEnter = function (offset) {
 };
 
 HTMLElement.prototype.oShiftEnter = function (offset) {
-    const restoreStates = prepareUpdate(this, offset);
+    const restore = prepareUpdate(this, offset);
 
     const brEl = document.createElement('BR');
     if (offset >= this.childNodes.length) {
@@ -24,7 +24,7 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
         brEl.before(document.createElement('BR'));
     }
 
-    restoreStates();
+    restore();
 
     setCursorEnd(brEl);
 };
