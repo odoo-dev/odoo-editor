@@ -1,8 +1,8 @@
-- BUG: fix `ab<br>[] cd` + backspace = `ab cd` problem -> remove *following* invisible space before backspace command
-- BUG: fix shiftEnter in empty <td>
-- implement "attributes" in mutationRecords
-- sanitizer: sanitize sibling <ul> (directly or indirectly): or handle that in backspace?
-- BUG: unbreakable: check an element don't move from one unbreakable to another
+- redo bug: avoid unlimited loops
+- deleteForward
+- ! isCollapsed
+- backwardDeleteWord
+- font Awesome
+- tables
 - mobile support
-- implement ForwardDelete and refactor invisible space & empty blocks in the process
-- improve undos: use oid instead of indexes for collaborative mode
+- colors
