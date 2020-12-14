@@ -170,25 +170,3 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset) {
     }
     this.oShiftTab(offset);
 };
-
-// Utils
-// TODO review how this works, all method on prototype or all methods as utils
-// but a mix of both seems strange. Maybe a wrapper jQuery-like?
-
-/**
- * TODO review the whole logic of having to use oRemove instead of remove...
- */
-Text.prototype.oRemove = function () {
-    this.remove();
-};
-
-HTMLElement.prototype.oRemove = function () {
-    this.remove();
-};
-HTMLLIElement.prototype.oRemove = function () {
-    const parentEl = this.parentElement;
-    this.remove();
-    if (!parentEl.children.length) {
-        parentEl.remove();
-    }
-};
