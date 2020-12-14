@@ -35,7 +35,7 @@ Text.prototype.oDeleteBackward = function (offset) {
 
     // Get the left state at the first split location so that we know if the
     // backspace must propagate after the character removal.
-    const [leftState] = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
+    const {state: leftState} = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
 
     // Do remove the character, then restore the state of the surrounding parts.
     const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
@@ -150,7 +150,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
-        const [state,, isBR] = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
+        const {state, isBR} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
         if (state === STATES.BLOCK && !isBR) {
             cursorNode.oDeleteBackward(cursorOffset);
         }

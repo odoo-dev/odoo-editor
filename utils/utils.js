@@ -671,8 +671,7 @@ export function prepareUpdate(el, offset, ...args) {
         el = positions.shift();
         offset = positions.shift();
         for (const direction of directions) {
-            const [state, node, isBR] = getState(el, offset, direction);
-            restoreData.push({state: state, node: node, direction: direction, isBR: isBR});
+            restoreData.push(getState(el, offset, direction));
         }
     }
 
@@ -680,7 +679,7 @@ export function prepareUpdate(el, offset, ...args) {
     // direction wherever the node in the opposite direction has landed.
     return function restoreStates() {
         for (const data of restoreData) {
-            restoreState(data.node, data.state, data.isBR, data.direction);
+            restoreState(data);
         }
     };
 }
@@ -752,7 +751,8 @@ export function getState(el, offset, direction) {
                 }
             } else {
                 if (expr.test(value) && leftState === undefined) {
-                    [leftState] = getState(...leftPos(node), DIRECTIONS.LEFT);
+                    const data = getState(...leftPos(node), DIRECTIONS.LEFT);
+                    leftState = data.state;
                     if (leftState === STATES.CONTENT || leftState === STATES.SPACE) {
                         state = STATES.SPACE;
                         break;
@@ -774,27 +774,30 @@ export function getState(el, offset, direction) {
         }
     }
 
-    return [state, boundaryNode, isBR];
+    return {
+        node: boundaryNode,
+        direction: direction,
+        state: state,
+        isBR: isBR,
+    };
 }
 /**
  * Restores the given state starting before the given while looking in the given
  * direction.
  *
- * @param {Node} oldNode
- * @param {number} oldState @see STATES
- * @param {boolean} oldIsBR
- * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
+ * @param {Object} prevStateData @see getState
  */
-export function restoreState(oldNode, oldState, oldIsBR, direction) {
-    if (!oldNode || !oldNode.parentNode) {
+export function restoreState(prevStateData) {
+    const {node, direction, state, isBR} = prevStateData;
+    if (!node || !node.parentNode) {
         // FIXME sometimes we want to restore the state starting from a node
         // which has been removed by another restoreState call... Not sure if
         // it is a problem or not, to investigate.
         return;
     }
-    const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(oldNode) : rightPos(oldNode);
-    const [newState,, newIsBR] = getState(el, offset, direction);
-    if (oldState === newState && (oldState !== STATES.BLOCK || oldIsBR === newIsBR)) {
+    const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(node) : rightPos(node);
+    const {state: newState, isBR: newIsBR} = getState(el, offset, direction);
+    if (state === newState && (state !== STATES.BLOCK || isBR === newIsBR)) {
         return;
     }
 
@@ -805,7 +808,7 @@ export function restoreState(oldNode, oldState, oldIsBR, direction) {
     // is content, we have to get rid of the potential space in the opposite
     // direction.
     const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
-    enforceWhitespace(el, offset, inverseDirection, oldState === STATES.CONTENT || oldState === STATES.SPACE);
+    enforceWhitespace(el, offset, inverseDirection, state === STATES.CONTENT || state === STATES.SPACE);
 }
 /**
  * Enforces the whitespace and BR visibility in the given direction starting
@@ -831,8 +834,8 @@ export function enforceWhitespace(el, offset, direction, visible) {
     let foundVisibleSpaceTextNode = null;
     for (const node of domPath) {
         if (node.nodeName === 'BR') {
-            const hasBlockBefore = (getState(...leftPos(node), DIRECTIONS.LEFT)[0] === STATES.BLOCK);
-            const hasBlockAfter = (getState(...rightPos(node), DIRECTIONS.RIGHT)[0] === STATES.BLOCK);
+            const hasBlockBefore = (getState(...leftPos(node), DIRECTIONS.LEFT).state === STATES.BLOCK);
+            const hasBlockAfter = (getState(...rightPos(node), DIRECTIONS.RIGHT).state === STATES.BLOCK);
             if (visible) {
                 if (direction === DIRECTIONS.LEFT || !hasBlockAfter) { // FIXME review this
                     node.before(document.createElement('br'));
