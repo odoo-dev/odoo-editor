@@ -55,10 +55,10 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     // All split have been done, place the cursor at the right position, and
     // fill/remove empty nodes.
     if (firstSplit) {
+        restore();
+
         fillEmpty(clearEmpty(this));
         fillEmpty(splitEl);
-
-        restore();
 
         setCursorStart(splitEl);
     }
