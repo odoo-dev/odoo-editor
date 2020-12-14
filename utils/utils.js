@@ -835,6 +835,10 @@ export function getState(el, offset, direction) {
         } else if (node.nodeName === 'BR') {
             state = direction === DIRECTIONS.LEFT ? STATES.BLOCK : STATES.CONTENT;
             break;
+        } else if (isVisible(node)) {
+            // E.g. an image
+            state = STATES.CONTENT;
+            break;
         }
     }
 
