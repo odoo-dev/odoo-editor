@@ -7,6 +7,7 @@ import {
     clearEmpty,
     fillEmpty,
     isBlock,
+    moveMergedNodes,
     prepareUpdate,
     setCursorStart,
     setTagName,
@@ -29,17 +30,14 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
-    let restore;
-    if (firstSplit) {
-        restore = prepareUpdate(this, offset);
-    }
-
     // First split the node in two and move half the children in the clone.
     const splitEl = this.cloneNode(false);
-    while (offset < this.childNodes.length) {
-        splitEl.appendChild(this.childNodes[offset]);
-    }
     this.after(splitEl);
+    // FIXME fail because moveMergedNode prepareUpdate is done to late: we
+    // already added the splitEl element (and we cannot add it after for the
+    // opposite reason)... maybe this is possible to review moveMergedNodes API
+    // to accept doing something after prepareUpdate / before its restore calls
+    moveMergedNodes(splitEl, 0, this, offset, this.childNodes.length, true);
 
     // Propagate the split until reaching a block element
     if (!isBlock(this)) {
@@ -55,12 +53,10 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     // All split have been done, place the cursor at the right position, and
     // fill/remove empty nodes.
     if (firstSplit) {
-        restore();
-
         fillEmpty(clearEmpty(this));
         fillEmpty(splitEl);
 
-        setCursorStart(splitEl);
+        setCursorStart(splitEl); // TODO review
     }
 };
 /**

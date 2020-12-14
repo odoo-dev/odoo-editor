@@ -585,10 +585,11 @@ export function setTagName(el, newTagName) {
  * @param {HTMLElement} sourceEl
  * @param {number} [startIndex=0]
  * @param {number} [endIndex=sourceEl.childNodes.length]
+ * @param {boolean} [noRemove=false]
  * @returns {Array.<HTMLElement, number} The position at the left of the moved
  *     nodes after the move was done (and where the cursor was repositioned).
  */
-export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
+export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length, noRemove = false) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
@@ -615,7 +616,7 @@ export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, star
         restoreMoved();
     }
 
-    if (!nodeSize(sourceEl)) {
+    if (!noRemove && !nodeSize(sourceEl)) {
         const restoreOrigin = prepareUpdate(...boundariesOut(sourceEl));
         sourceEl.remove();
         restoreOrigin();
