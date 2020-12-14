@@ -2,13 +2,6 @@
 
 const INVISIBLE_REGEX = /\u200c/g;
 
-export const MERGE_CODES = {
-    SUCCESS: 100,
-    NOTHING_TO_MERGE: 101,
-    REMOVED_INVISIBLE_NODE: 102,
-    REMOVED_VISIBLE_NODE: 103,
-};
-
 //------------------------------------------------------------------------------
 // Position and sizes
 //------------------------------------------------------------------------------
@@ -230,28 +223,28 @@ export function setCursor(node, offset = undefined) {
     if (node.childNodes.length === offset && node.lastChild instanceof HTMLBRElement) {
         offset--;
     }
-    range.setStart(node, Math.max(offset, 0));
-    range.setEnd(node, Math.max(offset, 0));
+    offset = Math.max(offset, 0);
+    range.setStart(node, offset);
+    range.setEnd(node, offset);
     sel.removeAllRanges();
     sel.addRange(range);
+    return [node, offset];
 }
 
 export function setCursorStart(node) {
     node = firstChild(node);
     if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
-        setCursor(node.parentElement, childNodeIndex(node));
-        return;
+        return setCursor(node.parentElement, childNodeIndex(node));
     }
-    setCursor(node, 0);
+    return setCursor(node, 0);
 }
 
 export function setCursorEnd(node) {
     node = latestChild(node);
     if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
-        setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
-        return;
+        return setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
     }
-    setCursor(node, nodeSize(node));
+    return setCursor(node, nodeSize(node));
 }
 
 //------------------------------------------------------------------------------
@@ -583,129 +576,66 @@ export function setTagName(el, newTagName) {
     return n;
 }
 /**
- * Merges the second given node or following sibling of the first given node
- * into that first given node, the way it i done depending of the type of those
- * nodes and their context.
- *
- * @param {Node} leftNode
- * @param {Node} [rightNode=leftNode.nextSibling]
- * @returns {number} Merge type code @see MERGE_CODES
- */
-export function mergeNodes(leftNode, rightNode = leftNode.nextSibling) {
-    // The given node is not visible. It should not accept new content as the
-    // user simply did not know it existed. We simply remove it and return the
-    // related merge code.
-    if (!isVisible(leftNode)) {
-        leftNode.oRemove();
-        return MERGE_CODES.REMOVED_INVISIBLE_NODE;
-    }
-
-    // The given node is visible but cannot accept contents (like a BR). We
-    // remove it and return the related merge code.
-    if (isVisibleEmpty(leftNode)) {
-        const restore = prepareUpdate(...boundariesOut(leftNode));
-        leftNode.oRemove();
-        restore();
-        return MERGE_CODES.REMOVED_VISIBLE_NODE;
-    }
-
-    // The given node can accept content but there is no content to receive,
-    // nothing can be merged.
-    if (!rightNode) {
-        return MERGE_CODES.NOTHING_TO_MERGE;
-    }
-
-    // Now actually merge the left and right nodes, depending of if they are
-    // blocks or not.
-    const leftIsBlock = isBlock(leftNode);
-    const rightIsBlock = isBlock(rightNode);
-
-    if (rightIsBlock) {
-        // First case, the right side is block content: we have to unwrap that
-        // content in the proper location. Left side inline = current location,
-        // left side block = deepest block inside.
-        const restore = prepareUpdate(...boundariesOut(rightNode));
-        if (rightNode.childNodes.length) {
-            moveMergedNodes(leftNode, [...rightNode.childNodes], leftIsBlock);
-        }
-        rightNode.oRemove();
-        restore();
-    } else if (leftIsBlock) {
-        // If the left side is a block and right side is inline content, move
-        // that inline content and the one which follows in that left side.
-        const inlineNodes = [];
-        let node = rightNode;
-        do {
-            inlineNodes.push(node);
-            node = node.nextSibling;
-        } while (node && !isBlock(node));
-
-        const restore = prepareUpdate(...leftPos(inlineNodes[0]), ...rightPos(inlineNodes[inlineNodes.length - 1]));
-        moveMergedNodes(leftNode, inlineNodes);
-        restore();
-    } else {
-        // Both sides are inline content, nothing to merge.
-        return MERGE_CODES.NOTHING_TO_MERGE;
-    }
-
-    return MERGE_CODES.SUCCESS;
-}
-/**
  * Moves the given nodes to the given destination element.
  * That destination element is prepared first and adapted if necessary. The
  * cursor is then placed inside, before the moved elements.
  *
  * @param {HTMLElement} destinationEl
- * @param {Node[]} nodes
- * @param {boolean} [inside=true]
- * @returns {HTMLElement} The element where the elements where actually moved.
+ * @param {number} destinationOffset
+ * @param {HTMLElement} sourceEl
+ * @param {number} [startIndex=0]
+ * @param {number} [endIndex=sourceEl.childNodes.length]
+ * @returns {Array.<HTMLElement, number} The position at the left of the moved
+ *     nodes after the move was done (and where the cursor was repositioned).
  */
-export function moveMergedNodes(destinationEl, nodes, inside = true) {
+export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
-        inside = false;
+        [destinationEl, destinationOffset] = rightPos(destinationEl);
     }
 
-    if (inside) {
-        // Merge into deepest ending block, after visible content (also handle
-        // UL case automatically for example).
-        const visibleNode = findNode(
-            leftDeepFirstPath(...endPos(destinationEl)),
-            node => node === destinationEl || isVisible(node)
-        );
-        destinationEl = findNode(
-            closestPath(visibleNode),
-            node => node === destinationEl || isBlock(node),
-        );
+    const nodes = [];
+    for (let i = startIndex; i < endIndex; i++) {
+        nodes.push(sourceEl.childNodes[i]);
     }
 
-    const restoreDestination = prepareUpdate(...(inside ? endPos(destinationEl) : rightPos(destinationEl)));
-    const restoreMoved = prepareUpdate(...leftPos(nodes[0]), ...rightPos(nodes[nodes.length - 1]));
-    const fragment = document.createDocumentFragment();
-    nodes.forEach(node => fragment.appendChild(node));
-    if (inside) {
-        destinationEl.appendChild(fragment);
-    } else {
-        destinationEl.after(fragment);
+    if (nodes.length) {
+        const restoreDestination = prepareUpdate(destinationEl, destinationOffset);
+        const restoreMoved = prepareUpdate(...leftPos(sourceEl.childNodes[startIndex]), ...rightPos(sourceEl.childNodes[endIndex - 1]));
+        const fragment = document.createDocumentFragment();
+        nodes.forEach(node => fragment.appendChild(node));
+        const posRightNode = destinationEl.childNodes[destinationOffset];
+        if (posRightNode) {
+            destinationEl.insertBefore(fragment, posRightNode);
+        } else {
+            destinationEl.appendChild(fragment);
+        }
+        restoreDestination();
+        restoreMoved();
     }
-    restoreDestination();
-    restoreMoved();
+
+    if (!nodeSize(sourceEl)) {
+        const restoreOrigin = prepareUpdate(...boundariesOut(sourceEl));
+        sourceEl.remove();
+        restoreOrigin();
+    }
 
     // Replace cursor before the first moved node that remains after restore.
     const firstNode = nodes.find(node => !!node.parentNode);
+    let pos;
     if (firstNode) {
         const leftNode = leftDeepOnlyInlinePath(...leftPos(firstNode)).next().value;
         if (leftNode) {
-            setCursorEnd(leftNode);
+            pos = setCursorEnd(leftNode);
         } else {
-            setCursorStart(firstNode);
+            pos = setCursorStart(firstNode);
         }
     } else {
-        setCursorEnd(destinationEl);
+        pos = setCursorEnd(destinationEl);
     }
 
-    return destinationEl;
+    return pos;
 }
 
 //------------------------------------------------------------------------------
@@ -741,8 +671,8 @@ export function prepareUpdate(el, offset, ...args) {
         el = positions.shift();
         offset = positions.shift();
         for (const direction of directions) {
-            const [state, node] = getState(el, offset, direction);
-            restoreData.push({state: state, node: node, direction: direction});
+            const [state, node, isBR] = getState(el, offset, direction);
+            restoreData.push({state: state, node: node, direction: direction, isBR: isBR});
         }
     }
 
@@ -750,7 +680,7 @@ export function prepareUpdate(el, offset, ...args) {
     // direction wherever the node in the opposite direction has landed.
     return function restoreStates() {
         for (const data of restoreData) {
-            restoreState(data.node, data.state, data.direction);
+            restoreState(data.node, data.state, data.isBR, data.direction);
         }
     };
 }
@@ -799,6 +729,7 @@ export function getState(el, offset, direction) {
     // We only traverse through deep inline nodes. If we cannot find a
     // meanfingful state between them, that means we hit a block.
     let state = STATES.BLOCK;
+    let isBR = false;
 
     // Traverse the DOM in the given direction to check what type of content
     // there is.
@@ -834,6 +765,7 @@ export function getState(el, offset, direction) {
             }
         } else if (node.nodeName === 'BR') {
             state = direction === DIRECTIONS.LEFT ? STATES.BLOCK : STATES.CONTENT;
+            isBR = true;
             break;
         } else if (isVisible(node)) {
             // E.g. an image
@@ -842,7 +774,7 @@ export function getState(el, offset, direction) {
         }
     }
 
-    return [state, boundaryNode];
+    return [state, boundaryNode, isBR];
 }
 /**
  * Restores the given state starting before the given while looking in the given
@@ -850,9 +782,10 @@ export function getState(el, offset, direction) {
  *
  * @param {Node} oldNode
  * @param {number} oldState @see STATES
+ * @param {boolean} oldIsBR
  * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
  */
-export function restoreState(oldNode, oldState, direction) {
+export function restoreState(oldNode, oldState, oldIsBR, direction) {
     if (!oldNode || !oldNode.parentNode) {
         // FIXME sometimes we want to restore the state starting from a node
         // which has been removed by another restoreState call... Not sure if
@@ -860,8 +793,8 @@ export function restoreState(oldNode, oldState, direction) {
         return;
     }
     const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(oldNode) : rightPos(oldNode);
-    const [newState] = getState(el, offset, direction);
-    if (oldState === newState) {
+    const [newState,, newIsBR] = getState(el, offset, direction);
+    if (oldState === newState && (oldState !== STATES.BLOCK || oldIsBR === newIsBR)) {
         return;
     }
 
@@ -898,12 +831,13 @@ export function enforceWhitespace(el, offset, direction, visible) {
     let foundVisibleSpaceTextNode = null;
     for (const node of domPath) {
         if (node.nodeName === 'BR') {
+            const hasBlockBefore = (getState(...leftPos(node), DIRECTIONS.LEFT)[0] === STATES.BLOCK);
             const hasBlockAfter = (getState(...rightPos(node), DIRECTIONS.RIGHT)[0] === STATES.BLOCK);
             if (visible) {
                 if (direction === DIRECTIONS.LEFT || !hasBlockAfter) { // FIXME review this
                     node.before(document.createElement('br'));
                 }
-            } else if (direction === DIRECTIONS.LEFT || hasBlockAfter) { // FIXME review this
+            } else if (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore) { // FIXME review this
                 // Tricky case: even the BR removal/duplication during
                 // restoreState must be protected. Probably only because of
                 // chrome: <p>abc <br><br>[]</p> + BACKSPACE -> <p>abc </p>

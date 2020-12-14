@@ -107,8 +107,7 @@ describe('Editor', () => {
                             stepFunction: deleteForward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
-                            // JW cAfter: '<p>[]abc</p>',
-                            contentAfter: '<p>[] abc</p>',
+                            contentAfter: '<p>[]abc</p>',
                         });
                     });
                     it('should delete a line break within a paragraph', async () => {
@@ -532,8 +531,7 @@ describe('Editor', () => {
                             stepFunction: deleteBackward,
                             // The space after the <br> is expected to be parsed
                             // away, like it is in the DOM.
-                            // JW cAfter: '<p>[]abc</p>',
-                            contentAfter: '<p>[] abc</p>',
+                            contentAfter: '<p>[]abc</p>',
                         });
                     });
                     it('should delete a line break within a paragraph', async () => {

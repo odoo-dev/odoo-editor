@@ -1,13 +1,16 @@
 "use strict";
 
 import {
+    boundariesOut,
     childNodeIndex,
     DIRECTIONS,
+    endPos,
     getState,
     isBlock,
     isUnbreakable,
-    mergeNodes,
-    MERGE_CODES,
+    isVisible,
+    leftPos,
+    moveMergedNodes,
     nodeSize,
     prepareUpdate,
     setCursor,
@@ -19,13 +22,9 @@ Text.prototype.oDeleteBackward = function (offset) {
     const parentNode = this.parentNode;
 
     if (!offset) {
-        // Backspace at the beginning of a text node, we have to propagate
-        // the backspace to the parent.
-        const parentOffset = childNodeIndex(this);
-        if (!this.length) {
-            this.remove();
-        }
-        parentNode.oDeleteBackward(parentOffset);
+        // Backspace at the beginning of a text node is not a specific case to
+        // handle, let the element implementation handle it.
+        HTMLElement.prototype.oDeleteBackward.call(this, offset);
         return;
     }
 
@@ -53,12 +52,36 @@ Text.prototype.oDeleteBackward = function (offset) {
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset) {
-    if (offset === 0) {
-        // If backspace at the beginning of an unbreakable or the last child
-        // element of an unbreakable, in that case we do nothing.
-        const pEl = this.parentElement;
+    let moveDest;
+
+    if (offset) {
+        const leftNode = this.childNodes[offset - 1];
+        if (!isBlock(leftNode)) {
+            /**
+             * Backspace just after an inline node, convert to backspace at the
+             * end of that inline node.
+             *
+             * E.g. <p>abc<i>def</i>[]</p> + BACKSPACE
+             * <=>  <p>abc<i>def[]</i></p> + BACKSPACE
+             */
+            leftNode.oDeleteBackward(nodeSize(leftNode));
+            return;
+        }
+
+        /**
+         * Backspace just after an block node, we have to move any inline
+         * content after it, up to the next block. If the cursor is between
+         * two blocks, this is a theoretical case: just do nothing.
+         *
+         * E.g. <p>abc</p>[]de<i>f</i><p>ghi</p> + BACKSPACE
+         * <=>  <p>abcde<i>f</i></p><p>ghi</p>
+         */
+        moveDest = endPos(leftNode);
+    } else {
+        const parentEl = this.parentNode;
+
         if (isUnbreakable(this)
-                || isUnbreakable(pEl) && pEl.childNodes.length === 1 && pEl.firstChild === this) {
+                || isUnbreakable(parentEl) && parentEl.childNodes.length === 1 && parentEl.firstChild === this) {
             // TODO review that logic, it made sense when AGE explained it but
             // then they have an opposite test which removes the last p if there
             // is surrounding text node ab<p>[]cd</p> should apparently drop the
@@ -66,72 +89,70 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
             return;
         }
 
-        if (!this.childNodes.length) {
-            // Backspace at the beginning of an empty node: convert to backspace
-            // after that empty node (propagate to parent node)
-            //
-            //     <p>abc<span>[]</span>def</p> + BACKSPACE
-            // <=> <p>abc<span></span>[]def</p> + BACKSPACE
-            const parentOffset = childNodeIndex(this) + 1;
-            pEl.oDeleteBackward(parentOffset);
+        if (!isBlock(this)) {
+            /**
+             * Backspace at the beginning of an inline node, nothing has to be
+             * done: propagate the backspace. If the node was empty, we remove
+             * it before.
+             *
+             * E.g. <p>abc<b></b><i>[]def</i></p> + BACKSPACE
+             * <=>  <p>abc<b>[]</b><i>def</i></p> + BACKSPACE
+             * <=>  <p>abc[]<i>def</i></p> + BACKSPACE
+             */
+            const parentOffset = childNodeIndex(this);
+            if (!nodeSize(this)) {
+                const visible = isVisible(this);
+
+                const restore = prepareUpdate(...boundariesOut(this));
+                this.remove();
+                restore();
+
+                if (visible) {
+                    // TODO this handle BR/IMG/etc removals../ to see if we
+                    // prefer to have a dedicated handler for every possible
+                    // HTML element or if we let this generic code handle it.
+                    setCursor(parentEl, parentOffset); // FIXME should probably get the first inline in the LEFT direction, just like moveMergeNodes
+                    return;
+                }
+            }
+            parentEl.oDeleteBackward(parentOffset);
             return;
         }
 
-        // Backspace at the beginning of a non-empty node: first move the
-        // following *block* (if any) outside of its parent, then in any case
-        // convert to backspace between parent element and its previous sibling
-        //
-        // 1°)
-        //     <div>ab</div><section>[]<p>cd</p>ef</section> + BACKSPACE
-        // <=> <div>ab</div>[]<p>cd</p><section>ef</section> + BACKSPACE
-        //
-        // 2°)
-        //     <div>ab</div><section>[]cd<p>ef</p></section> + BACKSPACE
-        // <=> <div>ab</div>[]<section>cd<p>ef</p></section> + BACKSPACE
-        const parentOffset = childNodeIndex(this);
-        // TODO should ignore invisible text nodes at the beginning (review
-        // findNode and other methods to do that more easily).
-        if (isBlock(this.firstChild)) {
-            this.before(this.firstChild);
-            if (!this.childNodes.length) {
-                this.oRemove();
-            }
-        }
-        pEl.oDeleteBackward(parentOffset);
-        return;
+        /**
+         * Backspace at the beginning of a block node, we have to move the
+         * inline content at its beginning outside of the element and propagate
+         * to the left block if any.
+         *
+         * E.g. (prev == block)
+         *      <p>abc</p><div>[]def<p>ghi</p></div> + BACKSPACE
+         * <=>  <p>abc</p>[]def<div><p>ghi</p></div> + BACKSPACE
+         *
+         * E.g. (prev != block)
+         *      abc<div>[]def<p>ghi</p></div> + BACKSPACE
+         * <=>  abc[]def<div><p>ghi</p></div>
+         */
+        moveDest = leftPos(this);
     }
 
-    // Now the cursor is on the right of a node. Merge it with its next sibling
-    // node if any (node: mergeNodes also handle the case where is there is no
-    // next sibling or if the left node is something that cannot or should not
-    // receive content to merge: e.g. the removal of a <br> for instance).
-    const node = this.childNodes[offset - 1];
-    const mergeResult = mergeNodes(node);
-    switch (mergeResult) {
-        // Merge succeeded, nothing more to be done, the backspace command
-        // visually removed something for the user.
-        case MERGE_CODES.SUCCESS: {
-            break;
-        }
-        // The merge resulted in removing the left node because it was invisible
-        // (empty span, empty text node, ...), continue propagation of the
-        // backspace command as we did not remove anything visible to the user.
-        case MERGE_CODES.REMOVED_INVISIBLE_NODE: {
-            this.oDeleteBackward(offset - 1);
-            break;
-        }
-        // The merge resulted in removing the left node alone (backspace after a
-        // <br> for instance). The backspace command is done, the cursor just
-        // have to be repositioned properly.
-        case MERGE_CODES.REMOVED_VISIBLE_NODE: {
-            setCursor(this, offset - 1);
-            break;
-        }
-        // The merge was not possible to be performed (example: mixing inline
-        // nodes) -> propagate the backspace.
-        case MERGE_CODES.NOTHING_TO_MERGE: {
-            node.oDeleteBackward(nodeSize(node));
-            break;
+    let node = this.childNodes[offset];
+    let firstBlockIndex = offset;
+    while (node && !isBlock(node)) {
+        node = node.nextSibling;
+        firstBlockIndex++;
+    }
+    let [cursorNode, cursorOffset] = moveMergedNodes(...moveDest, this, offset, firstBlockIndex);
+
+    // Propagate if this is still a block on the left of where the nodes were
+    // moved.
+    if (cursorNode.nodeType === Node.TEXT_NODE && cursorOffset === 0) {
+        cursorOffset = childNodeIndex(cursorNode);
+        cursorNode = cursorNode.parentNode;
+    }
+    if (cursorNode.nodeType !== Node.TEXT_NODE) {
+        const [state,, isBR] = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
+        if (state === STATES.BLOCK && !isBR) {
+            cursorNode.oDeleteBackward(cursorOffset);
         }
     }
 };
