@@ -981,6 +981,20 @@ describe('Editor', () => {
                         contentAfter: '<p>ab[]cd</p>',
                     });
                 });
+                it('should delete the first character in a paragraph (2)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a[] bc</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]&nbsp;bc</p>',
+                    });
+                });
+                it('should delete a one letter word', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab c[] de</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab&nbsp;[] de</p>',
+                    });
+                });
                 it('should merge a paragraph with text into a paragraph with text removing spaces', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab   </p>    <p>   []cd</p>',

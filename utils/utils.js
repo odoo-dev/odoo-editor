@@ -810,6 +810,110 @@ export function getState(el, offset, direction) {
         cType: cType, // Short for contentType
     };
 }
+const priorityRestoreStateRules = [
+    // Each entry is a list of two objects, with each key being optional (the
+    // more key-value pairs, the bigger the priority).
+    // {direction: ..., cType1: ..., cType2: ...}
+    // ->
+    // {spaceVisibility: (false|true), brVisibility: (false|true)}
+    [
+        // Replace a space by &nbsp; when it was not collapsed before and now is
+        // collapsed.
+        {cType1: CTYPES.CONTENT, cType2: CTYPES.SPACE | CTYPES.BLOCK_INSIDE | CTYPES.BR},
+        {spaceVisibility: true},
+    ],
+    [
+        // Remove all collapsed spaces when a space is removed.
+        {cType1: CTYPES.SPACE},
+        {spaceVisibility: false},
+    ],
+    [
+        // Remove spaces once the preceeding BR is removed
+        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR},
+        {spaceVisibility: false},
+    ],
+    [
+        // Remove space at the end of block after content once content is put
+        // after it (otherwise it would become visible).
+        {cType1: CTYPES.BLOCK_INSIDE, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
+        {spaceVisibility: false},
+    ],
+    [
+        // Duplicate a BR once the content afterwards disappears
+        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.INLINE, cType2: CTYPES.BLOCK_INSIDE},
+        {brVisibility: true},
+    ],
+    [
+        // Remove a BR at the end of a block once inline content is put after
+        // it (otherwise it would act as a line break).
+        {direction: DIRECTIONS.RIGHT, cType1: CTYPES.BLOCK_INSIDE, cType2: CTGROUPS.INLINE},
+        {brVisibility: false},
+    ],
+    [
+        // Remove trailing BR (now or still faces a block boundary).
+        {direction: DIRECTIONS.RIGHT, cType2: CTGROUPS.BLOCK},
+        {brVisibility: false},
+    ],
+    [
+        // Remove a BR once the BR that preceeds it is now replaced by
+        // content.
+        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR, cType2: CTGROUPS.INLINE},
+        {brVisibility: false},
+    ],
+];
+function restoreStateRuleHashCode(direction, cType1, cType2) {
+    return `${direction}-${cType1}-${cType2}`;
+}
+const allRestoreStateRules = (function () {
+    const map = new Map();
+
+    const keys = ['direction', 'cType1', 'cType2'];
+    for (const direction of Object.values(DIRECTIONS)) {
+        for (const cType1 of Object.values(CTYPES)) {
+            for (const cType2 of Object.values(CTYPES)) {
+                const rule = {direction: direction, cType1: cType1, cType2: cType2};
+
+                // Search for the rules which match whatever their priority
+                const matchedRules = [];
+                for (const entry of priorityRestoreStateRules) {
+                    let priority = 0;
+                    for (const key of keys) {
+                        const entryKeyValue = entry[0][key];
+                        if (entryKeyValue !== undefined) {
+                            if (typeof entryKeyValue === 'boolean' ? (rule[key] === entryKeyValue) : (rule[key] & entryKeyValue)) {
+                                priority++;
+                            } else {
+                                priority = -1;
+                                break;
+                            }
+                        }
+                    }
+                    if (priority >= 0) {
+                        matchedRules.push([priority, entry[1]]);
+                    }
+                }
+
+                // Create the final rule by merging found rules by order of
+                // priority
+                const finalRule = {};
+                for (let p = 0; p <= keys.length; p++) {
+                    for (const entry of matchedRules) {
+                        if (entry[0] === p) {
+                            Object.assign(finalRule, entry[1]);
+                        }
+                    }
+                }
+
+                // Create an unique identifier for the set of values
+                // direction - state 1 - state2 to add the rule in the map
+                const hashCode = restoreStateRuleHashCode(direction, cType1, cType2);
+                map.set(hashCode, finalRule);
+            }
+        }
+    }
+
+    return map;
+})();
 /**
  * Restores the given state starting before the given while looking in the given
  * direction.
@@ -826,21 +930,17 @@ export function restoreState(prevStateData) {
     }
     const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(node) : rightPos(node);
     const {cType: cType2} = getState(el, offset, direction);
-    if (cType1 === cType2
-            || cType1 & CTGROUPS.BLOCK && cType2 & CTGROUPS.BLOCK
-            || cType1 === CTYPES.CONTENT && cType2 === CTYPES.BR && direction === DIRECTIONS.RIGHT
-            || cType1 === CTYPES.BR && cType2 === CTYPES.CONTENT && direction === DIRECTIONS.RIGHT) {
-        return;
-    }
 
-    // Either: There was content in the given direction before and now there is
-    // space or a block, we have to enforce the potential space in the opposite
-    // direction.
-    // Or: There was space or block in the given direction before and now there
-    // is content, we have to get rid of the potential space in the opposite
-    // direction.
-    const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
-    enforceWhitespace(el, offset, inverseDirection, !!(cType1 & CTGROUPS.INLINE || (cType1 === CTYPES.BR && direction === DIRECTIONS.RIGHT)));
+    /**
+     * Knowing the old state data and the new state data, we know if we have to
+     * do something or not, and what to do.
+     */
+    const ruleHashCode = restoreStateRuleHashCode(direction, cType1, cType2);
+    const rule = allRestoreStateRules.get(ruleHashCode);
+    if (Object.values(rule).filter(x => x !== undefined).length) {
+        const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
+        enforceWhitespace(el, offset, inverseDirection, rule);
+    }
 }
 /**
  * Enforces the whitespace and BR visibility in the given direction starting
@@ -849,9 +949,11 @@ export function restoreState(prevStateData) {
  * @param {HTMLElement} el
  * @param {number} offset
  * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
- * @param {boolean} visible
+ * @param {Object} rule
+ * @param {boolean} [rule.spaceVisibility]
+ * @param {boolean} [rule.brVisibility]
  */
-export function enforceWhitespace(el, offset, direction, visible) {
+export function enforceWhitespace(el, offset, direction, rule) {
     let domPath;
     let expr;
     if (direction === DIRECTIONS.LEFT) {
@@ -866,16 +968,23 @@ export function enforceWhitespace(el, offset, direction, visible) {
     let foundVisibleSpaceTextNode = null;
     for (const node of domPath) {
         if (node.nodeName === 'BR') {
-            const {cType: leftCType} = getState(...leftPos(node), DIRECTIONS.LEFT);
-            const hasBlockBefore = !!(leftCType & CTGROUPS.BLOCK);
-            const {cType: rightCType} = getState(...rightPos(node), DIRECTIONS.RIGHT);
-            const hasBlockAfter = !!(rightCType & CTGROUPS.BLOCK);
-            if (visible) {
-                if (direction === DIRECTIONS.LEFT || !hasBlockAfter) { // FIXME review this
-                    node.before(document.createElement('br'));
+            if (rule.brVisibility === undefined) {
+                break;
+            }
+            if (rule.brVisibility) {
+                node.before(document.createElement('br'));
+            } else {
+                // We found a BR that we were asked to remove. Disobey if the
+                // BR is between a space and a block or between a BR and a block
+                // or between content and a BR (because in that case, this is a
+                // BR which makes it visible).
+                // TODO I'd like this to not be needed, it feels wrong...
+                const {cType: leftCType} = getState(...leftPos(node), DIRECTIONS.LEFT);
+                const {cType: rightCType} = getState(...rightPos(node), DIRECTIONS.RIGHT);
+                if (!(leftCType & (CTYPES.BR | CTYPES.SPACE) && rightCType & CTGROUPS.BLOCK
+                        || leftCType & CTGROUPS.INLINE && rightCType & CTGROUPS.BR)) {
+                    node.remove();
                 }
-            } else if ((leftCType !== CTYPES.SPACE || rightCType === CTYPES.CONTENT) && (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore)) { // FIXME review this
-                node.remove();
             }
             break;
         } else if (node.nodeType === Node.TEXT_NODE) {
@@ -898,7 +1007,10 @@ export function enforceWhitespace(el, offset, direction, visible) {
         }
     }
 
-    if (!visible) {
+    if (rule.spaceVisibility === undefined) {
+        return;
+    }
+    if (!rule.spaceVisibility) {
         for (const node of invisibleSpaceTextNodes) {
             // Empty and not remove to not mess with offset-based positions in
             // commands implementation, also remove non-block empty parents.
@@ -920,6 +1032,6 @@ export function enforceWhitespace(el, offset, direction, visible) {
     }
     const spaceNode = (foundVisibleSpaceTextNode || invisibleSpaceTextNodes[0]);
     if (spaceNode) {
-        spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, visible ? '\u00A0' : '');
+        spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, rule.spaceVisibility ? '\u00A0' : '');
     }
 }
