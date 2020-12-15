@@ -850,22 +850,16 @@ export function enforceWhitespace(el, offset, direction, visible) {
     let foundVisibleSpaceTextNode = null;
     for (const node of domPath) {
         if (node.nodeName === 'BR') {
-            const hasBlockBefore = (getState(...leftPos(node), DIRECTIONS.LEFT).state === STATES.BLOCK);
-            const hasBlockAfter = (getState(...rightPos(node), DIRECTIONS.RIGHT).state === STATES.BLOCK);
+            const leftStateData = getState(...leftPos(node), DIRECTIONS.LEFT);
+            const hasBlockBefore = (leftStateData.state === STATES.BLOCK);
+            const rightStateData = getState(...rightPos(node), DIRECTIONS.RIGHT);
+            const hasBlockAfter = (rightStateData.state === STATES.BLOCK);
             if (visible) {
                 if (direction === DIRECTIONS.LEFT || !hasBlockAfter) { // FIXME review this
                     node.before(document.createElement('br'));
                 }
-            } else if (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore) { // FIXME review this
-                // Tricky case: even the BR removal/duplication during
-                // restoreState must be protected. Probably only because of
-                // chrome: <p>abc <br><br>[]</p> + BACKSPACE -> <p>abc </p>
-                // Fine on Firefox but on Chrome, the space is now invisible.
-                // Removing the second BR, the space has to be transformed into
-                // &nbsp; for this case on Chrome.
-                const restore = prepareUpdate(...boundariesOut(node));
+            } else if ((leftStateData.state !== STATES.SPACE || rightStateData.state === STATES.CONTENT) && (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore)) { // FIXME review this
                 node.remove();
-                restore();
             }
             break;
         } else if (node.nodeType === Node.TEXT_NODE) {

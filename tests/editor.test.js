@@ -568,7 +568,7 @@ describe('Editor', () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>abc <br><br>[]</p>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<p>abc&nbsp;[]</p>',
+                            contentAfter: '<p>abc []<br></p>',
                         });
                     });
                     it('should delete a character and a line break, emptying a paragraph', async () => {
