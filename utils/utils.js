@@ -152,6 +152,15 @@ export function firstChild(node, inline = false) {
     return node;
 }
 /**
+ * Values which can be returned while browsing the DOM which gives information
+ * to why the path ended.
+ */
+const PATH_END_REASONS = {
+    NO_NODE: 0,
+    BLOCK_OUT: 1,
+    BLOCK_HIT: 2,
+};
+/**
  * Creates a generator function according to the given parameters. Pre-made
  * generators to traverse the DOM are made using this function:
  *
@@ -178,7 +187,9 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
         ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
         : (node, offset) => firstChild(node.childNodes[offset], inline);
 
-    return function* (node, offset) {
+    // Note "reasons" is a way for the caller to be able to know why the
+    // generator ended yielding values.
+    return function* (node, offset, reasons = []) {
         let movedUp = false;
 
         let currentNode = node;
@@ -192,6 +203,7 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
 
         while (currentNode) {
             if (inline && isBlock(currentNode)) {
+                reasons.push(movedUp ? PATH_END_REASONS.BLOCK_OUT : PATH_END_REASONS.BLOCK_HIT);
                 break;
             }
             if (!deepOnly || !movedUp) {
@@ -206,6 +218,8 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
             }
             currentNode = nextNode;
         }
+
+        reasons.push(PATH_END_REASONS.NO_NODE);
     };
 }
 
@@ -703,19 +717,20 @@ export const STATES = {
  * @returns {Array<number, Node>} @see STATES
  */
 export function getState(el, offset, direction) {
-    const leftDOMPath = leftDeepOnlyInlinePath(el, offset);
-    const rightDOMPath = rightDeepOnlyInlinePath(el, offset);
+    const leftDOMPath = leftDeepOnlyInlinePath;
+    const rightDOMPath = rightDeepOnlyInlinePath;
 
     let domPath;
     let inverseDOMPath;
     let expr;
+    const reasons = [];
     if (direction === DIRECTIONS.LEFT) {
-        domPath = leftDOMPath;
-        inverseDOMPath = rightDOMPath;
+        domPath = leftDOMPath(el, offset, reasons);
+        inverseDOMPath = rightDOMPath(el, offset);
         expr = /[^\S\u00A0]$/;
     } else {
-        domPath = rightDOMPath;
-        inverseDOMPath = leftDOMPath;
+        domPath = rightDOMPath(el, offset, reasons);
+        inverseDOMPath = leftDOMPath(el, offset);
         expr = /^[^\S\u00A0]/;
     }
 
@@ -779,6 +794,7 @@ export function getState(el, offset, direction) {
         direction: direction,
         state: state,
         isBR: isBR,
+        isBlockOutside: state === STATES.BLOCK ? reasons.includes(PATH_END_REASONS.BLOCK_HIT) : undefined,
     };
 }
 /**

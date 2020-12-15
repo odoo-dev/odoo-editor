@@ -18,13 +18,13 @@ import {
     STATES,
 } from "../utils/utils.js";
 
-Text.prototype.oDeleteBackward = function (offset) {
+Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     const parentNode = this.parentNode;
 
     if (!offset) {
         // Backspace at the beginning of a text node is not a specific case to
         // handle, let the element implementation handle it.
-        HTMLElement.prototype.oDeleteBackward.call(this, offset);
+        HTMLElement.prototype.oDeleteBackward.call(this, offset, alreadyMoved);
         return;
     }
 
@@ -44,14 +44,14 @@ Text.prototype.oDeleteBackward = function (offset) {
 
     // If the removed element was not visible content, propagate the backspace.
     if (leftState === STATES.BLOCK) {
-        parentNode.oDeleteBackward(secondSplitOffset);
+        parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
         return;
     }
 
     setCursor(parentNode, secondSplitOffset);
 };
 
-HTMLElement.prototype.oDeleteBackward = function (offset) {
+HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     let moveDest;
 
     if (offset) {
@@ -64,7 +64,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
              * E.g. <p>abc<i>def</i>[]</p> + BACKSPACE
              * <=>  <p>abc<i>def[]</i></p> + BACKSPACE
              */
-            leftNode.oDeleteBackward(nodeSize(leftNode));
+            leftNode.oDeleteBackward(nodeSize(leftNode), alreadyMoved);
             return;
         }
 
@@ -76,6 +76,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
          * E.g. <p>abc</p>[]de<i>f</i><p>ghi</p> + BACKSPACE
          * <=>  <p>abcde<i>f</i></p><p>ghi</p>
          */
+        alreadyMoved = true;
         moveDest = endPos(leftNode);
     } else {
         const parentEl = this.parentNode;
@@ -115,7 +116,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
                     return;
                 }
             }
-            parentEl.oDeleteBackward(parentOffset);
+            parentEl.oDeleteBackward(parentOffset, alreadyMoved);
             return;
         }
 
@@ -150,14 +151,14 @@ HTMLElement.prototype.oDeleteBackward = function (offset) {
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
-        const {state, isBR} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
-        if (state === STATES.BLOCK && !isBR) {
-            cursorNode.oDeleteBackward(cursorOffset);
+        const {state, isBR, isBlockOutside} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
+        if (state === STATES.BLOCK && !isBR && (!alreadyMoved || isBlockOutside)) {
+            cursorNode.oDeleteBackward(cursorOffset, alreadyMoved);
         }
     }
 };
 
-HTMLLIElement.prototype.oDeleteBackward = function (offset) {
+HTMLLIElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     // FIXME On Firefox, backspace in LI at offset 0 is not detected if the LI
     // still contains text as contentEditable does nothing so no 'input' event
     // is fired and nothing can be rollbacked: how to handle that ??
@@ -165,7 +166,7 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset) {
     if (offset > 0 || this.previousElementSibling) {
         // If backspace inside li content or if the li is not the first one,
         // it behaves just like in a normal element.
-        HTMLElement.prototype.oDeleteBackward.call(this, offset);
+        HTMLElement.prototype.oDeleteBackward.call(this, offset, alreadyMoved);
         return;
     }
     this.oShiftTab(offset);

@@ -1039,6 +1039,13 @@ describe('Editor', () => {
                         contentAfter: '<div><p>ab</p><img>[]fg</div>',
                     });
                 });
+                it('should move paragraph content to empty block', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc</p><h1><br></h1><p>[]def</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>abc</p><h1>[]def</h1>',
+                    });
+                });
             });
         });
     });
