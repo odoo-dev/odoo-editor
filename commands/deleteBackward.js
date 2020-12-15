@@ -3,6 +3,8 @@
 import {
     boundariesOut,
     childNodeIndex,
+    CTGROUPS,
+    CTYPES,
     DIRECTIONS,
     endPos,
     getState,
@@ -15,7 +17,6 @@ import {
     prepareUpdate,
     setCursor,
     splitTextNode,
-    STATES,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -35,7 +36,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
 
     // Get the left state at the first split location so that we know if the
     // backspace must propagate after the character removal.
-    const {state: leftState} = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
+    const {ctGroup: leftCTGroup} = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
 
     // Do remove the character, then restore the state of the surrounding parts.
     const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
@@ -43,7 +44,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     restore();
 
     // If the removed element was not visible content, propagate the backspace.
-    if (leftState === STATES.BLOCK) {
+    if (leftCTGroup === CTGROUPS.BLOCK || leftCTGroup === CTGROUPS.BR) {
         parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
         return;
     }
@@ -151,8 +152,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
-        const {state, isBR, isBlockOutside} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
-        if (state === STATES.BLOCK && !isBR && (!alreadyMoved || isBlockOutside)) {
+        const {ctGroup, cType} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
+        if (ctGroup === CTGROUPS.BLOCK && (!alreadyMoved || cType === CTYPES.BLOCK_OUTSIDE)) {
             cursorNode.oDeleteBackward(cursorOffset, alreadyMoved);
         }
     }

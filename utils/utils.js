@@ -697,10 +697,22 @@ export function prepareUpdate(el, offset, ...args) {
         }
     };
 }
-export const STATES = {
+export const CTGROUPS = { // Short for CONTENT_TYPE_GROUPS
+    INLINE: 0,
+    BLOCK: 1,
+    BR: 2,
+};
+export const CTYPES = { // Short for CONTENT_TYPES
+    // Inline group
     CONTENT: 0,
     SPACE: 1,
-    BLOCK: 2,
+
+    // Block group
+    BLOCK_OUTSIDE: 2,
+    BLOCK_INSIDE: 3,
+
+    // Br group
+    BR: 4,
 };
 /**
  * Retrieves the "state" from a given position looking at the given direction.
@@ -714,7 +726,7 @@ export const STATES = {
  * @param {HTMLElement} el
  * @param {number} offset
  * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
- * @returns {Array<number, Node>} @see STATES
+ * @returns {Object}
  */
 export function getState(el, offset, direction) {
     const leftDOMPath = leftDeepOnlyInlinePath;
@@ -742,13 +754,13 @@ export function getState(el, offset, direction) {
 
     // We only traverse through deep inline nodes. If we cannot find a
     // meanfingful state between them, that means we hit a block.
-    let state = STATES.BLOCK;
-    let isBR = false;
+    let ctGroup = undefined;
+    let cType = undefined;
 
     // Traverse the DOM in the given direction to check what type of content
     // there is.
     let lastSpace = null;
-    let leftState;
+    let leftStateData;
     for (const node of domPath) {
         if (node.nodeType === Node.TEXT_NODE) {
             const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
@@ -758,43 +770,50 @@ export function getState(el, offset, direction) {
             // visible if we have content backwards.
             if (direction === DIRECTIONS.LEFT) {
                 if (isVisibleStr(value)) {
-                    state = (lastSpace || expr.test(value)) ? STATES.SPACE : STATES.CONTENT;
+                    ctGroup = CTGROUPS.INLINE;
+                    cType = (lastSpace || expr.test(value)) ? CTYPES.SPACE : CTYPES.CONTENT;
                     break;
                 }
                 if (value.length) {
                     lastSpace = node;
                 }
             } else {
-                if (expr.test(value) && leftState === undefined) {
-                    const data = getState(...leftPos(node), DIRECTIONS.LEFT);
-                    leftState = data.state;
-                    if (leftState === STATES.CONTENT || leftState === STATES.SPACE) {
-                        state = STATES.SPACE;
+                if (expr.test(value) && leftStateData === undefined) {
+                    leftStateData = getState(...leftPos(node), DIRECTIONS.LEFT);
+                    if (leftStateData.ctGroup === CTGROUPS.INLINE || leftStateData.ctGroup === CTGROUPS.BR && direction === DIRECTIONS.RIGHT) {
+                        ctGroup = CTGROUPS.INLINE;
+                        cType = CTYPES.SPACE;
                         break;
                     }
                 }
                 if (isVisibleStr(value)) {
-                    state = STATES.CONTENT;
+                    ctGroup = CTGROUPS.INLINE;
+                    cType = CTYPES.CONTENT;
                     break;
                 }
             }
         } else if (node.nodeName === 'BR') {
-            state = direction === DIRECTIONS.LEFT ? STATES.BLOCK : STATES.CONTENT;
-            isBR = true;
+            ctGroup = CTGROUPS.BR;
+            cType = CTYPES.BR;
             break;
         } else if (isVisible(node)) {
             // E.g. an image
-            state = STATES.CONTENT;
+            ctGroup = CTGROUPS.INLINE;
+            cType = CTYPES.CONTENT;
             break;
         }
+    }
+
+    if (ctGroup === undefined) {
+        ctGroup = CTGROUPS.BLOCK;
+        cType = reasons.includes(PATH_END_REASONS.BLOCK_HIT) ? CTYPES.BLOCK_OUTSIDE : CTYPES.BLOCK_INSIDE;
     }
 
     return {
         node: boundaryNode,
         direction: direction,
-        state: state,
-        isBR: isBR,
-        isBlockOutside: state === STATES.BLOCK ? reasons.includes(PATH_END_REASONS.BLOCK_HIT) : undefined,
+        ctGroup: ctGroup, // Short for contentTypeGroup
+        cType: cType, // Short for contentType
     };
 }
 /**
@@ -804,7 +823,7 @@ export function getState(el, offset, direction) {
  * @param {Object} prevStateData @see getState
  */
 export function restoreState(prevStateData) {
-    const {node, direction, state, isBR} = prevStateData;
+    const {node, direction, cType: cType1, ctGroup: ctGroup1} = prevStateData;
     if (!node || !node.parentNode) {
         // FIXME sometimes we want to restore the state starting from a node
         // which has been removed by another restoreState call... Not sure if
@@ -812,8 +831,11 @@ export function restoreState(prevStateData) {
         return;
     }
     const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(node) : rightPos(node);
-    const {state: newState, isBR: newIsBR} = getState(el, offset, direction);
-    if (state === newState && (state !== STATES.BLOCK || isBR === newIsBR)) {
+    const {cType: cType2, ctGroup: ctGroup2} = getState(el, offset, direction);
+    if (cType1 === cType2
+            || ctGroup1 === CTGROUPS.BLOCK && ctGroup2 === CTGROUPS.BLOCK
+            || cType1 === CTYPES.CONTENT && cType2 === CTYPES.BR && direction === DIRECTIONS.RIGHT
+            || cType1 === CTYPES.BR && cType2 === CTYPES.CONTENT && direction === DIRECTIONS.RIGHT) {
         return;
     }
 
@@ -824,7 +846,7 @@ export function restoreState(prevStateData) {
     // is content, we have to get rid of the potential space in the opposite
     // direction.
     const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
-    enforceWhitespace(el, offset, inverseDirection, state === STATES.CONTENT || state === STATES.SPACE);
+    enforceWhitespace(el, offset, inverseDirection, cType1 === CTYPES.CONTENT || cType1 === CTYPES.SPACE || (cType1 === CTYPES.BR && direction === DIRECTIONS.RIGHT));
 }
 /**
  * Enforces the whitespace and BR visibility in the given direction starting
@@ -851,14 +873,14 @@ export function enforceWhitespace(el, offset, direction, visible) {
     for (const node of domPath) {
         if (node.nodeName === 'BR') {
             const leftStateData = getState(...leftPos(node), DIRECTIONS.LEFT);
-            const hasBlockBefore = (leftStateData.state === STATES.BLOCK);
+            const hasBlockBefore = (leftStateData.ctGroup === CTGROUPS.BLOCK);
             const rightStateData = getState(...rightPos(node), DIRECTIONS.RIGHT);
-            const hasBlockAfter = (rightStateData.state === STATES.BLOCK);
+            const hasBlockAfter = (rightStateData.ctGroup === CTGROUPS.BLOCK);
             if (visible) {
                 if (direction === DIRECTIONS.LEFT || !hasBlockAfter) { // FIXME review this
                     node.before(document.createElement('br'));
                 }
-            } else if ((leftStateData.state !== STATES.SPACE || rightStateData.state === STATES.CONTENT) && (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore)) { // FIXME review this
+            } else if ((leftStateData.cType !== CTYPES.SPACE || rightStateData.cType === CTYPES.CONTENT) && (direction === DIRECTIONS.LEFT || hasBlockAfter && !hasBlockBefore)) { // FIXME review this
                 node.remove();
             }
             break;
