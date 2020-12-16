@@ -646,7 +646,7 @@ export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, star
             pos = setCursorStart(firstNode);
         }
     } else {
-        pos = setCursorEnd(destinationEl);
+        pos = setCursorEnd(destinationEl.childNodes[destinationOffset - 1] || destinationEl);
     }
 
     return pos;
