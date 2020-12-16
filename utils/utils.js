@@ -237,7 +237,7 @@ export function setCursor(node, offset = undefined) {
     if (node.childNodes.length === offset && node.lastChild instanceof HTMLBRElement) {
         offset--;
     }
-    offset = Math.max(offset, 0);
+    offset = Math.min(Math.max(offset, 0), nodeSize(node));
     range.setStart(node, offset);
     range.setEnd(node, offset);
     sel.removeAllRanges();
