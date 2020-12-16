@@ -16,6 +16,7 @@ import {
     nodeSize,
     prepareUpdate,
     setCursor,
+    setCursorEnd,
     splitTextNode,
 } from "../utils/utils.js";
 
@@ -49,7 +50,12 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
         return;
     }
 
-    setCursor(parentNode, secondSplitOffset);
+    const node = parentNode.childNodes[secondSplitOffset - 1];
+    if (node) { // TODO unify setCursor
+        setCursorEnd(node);
+    } else {
+        setCursor(parentNode, secondSplitOffset);
+    }
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
