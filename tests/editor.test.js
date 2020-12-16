@@ -1132,10 +1132,6 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[] </p>',
                         stepFunction: insertParagraphBreak,
-                        // FIXME this is indeed what should be expected on
-                        // Chrome... but our logic is that the space is visible
-                        // before because we see CONTENT, then BLOCK so restored
-                        // as &nbsp; -> which is what we would expect on FF.
                         contentAfter: '<p>abc</p><p>[]<br></p>',
                     });
                 });
@@ -1331,10 +1327,6 @@ describe('Editor', () => {
                         // The space should have been parsed away.
                         // JW cAfter: '<p><b>abc</b></p><p>[]<br></p>',
                         contentAfter: '<p><b>abc</b></p><p><b>[]<br></b></p>',
-                        // FIXME this is indeed what should be expected on
-                        // Chrome... but our logic is that the space is visible
-                        // before because we see CONTENT, then BLOCK so restored
-                        // as &nbsp; -> which is what we would expect on FF.
                     });
                 });
             });

@@ -1032,6 +1032,13 @@ export function enforceWhitespace(el, offset, direction, rule) {
     }
     const spaceNode = (foundVisibleSpaceTextNode || invisibleSpaceTextNodes[0]);
     if (spaceNode) {
-        spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, rule.spaceVisibility ? '\u00A0' : '');
+        let spaceVisibility = rule.spaceVisibility;
+        // In case we are asked to replace the space by a &nbsp;, disobey and
+        // do the opposite if that space is currently not visible
+        // TODO I'd like this to not be needed, it feels wrong...
+        if (spaceVisibility && !foundVisibleSpaceTextNode && getState(...rightPos(spaceNode), DIRECTIONS.RIGHT).cType & CTGROUPS.BLOCK) {
+            spaceVisibility = false;
+        }
+        spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, spaceVisibility ? '\u00A0' : '');
     }
 }
