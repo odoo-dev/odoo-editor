@@ -147,8 +147,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
 
     // Propagate if this is still a block on the left of where the nodes were
     // moved.
-    if (cursorNode.nodeType === Node.TEXT_NODE && cursorOffset === 0) {
-        cursorOffset = childNodeIndex(cursorNode);
+    if (cursorNode.nodeType === Node.TEXT_NODE && (cursorOffset === 0 || cursorOffset === cursorNode.length)) {
+        cursorOffset = childNodeIndex(cursorNode) + (cursorOffset === 0 ? 0 : 1);
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
