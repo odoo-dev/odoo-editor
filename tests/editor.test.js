@@ -4,6 +4,7 @@ import {
     BasicEditor,
     deleteBackward,
     deleteForward,
+    insertLineBreak,
     insertParagraphBreak,
     testEditor,
 } from './utils.js';
@@ -1344,6 +1345,288 @@ describe('Editor', () => {
                         stepFunction: insertParagraphBreak,
                         contentAfter:
                             '<p class="a">a</p><p class="a">[]<br></p><p class="a"><br></p>',
+                    });
+                });
+            });
+        });
+    });
+
+    describe('insertLineBreak', () => {
+        describe('Selection collapsed', () => {
+            describe('Basic', () => {
+                it('should insert a <br> into an empty paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<br></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p><br>[]<br></p>',
+                    });
+                    // TODO see later, collapsed into collapsed
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p>[<br>]</p>',
+                    //     stepFunction: insertLineBreak,
+                    //     contentAfter: '<p><br>[]<br></p>',
+                    // });
+                    // TODO to check: the cursor cannot be in that position...
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p><br>[]</p>',
+                    //     stepFunction: insertLineBreak,
+                    //     contentAfter: '<p><br>[]<br></p>',
+                    // });
+                });
+                it('should insert a <br> at the beggining of a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]abc</p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p><br>[]abc</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[] abc</p>',
+                        stepFunction: insertLineBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p><br>[]abc</p>',
+                    });
+                });
+                it('should insert a <br> within text', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]cd</p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p>ab<br>[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab []cd</p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's before a
+                        // <br>).
+                        contentAfter: '<p>ab&nbsp;<br>[]cd</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[] cd</p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's after a
+                        // <br>).
+                        contentAfter: '<p>ab<br>[]&nbsp;cd</p>',
+                    });
+                });
+                it('should insert a line break (2 <br>) at the end of a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]</p>',
+                        stepFunction: insertLineBreak,
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        contentAfter: '<p>abc<br>[]<br></p>',
+                    });
+                });
+            });
+            describe('Consecutive', () => {
+                it.skip('should insert two <br> at the beggining of an empty paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<br></p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        contentAfter: '<p><br><br>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[<br>]</p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        contentAfter: '<p><br><br>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br>[]</p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        contentAfter: '<p><br><br>[]<br></p>',
+                    });
+                });
+                it('should insert two <br> at the beggining of a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]abc</p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        contentAfter: '<p><br><br>[]abc</p>',
+                    });
+                });
+                it('should insert two <br> within text', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab[]cd</p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        contentAfter: '<p>ab<br><br>[]cd</p>',
+                    });
+                });
+                it('should insert two line breaks (3 <br>) at the end of a paragraph', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]</p>',
+                        stepFunction: async (editor) => {
+                            await insertLineBreak(editor);
+                            await insertLineBreak(editor);
+                        },
+                        // the last <br> is needed to make the first one
+                        // visible.
+                        contentAfter: '<p>abc<br><br>[]<br></p>',
+                    });
+                });
+            });
+            describe('Format', () => {
+                it.skip('should insert a <br> before a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc[]<b>def</b></p>',
+                        stepFunction: insertLineBreak,
+                        // That selection is equivalent to []<b>
+                        contentAfter: '<p>abc<br><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to []<b>
+                        contentBefore: '<p>abc<b>[]def</b></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p>abc<br><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc <b>[]def</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's after a
+                        // <br>).
+                        contentAfter: '<p>abc&nbsp;<br><b>[]def</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc<b>[] def </b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible (because it's before a
+                        // <br>).
+                        contentAfter: '<p>abc<br><b>[]&nbsp;def</b></p>',
+                    });
+                });
+                it.skip('should insert a <br> after a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc</b>[]def</p>',
+                        stepFunction: insertLineBreak,
+                        // Visually, the caret does show _after_ the line
+                        // break.
+                        contentAfter: '<p><b>abc[]<br></b>def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to </b>[]
+                        contentBefore: '<p><b>abc[]</b>def</p>',
+                        stepFunction: insertLineBreak,
+                        // Visually, the caret does show _after_ the line
+                        // break.
+                        contentAfter: '<p><b>abc[]<br></b>def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc[]</b> def</p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking space so
+                        // it is visible (because it's after a <br>).
+                        // Visually, the caret does show _after_ the line
+                        // break.
+                        contentAfter: '<p><b>abc[]<br></b>&nbsp;def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc []</b>def</p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking space so
+                        // it is visible (because it's before a <br>).
+                        // Visually, the caret does show _after_ the line
+                        // break.
+                        contentAfter: '<p><b>abc&nbsp;[]<br></b>def</p>',
+                    });
+                });
+                it.skip('should insert a <br> at the beginning of a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>[]<b>abc</b></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p><b><br>[]abc</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to []<b>
+                        contentBefore: '<p><b>[]abc</b></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p><b><br>[]abc</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>[] abc</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space should have been parsed away.
+                        contentAfter: '<p><b><br>[]abc</b></p>',
+                    });
+                });
+                it('should insert a <br> within a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab[]cd</b></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter: '<p><b>ab<br>[]cd</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab []cd</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p><b>ab&nbsp;<br>[]cd</b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>ab[] cd</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space is converted to a non-breaking
+                        // space so it is visible.
+                        contentAfter: '<p><b>ab<br>[]&nbsp;cd</b></p>',
+                    });
+                });
+                it.skip('should insert a line break (2 <br>) at the end of a format node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc</b>[]</p>',
+                        stepFunction: insertLineBreak,
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        contentAfter: '<p><b>abc<br>[]<br></b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to </b>[]
+                        contentBefore: '<p><b>abc[]</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        contentAfter: '<p><b>abc<br>[]<br></b></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc[] </b></p>',
+                        stepFunction: insertLineBreak,
+                        // The space should have been parsed away.
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        contentAfter: '<p><b>abc<br>[]<br></b></p>',
+                    });
+                });
+            });
+            describe('With attributes', () => {
+                it('should insert a line break before a span with class', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<p><span class="a">dom to</span></p><p><span class="b">[]edit</span></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter:
+                            '<p><span class="a">dom to</span></p><p><span class="b"><br>[]edit</span></p>',
+                    });
+                });
+                it('should insert a line break within a span with a bold', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><span><b>ab[]cd</b></span></p>',
+                        stepFunction: insertLineBreak,
+                        contentAfter:
+                            '<p><span><b>ab<br>[]cd</b></span></p>',
                     });
                 });
             });

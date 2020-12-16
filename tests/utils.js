@@ -246,16 +246,20 @@ export async function testEditor(Editor = OdooEditor, spec) {
     testNode.remove();
 }
 
-export let deleteForward = async editor => {
+export async function deleteForward(editor) {
     editor.execCommand('oDeleteForward');
-};
+}
 
-export let deleteBackward = async editor => {
+export async function deleteBackward(editor) {
     editor.execCommand('oDeleteBackward');
-};
+}
 
 export async function insertParagraphBreak(editor) {
     editor.execCommand('oEnter');
+}
+
+export async function insertLineBreak(editor) {
+    editor.execCommand('oShiftEnter');
 }
 
 export class BasicEditor extends OdooEditor {
