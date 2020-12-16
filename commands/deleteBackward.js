@@ -7,6 +7,7 @@ import {
     CTYPES,
     DIRECTIONS,
     endPos,
+    fillEmpty,
     getState,
     isBlock,
     isUnbreakable,
@@ -48,6 +49,8 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     if (!(leftCType & CTGROUPS.INLINE)) {
         parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
         return;
+    } else {
+        fillEmpty(parentNode);
     }
 
     const node = parentNode.childNodes[secondSplitOffset - 1];
@@ -114,6 +117,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
                 const restore = prepareUpdate(...boundariesOut(this));
                 this.remove();
                 restore();
+
+                fillEmpty(parentEl);
 
                 if (visible) {
                     // TODO this handle BR/IMG/etc removals../ to see if we

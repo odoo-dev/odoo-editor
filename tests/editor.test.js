@@ -995,6 +995,18 @@ describe('Editor', () => {
                         contentAfter: '<p>ab&nbsp;[] de</p>',
                     });
                 });
+                it('should fill empty block with a <br>', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>a[]</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><img>[]</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]<br></p>',
+                    });
+                });
                 it('should merge a paragraph with text into a paragraph with text removing spaces', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab   </p>    <p>   []cd</p>',
