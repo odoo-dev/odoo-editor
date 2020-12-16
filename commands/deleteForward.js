@@ -3,11 +3,16 @@
 import {
     childNodeIndex,
     findNode,
-    findVisibleTextNode,
     isContentTextNode,
     isVisibleEmpty,
+    nodeSize,
     rightDeepOnlyPath,
     rightDeepOnlyInlinePath,
+    rightPos,
+    getState,
+    DIRECTIONS,
+    CTYPES,
+    leftPos,
 } from "../utils/utils.js";
 
 Text.prototype.oDeleteForward = function (offset) {
@@ -19,21 +24,17 @@ Text.prototype.oDeleteForward = function (offset) {
 };
 
 HTMLElement.prototype.oDeleteForward = function (offset) {
-    const nextVisibleText = findVisibleTextNode(rightDeepOnlyInlinePath(this, offset));
-    if (nextVisibleText) {
-        nextVisibleText.oDeleteBackward(1);
+    const filterFunc = node => (isVisibleEmpty(node) || isContentTextNode(node));
+
+    const firstInlineNode = findNode(rightDeepOnlyInlinePath(this, offset), filterFunc);
+    if (firstInlineNode && (firstInlineNode.nodeName !== 'BR' || getState(...rightPos(firstInlineNode), DIRECTIONS.RIGHT).cType !== CTYPES.BLOCK_INSIDE)) {
+        firstInlineNode.oDeleteBackward(Math.min(1, nodeSize(firstInlineNode)));
         return;
     }
-
-    const nextVisibleEmptyEl = findNode(rightDeepOnlyInlinePath(this, offset), node => isVisibleEmpty(node));
-    if (nextVisibleEmptyEl) {
-        nextVisibleEmptyEl.parentNode.oDeleteBackward(childNodeIndex(nextVisibleEmptyEl) + 1);
-        return;
-    }
-
-    const nextVisibleTextOutOfBlock = findNode(rightDeepOnlyPath(this, offset), node => isContentTextNode(node));
-    if (nextVisibleTextOutOfBlock) {
-        nextVisibleTextOutOfBlock.oDeleteBackward(0);
+    const firstOutNode = findNode(rightDeepOnlyPath(...(firstInlineNode ? rightPos(firstInlineNode) : [this, offset])), filterFunc);
+    if (firstOutNode) {
+        const [node, offset] = leftPos(firstOutNode);
+        node.oDeleteBackward(offset);
         return;
     }
 };
