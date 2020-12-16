@@ -568,6 +568,7 @@ describe('Editor', () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>abc <br><br>[]</p>',
                             stepFunction: deleteBackward,
+                            // JW cAfter: '<p>abc&nbsp;[]</p>',
                             contentAfter: '<p>abc []<br></p>',
                         });
                     });
