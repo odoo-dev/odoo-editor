@@ -377,12 +377,7 @@ export default class OdooEditor {
         if (this.undos.has(pos)) {
             this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
             let step = this.history[this.undos.get(pos) + 1];
-            if (step.cursor.anchorNode) {
-                let anchor = this.idFind(this.dom, step.cursor.anchorNode);
-                if (anchor) {
-                    setCursor(anchor, step.cursor.anchorOffset, false);
-                }
-            }
+            this.historySetCursor(step);
             this.undos.set(pos + 1, this.undos.get(pos) + 1);
             this.undos.delete(pos);
         }
@@ -423,11 +418,21 @@ export default class OdooEditor {
                 }
             }
         }
-        // set cursor to latest position
+        this.historySetCursor(step);
+    }
+
+    historySetCursor(step) {
         if (step.cursor.anchorNode) {
-            let anchor = this.idFind(this.dom, step.cursor.anchorNode);
-            if (anchor) {
-                setCursor(anchor, step.cursor.anchorOffset, false);
+            const anchorNode = this.idFind(this.dom, step.cursor.anchorNode);
+            const focusNode = step.cursor.focusNode ? this.idFind(this.dom, step.cursor.focusNode) : anchorNode;
+            if (anchorNode) {
+                setCursor(
+                    anchorNode,
+                    step.cursor.anchorOffset,
+                    focusNode,
+                    step.cursor.focusOffset !== undefined ? step.cursor.focusOffset : step.cursor.anchorOffset,
+                    false
+                );
             }
         }
     }

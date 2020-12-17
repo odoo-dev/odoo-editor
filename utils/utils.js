@@ -241,15 +241,16 @@ export function createDOMPathGenerator(direction, deepOnly, inline, inScope = fa
 //------------------------------------------------------------------------------
 
 /**
+ * From a given position, returns the normalized version.
+ *
+ * E.g. <b>abc</b>[]def -> <b>abc[]</b>def
+ *
  * @param {Node} node
  * @param {number} offset
- * @param {boolean} [normalize=true]
- * @returns {?Array.<Node, number}
+ * @param {boolean} [full=true] (if not full, it means we only normalize
+ *     positions which are not possible, like the cursor inside an image).
  */
-export function setCursor(node, offset, normalize = true) {
-    if (!node || !node.parentNode || !node.parentNode.closest('body')) {
-        return null;
-    }
+export function getNormalizedCursorPosition(node, offset, full = true) {
     if (isVisibleEmpty(node)) {
         // Cannot put cursor inside those elements, put it after instead.
         [node, offset] = rightPos(node);
@@ -258,7 +259,7 @@ export function setCursor(node, offset, normalize = true) {
     // Be permissive about the received offset.
     offset = Math.min(Math.max(offset, 0), nodeSize(node));
 
-    if (normalize) {
+    if (full) {
         // Put the cursor in deepest inline node around the given position if
         // possible.
         let el;
@@ -295,13 +296,33 @@ export function setCursor(node, offset, normalize = true) {
         offset--;
     }
 
+    return [node, offset];
+}
+/**
+ * @param {Node} anchorNode
+ * @param {number} anchorOffset
+ * @param {Node} focusNode
+ * @param {number} focusOffset
+ * @param {boolean} [normalize=true]
+ * @returns {?Array.<Node, number}
+ */
+export function setCursor(anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset, normalize = true) {
+    if (!anchorNode || !anchorNode.parentNode || !anchorNode.parentNode.closest('body')
+            || !focusNode || !focusNode.parentNode || !focusNode.parentNode.closest('body')) {
+        return null;
+    }
+
+    const seemsCollapsed = (anchorNode === focusNode && anchorOffset === focusOffset);
+    [anchorNode, anchorOffset] = getNormalizedCursorPosition(anchorNode, anchorOffset, normalize);
+    [focusNode, focusOffset] = seemsCollapsed ? [anchorNode, anchorOffset] : getNormalizedCursorPosition(focusNode, focusOffset, normalize);
+
     const sel = document.defaultView.getSelection();
     const range = new Range();
-    range.setStart(node, offset);
-    range.setEnd(node, offset);
+    range.setStart(anchorNode, anchorOffset);
+    range.setEnd(focusNode, focusOffset);
     sel.removeAllRanges();
     sel.addRange(range);
-    return [node, offset];
+    return [anchorNode, anchorOffset, focusNode, focusOffset];
 }
 /**
  * @param {Node} node
@@ -309,7 +330,8 @@ export function setCursor(node, offset, normalize = true) {
  * @returns {?Array.<Node, number}
  */
 export function setCursorStart(node, normalize = true) {
-    return setCursor(...startPos(node), normalize);
+    const pos = startPos(node);
+    return setCursor(...pos, ...pos, normalize);
 }
 /**
  * @param {Node} node
@@ -317,7 +339,8 @@ export function setCursorStart(node, normalize = true) {
  * @returns {?Array.<Node, number}
  */
 export function setCursorEnd(node, normalize = true) {
-    return setCursor(...endPos(node), normalize);
+    const pos = endPos(node);
+    return setCursor(...pos, ...pos, normalize);
 }
 
 //------------------------------------------------------------------------------
