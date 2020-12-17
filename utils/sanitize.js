@@ -4,7 +4,7 @@ import {
     areSimilarElements,
     closestBlock,
     endPos,
-    moveMergedNodes,
+    moveNodes,
 } from "./utils.js";
 
 class Sanitize {
@@ -32,7 +32,7 @@ class Sanitize {
 
         // Merge identical elements together
         if (areSimilarElements(node, node.nextSibling)) {
-            moveMergedNodes(...endPos(node), node.nextSibling);
+            moveNodes(...endPos(node), node.nextSibling);
         }
 
         // FIXME not parse out of editable zone...

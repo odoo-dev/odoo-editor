@@ -2,14 +2,31 @@
 
 const INVISIBLE_REGEX = /\u200c/g;
 
-//------------------------------------------------------------------------------
-// Position and sizes
-//------------------------------------------------------------------------------
-
 export const DIRECTIONS = {
     LEFT: false,
     RIGHT: true,
 };
+export const CTYPES = { // Short for CONTENT_TYPES
+    // Inline group
+    CONTENT: 1,
+    SPACE: 2,
+
+    // Block group
+    BLOCK_OUTSIDE: 4,
+    BLOCK_INSIDE: 8,
+
+    // Br group
+    BR: 16,
+};
+export const CTGROUPS = { // Short for CONTENT_TYPE_GROUPS
+    INLINE: CTYPES.CONTENT | CTYPES.SPACE,
+    BLOCK: CTYPES.BLOCK_OUTSIDE | CTYPES.BLOCK_INSIDE,
+    BR: CTYPES.BR,
+};
+
+//------------------------------------------------------------------------------
+// Position and sizes
+//------------------------------------------------------------------------------
 
 /**
  * @param {Node} node
@@ -114,14 +131,6 @@ export function findNode(domPath, findCallback = node => true, stopCallback = no
     return null;
 }
 
-export function findVisibleTextNode(domPath, findCallback = node => true, stopCallback = node => false) {
-    return findNode(
-        domPath,
-        node => isContentTextNode(node) && findCallback(node),
-        node => isContentTextNode(node) || stopCallback(node),
-    );
-}
-
 export function closestBlock(node) {
     return findNode(closestPath(node), node => isBlock(node));
 }
@@ -192,13 +201,10 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
     return function* (node, offset, reasons = []) {
         let movedUp = false;
 
-        let currentNode = node;
-        if (offset !== undefined) {
-            currentNode = firstNode(node, offset);
-            if (!currentNode) {
-                movedUp = true;
-                currentNode = node;
-            }
+        let currentNode = firstNode(node, offset);
+        if (!currentNode) {
+            movedUp = true;
+            currentNode = node;
         }
 
         while (currentNode) {
@@ -256,7 +262,7 @@ export function setCursorStart(node) {
 export function setCursorEnd(node) {
     node = latestChild(node);
     if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
-        return setCursor(node.parentElement, childNodeIndex(node) + (isFakeLineBreak(node) ? 0 : 1));
+        return setCursor(node.parentElement, childNodeIndex(node) + (node.nodeName === 'BR' && isFakeLineBreak(node) ? 0 : 1));
     }
     return setCursor(node, nodeSize(node));
 }
@@ -429,17 +435,6 @@ export function isVisible(node) {
     }
     return [...node.childNodes].some(n => isVisible(n));
 }
-/**
- * Returns whether or not the given char is invisible = a character that the
- * user should never have to remove himself.
- *
- * @param {string} ch
- * @returns {boolean}
- */
-const invisibleCharValues = ['\u200c'];
-export function isInvisibleChar(ch) {
-    return invisibleCharValues.includes(ch);
-}
 
 export function parentsGet(node, root = undefined) {
     let parents = [];
@@ -494,23 +489,15 @@ export function areSimilarElements(node, node2) {
     return !isBlock(node) && !isBlock(node2) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
 }
 /**
- * Returns whether or not the given node is a BR element which really acts as a
- * line break, not as a placeholder for the cursor.
- */
-export function isRealLineBreak(node) {
-    return (node instanceof HTMLBRElement
-        && (findVisibleTextNode(rightDeepOnlyInlinePath(...rightPos(node)))
-            || findNode(rightDeepOnlyInlinePath(...rightPos(node)), node => node instanceof HTMLBRElement)));
-}
-/**
- * Inverse as @see isRealLineBreak but also returns false if not a BR.
+ * Returns whether or not the given node is a BR element which does not really
+ * act as a line break, but as a placeholder for the cursor or to make some left
+ * element (like a space) visible.
  *
- * (e.g. should be removed if content added after it:
- * <p><br><br>[]</p> + TYPE 'a' -> <p><br>a</p> OR <p><br>a<br></p> but not
- * <p><br><br>a</p>).
+ * @param {HTMLBRElement} brEl
+ * @returns {boolean}
  */
-export function isFakeLineBreak(node) {
-    return (node instanceof HTMLBRElement && !isRealLineBreak(node));
+export function isFakeLineBreak(brEl) {
+    return !(getState(...rightPos(brEl), DIRECTIONS.RIGHT).cType & (CTGROUPS.INLINE | CTGROUPS.BR));
 }
 
 //------------------------------------------------------------------------------
@@ -590,9 +577,12 @@ export function setTagName(el, newTagName) {
     return n;
 }
 /**
- * Moves the given nodes to the given destination element.
- * That destination element is prepared first and adapted if necessary. The
- * cursor is then placed inside, before the moved elements.
+ * Moves the given subset of nodes of a source element to the given destination.
+ * If the source element is left empty it is removed. This ensures the moved
+ * content and its destination surroundings are restored (@see restoreState) to
+ * the way there were.
+ *
+ * It also reposition at the right position on the left of the moved nodes.
  *
  * @param {HTMLElement} destinationEl
  * @param {number} destinationOffset
@@ -602,7 +592,7 @@ export function setTagName(el, newTagName) {
  * @returns {Array.<HTMLElement, number} The position at the left of the moved
  *     nodes after the move was done (and where the cursor was repositioned).
  */
-export function moveMergedNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
+export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
@@ -697,24 +687,6 @@ export function prepareUpdate(el, offset, ...args) {
         }
     };
 }
-
-export const CTYPES = { // Short for CONTENT_TYPES
-    // Inline group
-    CONTENT: 1,
-    SPACE: 2,
-
-    // Block group
-    BLOCK_OUTSIDE: 4,
-    BLOCK_INSIDE: 8,
-
-    // Br group
-    BR: 16,
-};
-export const CTGROUPS = { // Short for CONTENT_TYPE_GROUPS
-    INLINE: CTYPES.CONTENT | CTYPES.SPACE,
-    BLOCK: CTYPES.BLOCK_OUTSIDE | CTYPES.BLOCK_INSIDE,
-    BR: CTYPES.BR,
-};
 /**
  * Retrieves the "state" from a given position looking at the given direction.
  * The "state" is the type of content. The functions also returns the first

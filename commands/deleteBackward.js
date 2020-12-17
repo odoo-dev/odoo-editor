@@ -13,7 +13,7 @@ import {
     isUnbreakable,
     isVisible,
     leftPos,
-    moveMergedNodes,
+    moveNodes,
     nodeSize,
     prepareUpdate,
     setCursor,
@@ -154,7 +154,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         node = node.nextSibling;
         firstBlockIndex++;
     }
-    let [cursorNode, cursorOffset] = moveMergedNodes(...moveDest, this, offset, firstBlockIndex);
+    let [cursorNode, cursorOffset] = moveNodes(...moveDest, this, offset, firstBlockIndex);
 
     // Propagate if this is still a block on the left of where the nodes were
     // moved.
