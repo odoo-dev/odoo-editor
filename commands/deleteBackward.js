@@ -17,7 +17,6 @@ import {
     nodeSize,
     prepareUpdate,
     setCursor,
-    setCursorEnd,
     splitTextNode,
 } from "../utils/utils.js";
 
@@ -53,12 +52,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
         fillEmpty(parentNode);
     }
 
-    const node = parentNode.childNodes[secondSplitOffset - 1];
-    if (node) { // TODO unify setCursor
-        setCursorEnd(node);
-    } else {
-        setCursor(parentNode, secondSplitOffset);
-    }
+    setCursor(parentNode, secondSplitOffset);
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -124,7 +118,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
                     // TODO this handle BR/IMG/etc removals../ to see if we
                     // prefer to have a dedicated handler for every possible
                     // HTML element or if we let this generic code handle it.
-                    setCursor(parentEl, parentOffset); // FIXME should probably get the first inline in the LEFT direction, just like moveMergeNodes
+                    setCursor(parentEl, parentOffset);
                     return;
                 }
             }

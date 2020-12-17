@@ -2,7 +2,7 @@
 
 import {
     isBlock,
-    setCursor,
+    setCursorStart,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftTab = function (offset) {
@@ -39,7 +39,7 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         if (toremove) {
             toremove.remove();
         }
-        setCursor(li.firstChild || li, 0);
+        setCursorStart(li);
     } else {
         let ul = li.parentNode;
         let p = document.createElement('P');
@@ -51,7 +51,7 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         if (!ul.firstElementChild) {
             ul.remove();
         }
-        setCursor(p.firstChild || p, 0);
+        setCursorStart(p);
     }
     return true;
 };

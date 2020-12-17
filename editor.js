@@ -380,7 +380,7 @@ export default class OdooEditor {
             if (step.cursor.anchorNode) {
                 let anchor = this.idFind(this.dom, step.cursor.anchorNode);
                 if (anchor) {
-                    setCursor(anchor, step.cursor.anchorOffset);
+                    setCursor(anchor, step.cursor.anchorOffset, false);
                 }
             }
             this.undos.set(pos + 1, this.undos.get(pos) + 1);
@@ -427,7 +427,7 @@ export default class OdooEditor {
         if (step.cursor.anchorNode) {
             let anchor = this.idFind(this.dom, step.cursor.anchorNode);
             if (anchor) {
-                setCursor(anchor, step.cursor.anchorOffset);
+                setCursor(anchor, step.cursor.anchorOffset, false);
             }
         }
     }

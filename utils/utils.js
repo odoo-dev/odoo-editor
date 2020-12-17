@@ -51,25 +51,25 @@ export function boundariesOut(node) {
     return [node.parentNode, index, node.parentNode, index + 1];
 }
 /**
- * @param {HTMLElement} el
- * @returns {Array.<HTMLElement, number>}
+ * @param {Node} node
+ * @returns {Array.<Node, number>}
  */
-export function startPos(el) {
-    return [el, 0];
+export function startPos(node) {
+    return [node, 0];
 }
 /**
- * @param {HTMLElement} el
- * @returns {Array.<HTMLElement, number>}
+ * @param {Node} node
+ * @returns {Array.<Node, number>}
  */
-export function endPos(el) {
-    return [el, el.childNodes.length];
+export function endPos(node) {
+    return [node, nodeSize(node)];
 }
 /**
- * @param {HTMLElement} el
- * @returns {Array.<HTMLElement, number, HTMLElement, number>}
+ * @param {Node} node
+ * @returns {Array.<node, number, node, number>}
  */
-export function boundariesIn(el) {
-    return [el, 0, el, el.childNodes.length];
+export function boundariesIn(node) {
+    return [node, 0, node, nodeSize(node)];
 }
 /**
  * Returns the given node's position relative to its parent (= its index in the
@@ -113,11 +113,13 @@ export const leftDeepFirstPath = createDOMPathGenerator(DIRECTIONS.LEFT, false, 
 export const leftDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.LEFT, true, false);
 export const leftDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, false, true);
 export const leftDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, true, true);
+export const leftDeepOnlyInlineInScopePath = createDOMPathGenerator(DIRECTIONS.LEFT, true, true, true);
 
 export const rightDeepFirstPath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, false);
 export const rightDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, false);
 export const rightDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, true);
 export const rightDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, true);
+export const rightDeepOnlyInlineInScopePath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, true, true);
 
 export function findNode(domPath, findCallback = node => true, stopCallback = node => false) {
     for (const node of domPath) {
@@ -168,6 +170,7 @@ const PATH_END_REASONS = {
     NO_NODE: 0,
     BLOCK_OUT: 1,
     BLOCK_HIT: 2,
+    OUT_OF_SCOPE: 3,
 };
 /**
  * Creates a generator function according to the given parameters. Pre-made
@@ -187,7 +190,7 @@ const PATH_END_REASONS = {
  * @param {boolean} deepOnly
  * @param {boolean} inline
  */
-export function createDOMPathGenerator(direction, deepOnly, inline) {
+export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
     const nextDeepest = direction === DIRECTIONS.LEFT
         ? node => latestChild(node.previousSibling, inline)
         : node => firstChild(node.nextSibling, inline);
@@ -212,6 +215,10 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
                 reasons.push(movedUp ? PATH_END_REASONS.BLOCK_OUT : PATH_END_REASONS.BLOCK_HIT);
                 break;
             }
+            if (inScope && currentNode === node) {
+                reasons.push(PATH_END_REASONS.OUT_OF_SCOPE);
+                break;
+            }
             if (!deepOnly || !movedUp) {
                 yield currentNode;
             }
@@ -233,38 +240,84 @@ export function createDOMPathGenerator(direction, deepOnly, inline) {
 // Cursor management
 //------------------------------------------------------------------------------
 
-export function setCursor(node, offset = undefined) {
-    if (!node || !node.parentElement || !node.parentElement.closest('body')) {
-        return;
+/**
+ * @param {Node} node
+ * @param {number} offset
+ * @param {boolean} [normalize=true]
+ * @returns {?Array.<Node, number}
+ */
+export function setCursor(node, offset, normalize = true) {
+    if (!node || !node.parentNode || !node.parentNode.closest('body')) {
+        return null;
+    }
+    if (isVisibleEmpty(node)) {
+        // Cannot put cursor inside those elements, put it after instead.
+        [node, offset] = rightPos(node);
     }
 
-    let sel = document.defaultView.getSelection();
-    let range = new Range();
-    if (node.childNodes.length === offset && node.lastChild instanceof HTMLBRElement) {
+    // Be permissive about the received offset.
+    offset = Math.min(Math.max(offset, 0), nodeSize(node));
+
+    if (normalize) {
+        // Put the cursor in deepest inline node around the given position if
+        // possible.
+        let el;
+        let elOffset;
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            el = node;
+            elOffset = offset;
+        } else if (node.nodeType === Node.TEXT_NODE) {
+            if (offset === 0) {
+                el = node.parentNode;
+                elOffset = childNodeIndex(node);
+            } else if (offset === node.length) {
+                el = node.parentNode;
+                elOffset = childNodeIndex(node) + 1;
+            }
+        }
+        if (el) {
+            const leftInlineNode = leftDeepOnlyInlineInScopePath(el, elOffset).next().value;
+            if (leftInlineNode) {
+                [node, offset] = isVisibleEmpty(leftInlineNode) ? rightPos(leftInlineNode) : endPos(leftInlineNode);
+            } else {
+                const rightInlineNode = rightDeepOnlyInlineInScopePath(el, elOffset).next().value;
+                if (rightInlineNode) {
+                    [node, offset] = isVisibleEmpty(rightInlineNode) ? leftPos(rightInlineNode) : startPos(rightInlineNode);
+                }
+            }
+        }
+    }
+
+    const prevNode = node.nodeType === Node.ELEMENT_NODE && node.childNodes[offset - 1];
+    if (prevNode && prevNode.nodeName === 'BR' && isFakeLineBreak(prevNode)) {
+        // If trying to put the cursor on the right of a fake line break, put
+        // it before instead.
         offset--;
     }
-    offset = Math.min(Math.max(offset, 0), nodeSize(node));
+
+    const sel = document.defaultView.getSelection();
+    const range = new Range();
     range.setStart(node, offset);
     range.setEnd(node, offset);
     sel.removeAllRanges();
     sel.addRange(range);
     return [node, offset];
 }
-
-export function setCursorStart(node) {
-    node = firstChild(node);
-    if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
-        return setCursor(node.parentElement, childNodeIndex(node));
-    }
-    return setCursor(node, 0);
+/**
+ * @param {Node} node
+ * @param {boolean} [normalize=true]
+ * @returns {?Array.<Node, number}
+ */
+export function setCursorStart(node, normalize = true) {
+    return setCursor(...startPos(node), normalize);
 }
-
-export function setCursorEnd(node) {
-    node = latestChild(node);
-    if (isVisibleEmpty(node) && node.parentNode) { // TODO improve / unify setCursorEnd
-        return setCursor(node.parentElement, childNodeIndex(node) + (node.nodeName === 'BR' && isFakeLineBreak(node) ? 0 : 1));
-    }
-    return setCursor(node, nodeSize(node));
+/**
+ * @param {Node} node
+ * @param {boolean} [normalize=true]
+ * @returns {?Array.<Node, number}
+ */
+export function setCursorEnd(node, normalize = true) {
+    return setCursor(...endPos(node), normalize);
 }
 
 //------------------------------------------------------------------------------
@@ -629,14 +682,9 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
     const firstNode = nodes.find(node => !!node.parentNode);
     let pos;
     if (firstNode) {
-        const leftNode = leftDeepOnlyInlinePath(...leftPos(firstNode)).next().value;
-        if (leftNode) {
-            pos = setCursorEnd(leftNode);
-        } else {
-            pos = setCursorStart(firstNode);
-        }
+        pos = setCursor(...leftPos(firstNode));
     } else {
-        pos = setCursorEnd(destinationEl.childNodes[destinationOffset - 1] || destinationEl);
+        pos = setCursor(destinationEl, destinationOffset);
     }
 
     return pos;

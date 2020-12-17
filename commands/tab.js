@@ -2,7 +2,7 @@
 
 import {
     isBlock,
-    setCursor,
+    setCursorStart,
 } from "../utils/utils.js";
 
 Text.prototype.oTab = function (offset) {
@@ -26,6 +26,6 @@ HTMLLIElement.prototype.oTab = function (offset) {
     lip.style.listStyle = "none";
     this.before(lip);
     ul.append(this);
-    setCursor(this, 0);
+    setCursorStart(this);
     return true;
 };
