@@ -466,7 +466,7 @@ export function isUnbreakable(node) {
         return true;
     }
     const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
-    return isEditableRoot || node.hasAttribute('t') || ['TABLE', 'TR', 'TD'].includes(node.tagName);
+    return isEditableRoot || node.hasAttribute('t') || ['TABLE', 'TR', 'TD'].includes(node.tagName) || node.classList.contains('oe_unbreakable');
 }
 
 export function containsUnbreakable(node) {

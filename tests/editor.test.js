@@ -23,7 +23,9 @@ describe('Editor', () => {
                     //     stepFunction: deleteForward,
                     //     contentAfter: '<p>[]</p>',
                     // });
-                    // TODO Collapsed test in non collapsed, to see later
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
                     // await testEditor(BasicEditor, {
                     //     contentBefore: '<p>[<br>]</p>',
                     //     stepFunction: deleteForward,
@@ -446,6 +448,150 @@ describe('Editor', () => {
                 });
             });
         });
+        describe('Selection not collapsed', () => {
+            it('should delete part of the text within a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd]ef</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ab[]ef</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd[ef</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ab[]ef</p>',
+                });
+            });
+            it('should delete across two paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd</p><p>ef]gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ab[]gh</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd</p><p>ef[gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ab[]gh</p>',
+                });
+            });
+            it('should delete all the text in a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[abc]</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]abc[</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>[]<br></p>',
+                });
+            });
+            it('should delete a complex selection accross format nodes and multiple paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>kl]</i>mn</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p><b>ab[]</b>mn</p>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>k]l</i>mn</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>kl[</i>mn</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p><b>ab[]</b>mn</p>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>k[l</i>mn</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
+                });
+            });
+            it('should delete all contents of a complex DOM with format nodes and multiple paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
+                    stepFunction: deleteForward,
+                    // JW cAfter: '<p>[]<br></p>',
+                    contentAfter: '<p><b>[]<br></b></p>', // Note: this is actually like that on google doc
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
+                    stepFunction: deleteForward,
+                    // JW cAfter: '<p>[]<br></p>',
+                    contentAfter: '<p><b>[]<br></b></p>', // Note: this is actually like that on google doc
+                });
+            });
+            it('should delete a selection accross a heading1 and a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab [cd</h1><p>ef]gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<h1>ab []gh</h1>',
+                });
+                // // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab ]cd</h1><p>ef[gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<h1>ab []gh</h1>',
+                });
+            });
+            it('should delete a selection from the beginning of a heading1 with a format to the middle of a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1><b>[abcd</b></h1><p>ef]gh</p>',
+                    stepFunction: deleteForward,
+                    // JW cAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<h1>[]gh</h1>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1><b>]abcd</b></h1><p>ef[gh</p>',
+                    stepFunction: deleteForward,
+                    // JW cAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<h1>[]gh</h1>',
+                });
+            });
+            it('should not break unbreakables', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore:
+                        '<table><tbody><tr><td>a[bc</td><td>de]f</td></tr></tbody></table>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<table><tbody><tr><td>a[]</td><td>f</td></tr></tbody></table>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p class="oe_unbreakable">a[bc</p><p class="oe_unbreakable">de]f</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>a[]</p><p>f</p>',
+                });
+            });
+            it('should delete a heading (triple click delete)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[abc</h1><p>]def</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>[]def</p>',
+                });
+            });
+        });
     });
 
     describe('deleteBackward', () => {
@@ -461,7 +607,9 @@ describe('Editor', () => {
                         stepFunction: deleteBackward,
                         contentAfter: '<p>[]</p>',
                     });
-                    // TODO non-collapsed in collapsed... to see later
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
                     // await testEditor(BasicEditor, {
                     //     contentBefore: '<p>[<br>]</p>',
                     //     stepFunction: deleteBackward,
@@ -844,11 +992,14 @@ describe('Editor', () => {
                         stepFunction: deleteBackward,
                         contentAfter: '<h1>ab[]</h1>',
                     });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<h1>ab</h1><p>[<br>]</p>',
-                        stepFunction: deleteBackward,
-                        contentAfter: '<h1>ab[]</h1>',
-                    });
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<h1>ab</h1><p>[<br>]</p>',
+                    //     stepFunction: deleteBackward,
+                    //     contentAfter: '<h1>ab[]</h1>',
+                    // });
                     await testEditor(BasicEditor, {
                         contentBefore: '<h1>ab</h1><p><br>[]</p>',
                         stepFunction: deleteBackward,
@@ -1078,6 +1229,137 @@ describe('Editor', () => {
                 });
             });
         });
+        describe('Selection not collapsed', () => {
+            it('should delete part of the text within a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd]ef</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]ef</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd[ef</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]ef</p>',
+                });
+            });
+            it('should delete across two paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd</p><p>ef]gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]gh</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd</p><p>ef[gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]gh</p>',
+                });
+            });
+            it('should delete all the text in a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[abc]</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]abc[</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>[]<br></p>',
+                });
+            });
+            it('should delete a complex selection accross format nodes and multiple paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>kl]</i>mn</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p><b>ab[]</b>mn</p>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab[cd</b></p><p><b>ef<br/>gh</b>ij<i>k]l</i>mn</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>kl[</i>mn</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p><b>ab[]</b>mn</p>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>ab]cd</b></p><p><b>ef<br/>gh</b>ij<i>k[l</i>mn</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p><b>ab[]</b><i>l</i>mn</p>',
+                });
+            });
+            it('should delete all contents of a complex DOM with format nodes and multiple paragraphs', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
+                    stepFunction: deleteBackward,
+                    // JW cAfter: '<p>[]<br></p>',
+                    contentAfter: '<p><b>[]<br></b></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
+                    stepFunction: deleteBackward,
+                    // JW cAfter: '<p>[]<br></p>',
+                    contentAfter: '<p><b>[]<br></b></p>',
+                });
+            });
+            it('should delete a selection accross a heading1 and a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab [cd</h1><p>ef]gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<h1>ab []gh</h1>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab ]cd</h1><p>ef[gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<h1>ab []gh</h1>',
+                });
+            });
+            it('should delete a selection from the beginning of a heading1 with a format to the middle fo a paragraph', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1><b>[abcd</b></h1><p>ef]gh</p>',
+                    stepFunction: deleteBackward,
+                    // JW cAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<h1>[]gh</h1>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1><b>]abcd</b></h1><p>ef[gh</p>',
+                    stepFunction: deleteBackward,
+                    // JW cAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<h1>[]gh</h1>',
+                });
+            });
+            it('should delete a heading (triple click backspace)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[abc</h1><p>]def</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>[]def</p>',
+                });
+            });
+        });
     });
 
     describe('insertParagraphBreak', () => {
@@ -1089,11 +1371,14 @@ describe('Editor', () => {
                         stepFunction: insertParagraphBreak,
                         contentAfter: '<p><br></p><p>[]<br></p>',
                     });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p>[<br>]</p>',
-                        stepFunction: insertParagraphBreak,
-                        contentAfter: '<p><br></p><p>[]<br></p>',
-                    });
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p>[<br>]</p>',
+                    //     stepFunction: insertParagraphBreak,
+                    //     contentAfter: '<p><br></p><p>[]<br></p>',
+                    // });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><br>[]</p>',
                         stepFunction: insertParagraphBreak,
@@ -1157,14 +1442,17 @@ describe('Editor', () => {
                         },
                         contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
                     });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p>[<br>]</p>',
-                        stepFunction: async (editor) => {
-                            await insertParagraphBreak(editor);
-                            await insertParagraphBreak(editor);
-                        },
-                        contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
-                    });
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p>[<br>]</p>',
+                    //     stepFunction: async (editor) => {
+                    //         await insertParagraphBreak(editor);
+                    //         await insertParagraphBreak(editor);
+                    //     },
+                    //     contentAfter: '<p><br></p><p><br></p><p>[]<br></p>',
+                    // });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><br>[]</p>',
                         stepFunction: async (editor) => {
@@ -1369,6 +1657,64 @@ describe('Editor', () => {
                 });
             });
         });
+        describe('Selection not collapsed', () => {
+            it('should delete the first half of a paragraph, then split it', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[ab]cd</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p><br></p><p>[]cd</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]ab[cd</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p><br></p><p>[]cd</p>',
+                });
+            });
+            it('should delete part of a paragraph, then split it', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a[bc]d</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p>a</p><p>[]d</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a]bc[d</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p>a</p><p>[]d</p>',
+                });
+            });
+            it('should delete the last half of a paragraph, then split it', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd]</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p>ab</p><p>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd[</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p>ab</p><p>[]<br></p>',
+                });
+            });
+            it('should delete all contents of a paragraph, then split it', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[abcd]</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p><br></p><p>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]abcd[</p>',
+                    stepFunction: insertParagraphBreak,
+                    contentAfter: '<p><br></p><p>[]<br></p>',
+                });
+            });
+        });
     });
 
     describe('insertLineBreak', () => {
@@ -1380,7 +1726,9 @@ describe('Editor', () => {
                         stepFunction: insertLineBreak,
                         contentAfter: '<p><br>[]<br></p>',
                     });
-                    // TODO see later, collapsed into collapsed
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
                     // await testEditor(BasicEditor, {
                     //     contentBefore: '<p>[<br>]</p>',
                     //     stepFunction: insertLineBreak,
@@ -1449,14 +1797,17 @@ describe('Editor', () => {
                         },
                         contentAfter: '<p><br><br>[]<br></p>',
                     });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p>[<br>]</p>',
-                        stepFunction: async (editor) => {
-                            await insertLineBreak(editor);
-                            await insertLineBreak(editor);
-                        },
-                        contentAfter: '<p><br><br>[]<br></p>',
-                    });
+                    // TODO this cannot actually be tested currently as a
+                    // backspace/delete in that case is not even detected
+                    // (no input event to rollback)
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p>[<br>]</p>',
+                    //     stepFunction: async (editor) => {
+                    //         await insertLineBreak(editor);
+                    //         await insertLineBreak(editor);
+                    //     },
+                    //     contentAfter: '<p><br><br>[]<br></p>',
+                    // });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><br>[]</p>',
                         stepFunction: async (editor) => {
@@ -1648,6 +1999,68 @@ describe('Editor', () => {
                         contentAfter:
                             '<p><span><b>ab<br>[]cd</b></span></p>',
                     });
+                });
+            });
+        });
+        describe('Selection not collapsed', () => {
+            it('should delete the first half of a paragraph, then insert a <br>', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[ab]cd</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p><br>[]cd</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]ab[cd</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p><br>[]cd</p>',
+                });
+            });
+            it('should delete part of a paragraph, then insert a <br>', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a[bc]d</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p>a<br>[]d</p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a]bc[d</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p>a<br>[]d</p>',
+                });
+            });
+            it('should delete the last half of a paragraph, then insert a line break (2 <br>)', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[cd]</p>',
+                    stepFunction: insertLineBreak,
+                    // the second <br> is needed to make the first one
+                    // visible.
+                    contentAfter: '<p>ab<br>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab]cd[</p>',
+                    stepFunction: insertLineBreak,
+                    // the second <br> is needed to make the first one
+                    // visible.
+                    contentAfter: '<p>ab<br>[]<br></p>',
+                });
+            });
+            it('should delete all contents of a paragraph, then insert a line break', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[abcd]</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p><br>[]<br></p>',
+                });
+                // Backward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>]abcd[</p>',
+                    stepFunction: insertLineBreak,
+                    contentAfter: '<p><br>[]<br></p>',
                 });
             });
         });
