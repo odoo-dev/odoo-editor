@@ -230,20 +230,34 @@ export async function testEditor(Editor = OdooEditor, spec) {
         document.getSelection().removeAllRanges();
     }
 
+    let firefoxExecCommandError = false;
     if (spec.stepFunction) {
-        await spec.stepFunction(editor);
+        try {
+            await spec.stepFunction(editor);
+        } catch (err) {
+            if (typeof err === 'object' && err.name === 'NS_ERROR_FAILURE') {
+                firefoxExecCommandError = true;
+            } else {
+                throw err;
+            }
+        }
     }
 
     // Same as above: disconnect mutation observers and other things, otherwise
     // reading the "[]" markers would broke the test.
     editor.destroy();
 
-    if (spec.contentAfter) {
+    if (spec.contentAfter && !firefoxExecCommandError) {
         renderTextualSelection();
         const value = testNode.innerHTML;
         window.chai.expect(value).to.be.equal(spec.contentAfter);
     }
     testNode.remove();
+
+    if (firefoxExecCommandError) {
+        // FIXME
+        throw new Error("Firefox was not able to test this case because of an execCommand error");
+    }
 }
 
 export async function deleteForward(editor) {

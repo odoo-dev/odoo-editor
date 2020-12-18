@@ -13,8 +13,7 @@ describe('Editor', () => {
     describe('deleteForward', () => {
         describe('Selection collapsed', () => {
             describe('Basic', () => {
-                // FIXME works but execCommand crashes on firefox here so cannot test
-                it.skip('should do nothing', async () => {
+                it('should do nothing', async () => {
                     // TODO the addition of <br/> "correction" part was judged
                     // unnecessary to enforce, the rest of the test still makes
                     // sense: not removing the unique <p/> and keeping the
