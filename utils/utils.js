@@ -798,18 +798,21 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
  * @param {HTMLElement} el
  * @param {number} offset
  * @param {...(HTMLElement|number)} args - argument 1 and 2 can be repeated for
- *     multiple preparations with only one restore callback returned.
+ *     multiple preparations with only one restore callback returned. Note: in
+ *     that case, the positions should be given in the document node order.
  * @returns {function}
  */
-const directions = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
+const directions = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT]; // Note: look left then right, to restore right then left
 export function prepareUpdate(el, offset, ...args) {
     const positions = [...arguments];
 
     // Check the state in each direction starting from each position.
     const restoreData = [];
     while (positions.length) {
-        el = positions.shift();
-        offset = positions.shift();
+        // Note: important to get the positions in reverse order to restore
+        // right side before left side.
+        offset = positions.pop();
+        el = positions.pop();
         for (const direction of directions) {
             restoreData.push(getState(el, offset, direction));
         }
@@ -926,8 +929,20 @@ const priorityRestoreStateRules = [
     // {spaceVisibility: (false|true), brVisibility: (false|true)}
     [
         // Replace a space by &nbsp; when it was not collapsed before and now is
-        // collapsed.
-        {cType1: CTYPES.CONTENT, cType2: CTYPES.SPACE | CTYPES.BLOCK_INSIDE | CTYPES.BR},
+        // collapsed (one-letter word removal for example).
+        {cType1: CTYPES.CONTENT, cType2: CTYPES.SPACE | CTGROUPS.BLOCK},
+        {spaceVisibility: true},
+    ],
+    [
+        // Replace a space by &nbsp; when it was content before and now it is
+        // a BR.
+        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BR},
+        {spaceVisibility: true},
+    ],
+    [
+        // Replace a space by &nbsp; when it was visible thanks to a BR which
+        // is now gone.
+        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BR, cType2: CTYPES.SPACE | CTGROUPS.BLOCK},
         {spaceVisibility: true},
     ],
     [
@@ -941,31 +956,27 @@ const priorityRestoreStateRules = [
         {spaceVisibility: false},
     ],
     [
-        // Remove space at the end of block after content once content is put
-        // after it (otherwise it would become visible).
-        {cType1: CTYPES.BLOCK_INSIDE, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
+        // Remove space before block once content is put after it (otherwise it
+        // would become visible).
+        {cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
         {spaceVisibility: false},
     ],
     [
         // Duplicate a BR once the content afterwards disappears
-        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.INLINE, cType2: CTYPES.BLOCK_INSIDE},
+        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BLOCK},
         {brVisibility: true},
     ],
     [
         // Remove a BR at the end of a block once inline content is put after
         // it (otherwise it would act as a line break).
-        {direction: DIRECTIONS.RIGHT, cType1: CTYPES.BLOCK_INSIDE, cType2: CTGROUPS.INLINE},
-        {brVisibility: false},
-    ],
-    [
-        // Remove trailing BR (now or still faces a block boundary).
-        {direction: DIRECTIONS.RIGHT, cType2: CTGROUPS.BLOCK},
+        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE},
         {brVisibility: false},
     ],
     [
         // Remove a BR once the BR that preceeds it is now replaced by
-        // content.
-        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR, cType2: CTGROUPS.INLINE},
+        // content (or if it was a BR at the start of a block which now is
+        // a trailing BR).
+        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR | CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE},
         {brVisibility: false},
     ],
 ];
@@ -1082,15 +1093,11 @@ export function enforceWhitespace(el, offset, direction, rule) {
             if (rule.brVisibility) {
                 node.before(document.createElement('br'));
             } else {
-                // We found a BR that we were asked to remove. Disobey if the
-                // BR is between a space and a block or between a BR and a block
-                // or between content and a BR (because in that case, this is a
-                // BR which makes it visible).
+                // We found a BR that we were asked to remove. Disobey if there
+                // is another BR in the same direction.
                 // TODO I'd like this to not be needed, it feels wrong...
-                const {cType: leftCType} = getState(...leftPos(node), DIRECTIONS.LEFT);
                 const {cType: rightCType} = getState(...rightPos(node), DIRECTIONS.RIGHT);
-                if (!(leftCType & (CTYPES.BR | CTYPES.SPACE) && rightCType & CTGROUPS.BLOCK
-                        || leftCType & CTGROUPS.INLINE && rightCType & CTGROUPS.BR)) {
+                if (!(rightCType & CTGROUPS.BR)) {
                     node.remove();
                 }
             }
