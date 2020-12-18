@@ -316,12 +316,20 @@ export function setCursor(anchorNode, anchorOffset, focusNode = anchorNode, focu
     [anchorNode, anchorOffset] = getNormalizedCursorPosition(anchorNode, anchorOffset, normalize);
     [focusNode, focusOffset] = seemsCollapsed ? [anchorNode, anchorOffset] : getNormalizedCursorPosition(focusNode, focusOffset, normalize);
 
+    const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
     const sel = document.defaultView.getSelection();
     const range = new Range();
-    range.setStart(anchorNode, anchorOffset);
-    range.setEnd(focusNode, focusOffset);
+    if (direction === DIRECTIONS.RIGHT) {
+        range.setStart(anchorNode, anchorOffset);
+        range.collapse(true);
+    } else {
+        range.setEnd(anchorNode, anchorOffset);
+        range.collapse(false);
+    }
     sel.removeAllRanges();
     sel.addRange(range);
+    sel.extend(focusNode, focusOffset);
+
     return [anchorNode, anchorOffset, focusNode, focusOffset];
 }
 /**
@@ -341,6 +349,29 @@ export function setCursorStart(node, normalize = true) {
 export function setCursorEnd(node, normalize = true) {
     const pos = endPos(node);
     return setCursor(...pos, ...pos, normalize);
+}
+/**
+ * From selection position, checks if it is left-to-right or right-to-left.
+ *
+ * @param {Node} anchorNode
+ * @param {number} anchorOffset
+ * @param {Node} focusNode
+ * @param {number} focusOffset
+ * @returns {(number|false)} the direction of false if the selection is collapsed
+ */
+export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset) {
+    const range1 = new Range();
+    range1.setStart(anchorNode, anchorOffset);
+    range1.setEnd(focusNode, focusOffset);
+
+    const range2 = new Range();
+    range2.setStart(focusNode, focusOffset);
+    range2.setEnd(anchorNode, anchorOffset);
+
+    if (range1.collapsed && range2.collapsed) {
+        return false;
+    }
+    return range1.collapsed ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
 }
 
 //------------------------------------------------------------------------------
