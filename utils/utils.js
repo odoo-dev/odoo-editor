@@ -606,6 +606,40 @@ export function areSimilarElements(node, node2) {
 export function isFakeLineBreak(brEl) {
     return !(getState(...rightPos(brEl), DIRECTIONS.RIGHT).cType & (CTGROUPS.INLINE | CTGROUPS.BR));
 }
+/**
+ * Checks whether or not the given block has any visible content, except for
+ * a placeholder BR.
+ *
+ * @param {HTMLElement} blockEl
+ * @returns {boolean}
+ */
+export function isEmptyBlock(blockEl) {
+    if (isVisibleStr(blockEl.textContent)) {
+        return false;
+    }
+    if (blockEl.querySelectorAll('br').length >= 2) {
+        return false;
+    }
+    const nodes = blockEl.querySelectorAll('*');
+    for (const node of nodes) {
+        // There is no text and no double BR, the only thing that could make
+        // this visible is a "visible empty" node like an image.
+        if (isVisibleEmpty(node)) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * Checks whether or not the given block element has something to make it have
+ * a visible height (except for padding / border).
+ *
+ * @param {HTMLElement} blockEl
+ * @returns {boolean}
+ */
+export function isShrunkBlock(blockEl) {
+    return isEmptyBlock(blockEl) && !blockEl.querySelector('br');
+}
 
 //------------------------------------------------------------------------------
 // DOM Modification
@@ -641,14 +675,14 @@ export function splitTextNode(textNode, offset) {
     return parentOffset;
 }
 /**
- * Add a BR in the given node if its closest ancestor block has none to make
+ * Add a BR in the given node if its closest ancestor block has nothing to make
  * it visible.
  *
  * @param {HTMLElement} el
  */
 export function fillEmpty(el) {
     const blockEl = closestBlock(el);
-    if (!isVisibleStr(blockEl.textContent) && !blockEl.querySelector('br')) {
+    if (isShrunkBlock(blockEl)) {
         el.appendChild(document.createElement('br'));
     }
 }
