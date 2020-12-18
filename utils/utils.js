@@ -977,7 +977,7 @@ const priorityRestoreStateRules = [
         // content (or if it was a BR at the start of a block which now is
         // a trailing BR).
         {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR | CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE},
-        {brVisibility: false},
+        {brVisibility: false, extraBRRemovalCondition: brNode => isFakeLineBreak(brNode)},
     ],
 ];
 function restoreStateRuleHashCode(direction, cType1, cType2) {
@@ -1093,11 +1093,7 @@ export function enforceWhitespace(el, offset, direction, rule) {
             if (rule.brVisibility) {
                 node.before(document.createElement('br'));
             } else {
-                // We found a BR that we were asked to remove. Disobey if there
-                // is another BR in the same direction.
-                // TODO I'd like this to not be needed, it feels wrong...
-                const {cType: rightCType} = getState(...rightPos(node), DIRECTIONS.RIGHT);
-                if (!(rightCType & CTGROUPS.BR)) {
+                if (!rule.extraBRRemovalCondition || rule.extraBRRemovalCondition(node)) {
                     node.remove();
                 }
             }

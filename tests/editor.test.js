@@ -1225,6 +1225,13 @@ describe('Editor', () => {
                         contentAfter: '<p>abc</p><h1>[]def</h1>',
                     });
                 });
+                it('should remove only one br between contents', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc<br>[]<br>def</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>abc[]<br>def</p>',
+                    });
+                });
             });
         });
         describe('Selection not collapsed', () => {
