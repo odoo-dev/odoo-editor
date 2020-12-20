@@ -1804,7 +1804,7 @@ describe('Editor', () => {
                 });
             });
             describe('Consecutive', () => {
-                it.skip('should insert two <br> at the beggining of an empty paragraph', async () => {
+                it('should insert two <br> at the beggining of an empty paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]<br></p>',
                         stepFunction: async (editor) => {

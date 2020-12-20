@@ -5,6 +5,8 @@ import {
     prepareUpdate,
     rightPos,
     setCursor,
+    getState, DIRECTIONS, CTYPES,
+    leftPos,
     splitTextNode,
 } from "../utils/utils.js";
 
@@ -21,7 +23,8 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     } else {
         this.insertBefore(brEl, this.childNodes[offset]);
     }
-    if (isFakeLineBreak(brEl)) {
+    if (isFakeLineBreak(brEl) && 
+            (getState(...leftPos(brEl), DIRECTIONS.LEFT).cType != CTYPES.BR)) {
         brEl.before(document.createElement('BR'));
     }
 
