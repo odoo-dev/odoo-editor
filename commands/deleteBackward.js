@@ -13,6 +13,7 @@ import {
     isBlock,
     isUnbreakable,
     isVisible,
+    isVisibleStr,
     leftPos,
     moveNodes,
     nodeSize,
@@ -36,23 +37,19 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     const middleNode = parentNode.childNodes[firstSplitOffset - 1];
     const secondSplitOffset = splitTextNode(middleNode, middleNode.length - 1);
 
-    // Get the left state at the first split location so that we know if the
-    // backspace must propagate after the character removal.
-    const {cType: leftCType} = getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT);
-
     // Do remove the character, then restore the state of the surrounding parts.
     const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
+    const isSpace = !isVisibleStr(middleNode);
     middleNode.remove();
-    restore();
 
     // If the removed element was not visible content, propagate the backspace.
-    if (!(leftCType & CTGROUPS.INLINE)) {
+    if (isSpace && (getState(parentNode, secondSplitOffset, DIRECTIONS.LEFT).cType != CTYPES.CONTENT)) {
         parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
         return;
-    } else {
-        fillEmpty(parentNode);
     }
 
+    restore();
+    fillEmpty(parentNode);
     setCursor(parentNode, secondSplitOffset);
 };
 
