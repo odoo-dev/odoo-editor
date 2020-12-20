@@ -1393,6 +1393,13 @@ describe('Editor', () => {
                         contentAfter: '<p><br></p><p>[]<br></p>',
                     });
                 });
+                it('should duplicate an empty h1', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>[]<br></h1>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<h1><br></h1><p>[]<br></p>',
+                    });
+                });
                 it('should insert an empty paragraph before a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]abc</p>',

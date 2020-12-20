@@ -73,7 +73,8 @@ HTMLHeadingElement.prototype.oEnter = function () {
     HTMLElement.prototype.oEnter.call(this, ...arguments);
     const newEl = this.nextSibling;
     if (!newEl.textContent) {
-        setTagName(newEl, 'P');
+        let node = setTagName(newEl, 'P');
+        setCursorStart(node);
     }
 };
 /**
