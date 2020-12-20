@@ -29,6 +29,5 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     }
 
     restore();
-
     setCursor(...rightPos(brEl));
 };

@@ -802,7 +802,6 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
  *     that case, the positions should be given in the document node order.
  * @returns {function}
  */
-const directions = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT]; // Note: look left then right, to restore right then left
 export function prepareUpdate(el, offset, ...args) {
     const positions = [...arguments];
 
@@ -813,9 +812,9 @@ export function prepareUpdate(el, offset, ...args) {
         // right side before left side.
         offset = positions.pop();
         el = positions.pop();
-        for (const direction of directions) {
-            restoreData.push(getState(el, offset, direction));
-        }
+        let left = getState(el, offset, DIRECTIONS.LEFT);
+        restoreData.push(left);
+        restoreData.push(getState(el, offset, DIRECTIONS.RIGHT, left.cType));
     }
 
     // Create the callback that will be able to restore the state in each
@@ -840,7 +839,7 @@ export function prepareUpdate(el, offset, ...args) {
  * @param {number} direction @see DIRECTIONS.LEFT @see DIRECTIONS.RIGHT
  * @returns {Object}
  */
-export function getState(el, offset, direction) {
+export function getState(el, offset, direction, leftCType) {
     const leftDOMPath = leftDeepOnlyInlinePath;
     const rightDOMPath = rightDeepOnlyInlinePath;
 
@@ -871,7 +870,6 @@ export function getState(el, offset, direction) {
     // Traverse the DOM in the given direction to check what type of content
     // there is.
     let lastSpace = null;
-    let leftCType;
     for (const node of domPath) {
         if (node.nodeType === Node.TEXT_NODE) {
             const value = node.nodeValue.replace(INVISIBLE_REGEX, '');
@@ -888,11 +886,15 @@ export function getState(el, offset, direction) {
                     lastSpace = node;
                 }
             } else {
-                if (expr.test(value) && leftCType === undefined) {
-                    const data = getState(...leftPos(node), DIRECTIONS.LEFT);
-                    leftCType = data.cType;
-                    if (leftCType & CTGROUPS.INLINE || leftCType & CTGROUPS.BR && direction === DIRECTIONS.RIGHT) {
-                        cType = CTYPES.SPACE;
+                if (expr.test(value)) {
+                    leftCType = (leftCType === undefined) ? getState(el, offset, DIRECTIONS.LEFT).cType : leftCType;
+                    if (leftCType & (CTGROUPS.INLINE | CTGROUPS.BR)) {
+                        if (isVisibleStr(value)) {
+                            cType = CTYPES.SPACE;
+                        } else {
+                            let rct = getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
+                            cType = (rct & CTGROUPS.BLOCK) ? rct : CTYPES.SPACE;
+                        }
                         break;
                     }
                 }
