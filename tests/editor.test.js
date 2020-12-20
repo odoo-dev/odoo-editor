@@ -588,7 +588,8 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[abc</h1><p>]def</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<p>[]def</p>',
+                    // JW cAfter: '<p>[]def</p>',
+                    contentAfter: '<h1>[]<br></h1><p>def</p>',
                 });
             });
         });
@@ -1362,7 +1363,8 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[abc</h1><p>]def</p>',
                     stepFunction: deleteBackward,
-                    contentAfter: '<p>[]def</p>',
+                    // JW cAfter: '<p>[]def</p>',
+                    contentAfter: '<h1>[]<br></h1><p>def</p>',
                 });
             });
         });

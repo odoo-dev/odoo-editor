@@ -509,6 +509,8 @@ export default class OdooEditor {
             const range = sel.getRangeAt(0);
             let pos1 = [range.startContainer, range.startOffset];
             let pos2 = [range.endContainer, range.endOffset];
+            if (!pos2[1])
+                pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
 
             // Hack: we will follow the logic "do many backspace until the
             // selection is collapsed". The problem is that after one backspace
