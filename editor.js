@@ -17,6 +17,7 @@ import {
     commonParentGet,
     containsUnbreakable,
     nodeSize,
+    leftDeepOnlyPath,
     prepareUpdate,
     rightPos,
     setCursor,
@@ -357,11 +358,12 @@ export default class OdooEditor {
         });
     }
 
-    historyRollback() {
+    historyRollback(until=0) {
+        const hist = this.history[this.history.length - 1];
         this.observerFlush();
-        this.historyRevert(this.history[this.history.length - 1]);
+        this.historyRevert(hist, until);
         this.observerFlush();
-        this.history[this.history.length - 1].dom = [];
+        hist.dom = hist.dom.slice(0, until);
         this.torollback = false;
     }
 
@@ -391,9 +393,9 @@ export default class OdooEditor {
         }
     }
 
-    historyRevert(step) {
+    historyRevert(step, until=0) {
         // apply dom changes by reverting history steps
-        for (let i = step.dom.length - 1; i >= 0; i--) {
+        for (let i = step.dom.length - 1; i >= until; i--) {
             let action = step.dom[i];
             if (!action) {
                 break;
@@ -559,11 +561,22 @@ export default class OdooEditor {
             let result;
             let i = 0;
             do {
-                result = pos2[0].oDeleteBackward(pos2[1]);
+                let histpos = this.history[this.history.length - 1].dom.length;
+                try {
+                    result = pos2[0].oDeleteBackward(pos2[1]);
+                    this.observerFlush();
+                } catch (err) {
+                    if (err == UNBREAKABLE_ROLLBACK_CODE) {
+                        this.historyRollback(histpos);
+                        pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
+                        continue;
+                    }
+                    throw err;
+                }
 
                 sel = document.defaultView.getSelection();
                 pos2 = [sel.anchorNode, sel.anchorOffset];
-            } while (fakeEl.parentNode && ++i < 1000); // FIXME when backspace has not effect (unbreakable?) we should stop and continue after that unbreakable
+            } while (fakeEl.parentNode);
 
             if (BACKSPACE_ONLY_COMMANDS.includes(method)) {
                 return result;

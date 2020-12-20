@@ -580,7 +580,8 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p class="oe_unbreakable">a[bc</p><p class="oe_unbreakable">de]f</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<p>a[]</p><p>f</p>',
+                    // JW-cAfter: '<p>a[]</p><p>f</p>',
+                    contentAfter: '<p class="oe_unbreakable">a[]</p><p class="oe_unbreakable">f</p>',
                 });
             });
             it('should delete a heading (triple click delete)', async () => {

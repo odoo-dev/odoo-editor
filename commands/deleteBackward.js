@@ -1,5 +1,6 @@
 "use strict";
 
+import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
 import {
     boundariesOut,
     childNodeIndex,
@@ -57,9 +58,10 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
 
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     let moveDest;
-
     if (offset) {
         const leftNode = this.childNodes[offset - 1];
+        if (isUnbreakable(leftNode))
+            throw UNBREAKABLE_ROLLBACK_CODE;
         if (!isBlock(leftNode)) {
             /**
              * Backspace just after an inline node, convert to backspace at the
@@ -83,16 +85,9 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         alreadyMoved = true;
         moveDest = endPos(leftNode);
     } else {
+        if (isUnbreakable(this))
+            throw UNBREAKABLE_ROLLBACK_CODE;
         const parentEl = this.parentNode;
-
-        if (isUnbreakable(this)
-                || isUnbreakable(parentEl) && parentEl.childNodes.length === 1 && parentEl.firstChild === this) {
-            // TODO review that logic, it made sense when AGE explained it but
-            // then they have an opposite test which removes the last p if there
-            // is surrounding text node ab<p>[]cd</p> should apparently drop the
-            // p but not if there is no ab...
-            return;
-        }
 
         if (!isBlock(this)) {
             /**
