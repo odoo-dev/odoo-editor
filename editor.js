@@ -562,15 +562,18 @@ export default class OdooEditor {
             // element we added is removed.
             let result;
             let i = 0;
+            let gen;
             do {
                 let histpos = this.history[this.history.length - 1].dom.length;
                 try {
                     result = pos2[0].oDeleteBackward(pos2[1]);
                     this.observerFlush();
+                    gen = undefined;
                 } catch (err) {
                     if (err == UNBREAKABLE_ROLLBACK_CODE) {
                         this.historyRollback(histpos);
-                        pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
+                        gen = gen || leftDeepOnlyPath(...pos2);
+                        pos2 = rightPos(gen.next().value);
                         continue;
                     }
                     throw err;
