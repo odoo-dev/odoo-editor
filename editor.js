@@ -800,6 +800,28 @@ export default class OdooEditor {
     }
 }
 
-let editor = new OdooEditor(document.getElementById("dom"));
-document.getElementById('vdom').append(editor.vdom);
-editor.historyFetch();
+function startEditor(testHTML) {
+    const editableContainer = document.getElementById('dom');
+    editableContainer.innerHTML = testHTML;
+    const editor = new OdooEditor(editableContainer);
+    document.getElementById('vdom').append(editor.vdom);
+    editor.historyFetch();
+}
+
+/**
+ * Quick UI to start editing
+ */
+const submitButtonEl = document.getElementById('textarea-submit');
+submitButtonEl.addEventListener('click', () => {
+    submitButtonEl.disabled = true;
+    const testHTML = document.getElementById('textarea').value;
+    startEditor(testHTML);
+    document.getElementById('control-panel').remove();
+});
+const useSampleEl = document.getElementById('use-sample');
+useSampleEl.addEventListener('click', () => {
+    useSampleEl.disabled = true;
+    const testHTML = document.getElementById('sample-dom').innerHTML;
+    startEditor(testHTML);
+    document.getElementById('control-panel').remove();
+});

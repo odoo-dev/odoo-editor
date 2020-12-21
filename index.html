@@ -24,7 +24,18 @@
     </head>
     <body>
         <div id="control-panel">
-            <button type="button" id="start-tests">Launch Tests</button>
+            <div>
+                Enter HTML code to edit in this textarea:
+                <textarea id="textarea"></textarea>
+                <button type="button" id="textarea-submit">Submit</button>
+            </div>
+            <div>
+                Or<br><button type="button" id="use-sample">Use the sample HTML</button>
+            </div>
+            <div>
+
+                Or<br><button type="button" id="start-tests">Launch tests</button>
+            </div>
         </div>
         <div id="test-container">
             <div id="dom-col">
@@ -45,73 +56,7 @@
                     <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
                 </div>
                 <!-- innerHTML only used in non collaborative mode -->
-                <div id="dom">
-                    <h1>Title H1</h1>
-                    <h2><br/></h2>
-                    <h3>Subtitle H3 (<u>empty <i>h2</i> above</u>)</h3>
-                    <p>
-                        <b>Select text to see the toolbar</b> dolor sit amet, consectetur
-                        adipiscing elit. Pellentesque et purus vel enim scelerisque faucibus. Duis
-                        malesuada lorem at placerat semper.
-                        <br/>
-                        Praesent cursus ornare convallis. Aliquam vitae vestibulum metus. Morbi
-                        commodolacus ut varius tincidunt. Vivamus in mattis lectus.
-                        Praesent commodo eget nunc non mollis.
-                    </p><p>
-                        <i>
-                        Pe</i><i>lentesque id massa ac mi iaculis tincidunt accumsan vitae
-                        tellus. Aliquam mi massa, suscipit non varius eu, ornare
-                        aliquet ex. Quisque mattis mi in magna viverra blandit.
-                        Curabitur auctor imperdiet nunc. Aenean id massa mauris.
-                        Nulla placerat orci sed blandit luctus. In ac nisl augue.
-                        </i>
-                    </p>
-                    <ul>
-                        <li>first item</li>
-                        <li style="list-style: none;">
-                            <ul>
-                                <li>first sub-item</li>
-                                <li>second sub-item</li>
-                            </ul>
-                        </li>
-                        <li><i>third item</i></li>
-                        <li>fourth <b>item</b></li>
-                    </ul>
-                    <p>
-                        Suspendisse euismod dictum ex
-                    </p>
-                    <div>
-                        div containing a <span class="btn">span button</span> and a <a href="#">link</a> afterwards.
-                    </div>
-                    <p>final paragraph</p>
-                    <div style="background-color: #eee" t="unbreak">
-                        <h1>Unbreakable div</h1>
-                        <p>unbreakable zone: light grey bg</p>
-                    </div>
-                    <p>
-                        Outside unbreak
-                    </p>
-                    <div style="background-color: #eee" t="unbreak">
-                        unbreakable <b id="ub">text field</b> (no block)
-                    </div>
-                    <p>
-                        And here is a table
-                    </p>
-                    <table>
-                        <tr>
-                            <td>cell 1</td>
-                            <td>cell 2</td>
-                            <td>cell 3</td>
-                        </tr><tr>
-                            <td><i>italic</i> 2.1</td>
-                            <td></td>
-                            <td><b>bold 3.2</b></td>
-                        </tr>
-                    </table>
-                    <p>
-                        That's all folks!
-                    </p>
-                </div>
+                <div id="dom"></div>
             </div>
             <div id="vdom-col">
                 <h1>vDOM</h1>
@@ -119,6 +64,73 @@
                 <div class="toolbar"><!-- Just for vertical alignment with DOM --></div>
                 <div id="vdom"></div>
             </div>
+        </div>
+        <div id="sample-dom">
+            <h1>Title H1</h1>
+            <h2><br/></h2>
+            <h3>Subtitle H3 (<u>empty <i>h2</i> above</u>)</h3>
+            <p>
+                <b>Select text to see the toolbar</b> dolor sit amet, consectetur
+                adipiscing elit. Pellentesque et purus vel enim scelerisque faucibus. Duis
+                malesuada lorem at placerat semper.
+                <br/>
+                Praesent cursus ornare convallis. Aliquam vitae vestibulum metus. Morbi
+                commodolacus ut varius tincidunt. Vivamus in mattis lectus.
+                Praesent commodo eget nunc non mollis.
+            </p><p>
+                <i>
+                Pe</i><i>lentesque id massa ac mi iaculis tincidunt accumsan vitae
+                tellus. Aliquam mi massa, suscipit non varius eu, ornare
+                aliquet ex. Quisque mattis mi in magna viverra blandit.
+                Curabitur auctor imperdiet nunc. Aenean id massa mauris.
+                Nulla placerat orci sed blandit luctus. In ac nisl augue.
+                </i>
+            </p>
+            <ul>
+                <li>first item</li>
+                <li style="list-style: none;">
+                    <ul>
+                        <li>first sub-item</li>
+                        <li>second sub-item</li>
+                    </ul>
+                </li>
+                <li><i>third item</i></li>
+                <li>fourth <b>item</b></li>
+            </ul>
+            <p>
+                Suspendisse euismod dictum ex
+            </p>
+            <div>
+                div containing a <span class="btn">span button</span> and a <a href="#">link</a> afterwards.
+            </div>
+            <p>final paragraph</p>
+            <div style="background-color: #eee" t="unbreak">
+                <h1>Unbreakable div</h1>
+                <p>unbreakable zone: light grey bg</p>
+            </div>
+            <p>
+                Outside unbreak
+            </p>
+            <div style="background-color: #eee" t="unbreak">
+                unbreakable <b id="ub">text field</b> (no block)
+            </div>
+            <p>
+                And here is a table
+            </p>
+            <table>
+                <tr>
+                    <td>cell 1</td>
+                    <td>cell 2</td>
+                    <td>cell 3</td>
+                </tr><tr>
+                    <td><i>italic</i> 2.1</td>
+                    <td></td>
+                    <td><b>bold 3.2</b></td>
+                </tr>
+            </table>
+            <p>
+                That's all folks!
+            </p>
         </div>
     </body>
 </html>

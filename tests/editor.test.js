@@ -2105,4 +2105,5 @@ startTestsButtonEl.addEventListener('click', () => {
         const reportEl = document.getElementById('mocha-report');
         window.scrollTo(0, window.scrollY + reportEl.getBoundingClientRect().top);
     });
+    document.getElementById('control-panel').remove();
 });
