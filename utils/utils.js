@@ -593,10 +593,13 @@ export function areSimilarElements(node, node2) {
             return false;
         }
     }
-    if (getComputedStyle(node, ':before').getPropertyValue('content') !== 'none'
-            || getComputedStyle(node, ':after').getPropertyValue('content') !== 'none'
-            || getComputedStyle(node2, ':before').getPropertyValue('content') !== 'none'
-            || getComputedStyle(node2, ':after').getPropertyValue('content') !== 'none') {
+    function isNotNoneValue(value) {
+        return value && value !== 'none';
+    }
+    if (isNotNoneValue(getComputedStyle(node, ':before').getPropertyValue('content'))
+            || isNotNoneValue(getComputedStyle(node, ':after').getPropertyValue('content'))
+            || isNotNoneValue(getComputedStyle(node2, ':before').getPropertyValue('content'))
+            || isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))) {
         return false;
     }
     return !isBlock(node) && !isBlock(node2) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
