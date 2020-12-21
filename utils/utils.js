@@ -278,12 +278,18 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
         }
         if (el) {
             const leftInlineNode = leftDeepOnlyInlineInScopePath(el, elOffset).next().value;
+            let leftVisibleEmpty = false;
             if (leftInlineNode) {
-                [node, offset] = isVisibleEmpty(leftInlineNode) ? rightPos(leftInlineNode) : endPos(leftInlineNode);
-            } else {
+                leftVisibleEmpty = isVisibleEmpty(leftInlineNode);
+                [node, offset] = leftVisibleEmpty ? rightPos(leftInlineNode) : endPos(leftInlineNode);
+            }
+            if (!leftInlineNode || leftVisibleEmpty) {
                 const rightInlineNode = rightDeepOnlyInlineInScopePath(el, elOffset).next().value;
                 if (rightInlineNode) {
-                    [node, offset] = isVisibleEmpty(rightInlineNode) ? leftPos(rightInlineNode) : startPos(rightInlineNode);
+                    const rightVisibleEmpty = isVisibleEmpty(rightInlineNode);
+                    if (!(leftVisibleEmpty && rightVisibleEmpty)) {
+                        [node, offset] = rightVisibleEmpty ? leftPos(rightInlineNode) : startPos(rightInlineNode);
+                    }
                 }
             }
         }

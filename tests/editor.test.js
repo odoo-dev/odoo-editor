@@ -1872,8 +1872,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]<b>def</b></p>',
                         stepFunction: insertLineBreak,
-                        // JW cAfter: '<p>abc<br><b>[]def</b></p>',
-                        contentAfter: '<p>abc<br>[]<b>def</b></p>',
+                        contentAfter: '<p>abc<br><b>[]def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
@@ -1934,7 +1933,7 @@ describe('Editor', () => {
                         contentBefore: '<p>[]<b>abc</b></p>',
                         stepFunction: insertLineBreak,
                         // JW cAfter: '<p><b><br>[]abc</b></p>',
-                        contentAfter: '<p><br>[]<b>abc</b></p>',
+                        contentAfter: '<p><br><b>[]abc</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
