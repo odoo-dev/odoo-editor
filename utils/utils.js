@@ -979,7 +979,7 @@ const priorityRestoreStateRules = [
     [
         // Remove a BR at the end of a block once inline content is put after
         // it (otherwise it would act as a line break).
-        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE},
+        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
         {brVisibility: false},
     ],
     [

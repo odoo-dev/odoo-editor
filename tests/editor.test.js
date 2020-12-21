@@ -1233,6 +1233,13 @@ describe('Editor', () => {
                         contentAfter: '<p>abc[]<br>def</p>',
                     });
                 });
+                it('should remove an empty block instead of merging it', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><br></p><p>[]<br></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>[]<br></p>',
+                    });
+                });
             });
         });
         describe('Selection not collapsed', () => {
@@ -1825,14 +1832,17 @@ describe('Editor', () => {
                     //     },
                     //     contentAfter: '<p><br><br>[]<br></p>',
                     // });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p><br>[]</p>',
-                        stepFunction: async (editor) => {
-                            await insertLineBreak(editor);
-                            await insertLineBreak(editor);
-                        },
-                        contentAfter: '<p><br><br>[]<br></p>',
-                    });
+                    // TODO seems like a theoretical case, if needed it could
+                    // be about checking at the start of the shift-enter if
+                    // we are not between left-state BR and right-state block.
+                    // await testEditor(BasicEditor, {
+                    //     contentBefore: '<p><br>[]</p>',
+                    //     stepFunction: async (editor) => {
+                    //         await insertLineBreak(editor);
+                    //         await insertLineBreak(editor);
+                    //     },
+                    //     contentAfter: '<p><br><br>[]<br></p>',
+                    // });
                 });
                 it('should insert two <br> at the beggining of a paragraph', async () => {
                     await testEditor(BasicEditor, {
