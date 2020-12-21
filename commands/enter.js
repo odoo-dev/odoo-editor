@@ -78,6 +78,10 @@ HTMLHeadingElement.prototype.oEnter = function () {
     }
 };
 /**
+ * Same specific behavior as headings elements.
+ */
+HTMLQuoteElement.prototype.oEnter = HTMLHeadingElement.prototype.oEnter;
+/**
  * Specific behavior for list items: deletion and unindentation in some cases.
  */
 HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
