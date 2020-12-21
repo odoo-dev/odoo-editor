@@ -43,7 +43,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     middleNode.remove();
 
     // If the removed element was not visible content, propagate the backspace.
-    if (isSpace && (getState(parentNode, secondSplitOffset, DIRECTIONS.LEFT).cType != CTYPES.CONTENT)) {
+    if (isSpace && (getState(parentNode, secondSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT)) {
         parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
         return;
     }
@@ -57,8 +57,9 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
     let moveDest;
     if (offset) {
         const leftNode = this.childNodes[offset - 1];
-        if (isUnbreakable(leftNode))
+        if (isUnbreakable(leftNode)) {
             throw UNBREAKABLE_ROLLBACK_CODE;
+        }
         if (!isBlock(leftNode)) {
             /**
              * Backspace just after an inline node, convert to backspace at the
@@ -82,8 +83,9 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         alreadyMoved = true;
         moveDest = endPos(leftNode);
     } else {
-        if (isUnbreakable(this))
+        if (isUnbreakable(this)) {
             throw UNBREAKABLE_ROLLBACK_CODE;
+        }
         const parentEl = this.parentNode;
 
         if (!isBlock(this)) {

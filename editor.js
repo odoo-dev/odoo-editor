@@ -358,7 +358,7 @@ export default class OdooEditor {
         });
     }
 
-    historyRollback(until=0) {
+    historyRollback(until = 0) {
         const hist = this.history[this.history.length - 1];
         this.observerFlush();
         this.historyRevert(hist, until);
@@ -393,7 +393,7 @@ export default class OdooEditor {
         }
     }
 
-    historyRevert(step, until=0) {
+    historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
         for (let i = step.dom.length - 1; i >= until; i--) {
             let action = step.dom[i];
@@ -509,8 +509,9 @@ export default class OdooEditor {
             const range = sel.getRangeAt(0);
             let pos1 = [range.startContainer, range.startOffset];
             let pos2 = [range.endContainer, range.endOffset];
-            if (!pos2[1])
+            if (!pos2[1]) {
                 pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
+            }
 
             // Hack: we will follow the logic "do many backspace until the
             // selection is collapsed". The problem is that after one backspace
@@ -561,22 +562,17 @@ export default class OdooEditor {
             // Starting from the second position, hit backspace until the fake
             // element we added is removed.
             let result;
-            let i = 0;
             let gen;
             do {
-                let histpos = this.history[this.history.length - 1].dom.length;
-                try {
+                const histPos = this.history[this.history.length - 1].dom.length;
+                const err = this._protectUnbreakable(() => {
                     result = pos2[0].oDeleteBackward(pos2[1]);
-                    this.observerFlush();
                     gen = undefined;
-                } catch (err) {
-                    if (err == UNBREAKABLE_ROLLBACK_CODE) {
-                        this.historyRollback(histpos);
-                        gen = gen || leftDeepOnlyPath(...pos2);
-                        pos2 = rightPos(gen.next().value);
-                        continue;
-                    }
-                    throw err;
+                }, histPos);
+                if (err === UNBREAKABLE_ROLLBACK_CODE) {
+                    gen = gen || leftDeepOnlyPath(...pos2);
+                    pos2 = rightPos(gen.next().value);
+                    continue;
                 }
 
                 sel = document.defaultView.getSelection();
@@ -608,9 +604,10 @@ export default class OdooEditor {
     /**
      * @private
      * @param {function} callback
+     * @param {number} [rollbackCounter]
      * @returns {?}
      */
-    _protectUnbreakable(callback) {
+    _protectUnbreakable(callback, rollbackCounter) {
         try {
             let result = callback.call(this);
             this.observerFlush();
@@ -622,7 +619,7 @@ export default class OdooEditor {
                 throw err;
             }
         }
-        this.historyRollback();
+        this.historyRollback(rollbackCounter);
         return UNBREAKABLE_ROLLBACK_CODE;
     }
 

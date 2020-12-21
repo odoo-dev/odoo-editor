@@ -580,8 +580,7 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p class="oe_unbreakable">a[bc</p><p class="oe_unbreakable">de]f</p>',
                     stepFunction: deleteForward,
-                    // JW-cAfter: '<p>a[]</p><p>f</p>',
-                    contentAfter: '<p class="oe_unbreakable">a[]</p><p class="oe_unbreakable">f</p>',
+                    contentAfter: '<p class="oe_unbreakable">a[]</p><p class="oe_unbreakable">f</p>', // JW without oe_breakable classes of course
                 });
             });
             it('should delete a heading (triple click delete)', async () => {
@@ -1393,13 +1392,6 @@ describe('Editor', () => {
                         contentAfter: '<p><br></p><p>[]<br></p>',
                     });
                 });
-                it('should duplicate an empty h1', async () => {
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<h1>[]<br></h1>',
-                        stepFunction: insertParagraphBreak,
-                        contentAfter: '<h1><br></h1><p>[]<br></p>',
-                    });
-                });
                 it('should insert an empty paragraph before a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]abc</p>',
@@ -1671,6 +1663,15 @@ describe('Editor', () => {
                     });
                 });
             });
+            describe('POC extra tests', () => {
+                it('should duplicate an empty h1', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<h1>[]<br></h1>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<h1><br></h1><p>[]<br></p>',
+                    });
+                });
+            });
         });
         describe('Selection not collapsed', () => {
             it('should delete the first half of a paragraph, then split it', async () => {
@@ -1885,7 +1886,7 @@ describe('Editor', () => {
                         contentBefore: '<p>abc <b>[]def</b></p>',
                         stepFunction: insertLineBreak,
                         // JW cAfter: '<p>abc&nbsp;<br><b>[]def</b></p>',
-                        contentAfter: '<p>abc <b><br>[]def</b></p>',
+                        contentAfter: '<p>abc <b><br>[]def</b></p>', // Note: JW seems just wrong here
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc<b>[] def </b></p>',
@@ -1925,7 +1926,7 @@ describe('Editor', () => {
                         contentBefore: '<p><b>abc []</b>def</p>',
                         stepFunction: insertLineBreak,
                         // JW cAfter: '<p><b>abc&nbsp;[]<br></b>def</p>',
-                        contentAfter: '<p><b>abc <br>[]</b>def</p>',
+                        contentAfter: '<p><b>abc <br>[]</b>def</p>', // Note: JW seems wrong here
                     });
                 });
                 it('should insert a <br> at the beginning of a format node', async () => {
@@ -1971,22 +1972,22 @@ describe('Editor', () => {
                     });
                 });
                 it('should insert a line break (2 <br>) at the end of a format node', async () => {
-                    // await testEditor(BasicEditor, {
-                    //     contentBefore: '<p><b>abc</b>[]</p>',
-                    //     stepFunction: insertLineBreak,
-                    //     // The second <br> is needed to make the first
-                    //     // one visible.
-                    //     // JW cAfter: '<p><b>abc<br>[]<br></b></p>',
-                    //     contentAfter: '<p><b>abc</b><br>[]<br></p>',
-                    // });
-                    // await testEditor(BasicEditor, {
-                    //     // That selection is equivalent to </b>[]
-                    //     contentBefore: '<p><b>abc[]</b></p>',
-                    //     stepFunction: insertLineBreak,
-                    //     // The second <br> is needed to make the first
-                    //     // one visible.
-                    //     contentAfter: '<p><b>abc<br>[]<br></b></p>',
-                    // });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p><b>abc</b>[]</p>',
+                        stepFunction: insertLineBreak,
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        // JW cAfter: '<p><b>abc<br>[]<br></b></p>',
+                        contentAfter: '<p><b>abc</b><br>[]<br></p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        // That selection is equivalent to </b>[]
+                        contentBefore: '<p><b>abc[]</b></p>',
+                        stepFunction: insertLineBreak,
+                        // The second <br> is needed to make the first
+                        // one visible.
+                        contentAfter: '<p><b>abc<br>[]<br></b></p>',
+                    });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>abc[] </b></p>',
                         stepFunction: insertLineBreak,

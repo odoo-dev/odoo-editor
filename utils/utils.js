@@ -812,7 +812,7 @@ export function prepareUpdate(el, offset, ...args) {
         // right side before left side.
         offset = positions.pop();
         el = positions.pop();
-        let left = getState(el, offset, DIRECTIONS.LEFT);
+        const left = getState(el, offset, DIRECTIONS.LEFT);
         restoreData.push(left);
         restoreData.push(getState(el, offset, DIRECTIONS.RIGHT, left.cType));
     }
@@ -887,12 +887,14 @@ export function getState(el, offset, direction, leftCType) {
                 }
             } else {
                 if (expr.test(value)) {
-                    leftCType = (leftCType === undefined) ? getState(el, offset, DIRECTIONS.LEFT).cType : leftCType;
+                    if (leftCType === undefined) {
+                        leftCType = getState(el, offset, DIRECTIONS.LEFT).cType;
+                    }
                     if (leftCType & (CTGROUPS.INLINE | CTGROUPS.BR)) {
                         if (isVisibleStr(value)) {
                             cType = CTYPES.SPACE;
                         } else {
-                            let rct = getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
+                            const rct = getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
                             cType = (rct & CTGROUPS.BLOCK) ? rct : CTYPES.SPACE;
                         }
                         break;
