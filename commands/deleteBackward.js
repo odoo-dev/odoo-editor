@@ -41,6 +41,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
     const isSpace = !isVisibleStr(middleNode);
     middleNode.remove();
+    restore();
 
     // If the removed element was not visible content, propagate the backspace.
     if (isSpace && (getState(parentNode, secondSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT)) {
@@ -48,7 +49,6 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
         return;
     }
 
-    restore();
     fillEmpty(parentNode);
     setCursor(parentNode, secondSplitOffset);
 };
