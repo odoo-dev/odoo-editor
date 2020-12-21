@@ -18,7 +18,7 @@ HTMLElement.prototype.oTab = function (offset) {
 
 HTMLLIElement.prototype.oTab = function (offset) {
     let lip = document.createElement("li");
-    let ul = document.createElement("ul");
+    let ul = document.createElement(this.closest('ul, ol').tagName);
 
     // TODO: improve DOM structure by joining same level sibling (oShiftTab already supports it)
 
