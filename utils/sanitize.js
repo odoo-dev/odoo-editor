@@ -12,6 +12,9 @@ class Sanitize {
      * @constructor
      */
     constructor(root) {
+        // Specific tag cleanup
+        this.tags = {};
+
         this.root = root;
         this.parse(root);
     }
@@ -39,9 +42,6 @@ class Sanitize {
         this._parse(node.firstChild);
         this._parse(node.nextSibling);
     }
-
-    // Specific tag cleanup
-    tags = {}
 }
 
 export function sanitize(root) {
