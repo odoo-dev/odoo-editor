@@ -263,7 +263,11 @@ export default class OdooEditor {
                     toremove.remove();
                 }
             } else if (record.type === "add") {
-                let newnode = this.unserialize(record.node).cloneNode(1);
+                let node = this.unserialize(record.node);
+                let newnode = node.cloneNode(1);
+                // preserve oid after the clone
+                this.idSet(node, newnode);
+
                 let destnode = this.idFind(destel, record.node.oid);
                 if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
@@ -335,7 +339,10 @@ export default class OdooEditor {
                 index++;
             }
             if (updated) {
-                this.historyStep();
+                this.history.push({
+                    cursor: {},
+                    dom: [],
+                });
             }
             this.observerActive();
             this.historyFetch();
