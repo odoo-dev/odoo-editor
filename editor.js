@@ -493,6 +493,99 @@ export default class OdooEditor {
     // EDITOR COMMANDS
     // ===============
 
+    deleteRange(sel) {
+        const range = sel.getRangeAt(0);
+        let pos1 = [range.startContainer, range.startOffset];
+        let pos2 = [range.endContainer, range.endOffset];
+        if (!pos2[1]) {
+            pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
+        }
+
+        // Hack: we will follow the logic "do many backspace until the
+        // selection is collapsed". The problem is that after one backspace
+        // the node the starting position of the cursor is in may have
+        // changed (split, removed, moved, etc) so there is no reliable
+        // way to know when there has been enough backspaces... except for
+        // this hack: we put a fake element acting as a one-space-to-remove
+        // element (like an image) at the selection start position and we
+        // hit backspace until that element is removed.
+        if (pos1[0].nodeType === Node.TEXT_NODE) {
+            // First, if the selection start is in a text node, we have to
+            // split that text node to be able to put the fake element
+            // in-between.
+            const splitNode = pos1[0];
+            const splitOffset = pos1[1];
+            const willActuallySplitPos2 = (pos2[0] === splitNode && splitOffset > 0 && splitOffset < splitNode.length);
+            pos1 = [splitNode.parentNode, splitTextNode(splitNode, splitOffset)];
+            if (willActuallySplitPos2) {
+                if (pos2[1] < splitOffset) {
+                    pos2[0] = splitNode.previousSibling;
+                } else {
+                    pos2[1] -= splitOffset;
+                }
+            }
+        }
+        // Then we add the fake element. However to add it properly without
+        // risking breaking the DOM states, we still have to prepareUpdate
+        // and restore here.
+        const restore = prepareUpdate(...pos1);
+        const fakeEl = document.createElement('img');
+        if (pos1[1] >= pos1[0].childNodes.length) {
+            pos1[0].appendChild(fakeEl);
+        } else {
+            pos1[0].insertBefore(fakeEl, pos1[0].childNodes[pos1[1]]);
+        }
+        if (pos1[0] === pos2[0] && pos2[1] > pos1[1]) {
+            // Update first backspace position offset if it was relative
+            // to the same element the fake element has been put in.
+            pos2[1]++;
+        }
+        restore();
+        // Check pos2 still make sense as the restoreState may have broken
+        // it, if that is is the case, set it just after the fake element.
+        if (!pos2[0].parentNode || pos2[1] > nodeSize(pos2[0])) {
+            pos2 = rightPos(fakeEl);
+        }
+
+        // Starting from the second position, hit backspace until the fake
+        // element we added is removed.
+        let result;
+        let gen;
+        do {
+            const histPos = this.history[this.history.length - 1].dom.length;
+            const err = this._protectUnbreakable(() => {
+                result = pos2[0].oDeleteBackward(pos2[1]);
+                gen = undefined;
+            }, histPos);
+            if (err === UNBREAKABLE_ROLLBACK_CODE) {
+                gen = gen || leftDeepOnlyPath(...pos2);
+                pos2 = rightPos(gen.next().value);
+                continue;
+            }
+
+            sel = document.defaultView.getSelection();
+            pos2 = [sel.anchorNode, sel.anchorOffset];
+        } while (fakeEl.parentNode);
+
+    }
+
+    toggleList(sel, mode='UL') {
+        sel = sel || document.defaultView.getSelection();
+        let pnode = closestBlock(sel.anchorNode);
+        if (pnode.tagName !== 'LI') {
+            // TODO: add support for ranges
+            let main = document.createElement(mode);
+            let li = document.createElement('LI');
+            while (pnode.firstChild) {
+                li.append(pnode.firstChild);
+            }
+            main.append(li);
+            pnode.after(main);
+            pnode.remove();
+        }
+    }
+
+
     /**
      * Applies the given command to the current selection. This does *NOT*:
      * 1) update the history cursor
@@ -511,87 +604,16 @@ export default class OdooEditor {
      */
     _applyRawCommand(method) {
         let sel = document.defaultView.getSelection();
-
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
-            const range = sel.getRangeAt(0);
-            let pos1 = [range.startContainer, range.startOffset];
-            let pos2 = [range.endContainer, range.endOffset];
-            if (!pos2[1]) {
-                pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
-            }
-
-            // Hack: we will follow the logic "do many backspace until the
-            // selection is collapsed". The problem is that after one backspace
-            // the node the starting position of the cursor is in may have
-            // changed (split, removed, moved, etc) so there is no reliable
-            // way to know when there has been enough backspaces... except for
-            // this hack: we put a fake element acting as a one-space-to-remove
-            // element (like an image) at the selection start position and we
-            // hit backspace until that element is removed.
-            if (pos1[0].nodeType === Node.TEXT_NODE) {
-                // First, if the selection start is in a text node, we have to
-                // split that text node to be able to put the fake element
-                // in-between.
-                const splitNode = pos1[0];
-                const splitOffset = pos1[1];
-                const willActuallySplitPos2 = (pos2[0] === splitNode && splitOffset > 0 && splitOffset < splitNode.length);
-                pos1 = [splitNode.parentNode, splitTextNode(splitNode, splitOffset)];
-                if (willActuallySplitPos2) {
-                    if (pos2[1] < splitOffset) {
-                        pos2[0] = splitNode.previousSibling;
-                    } else {
-                        pos2[1] -= splitOffset;
-                    }
-                }
-            }
-            // Then we add the fake element. However to add it properly without
-            // risking breaking the DOM states, we still have to prepareUpdate
-            // and restore here.
-            const restore = prepareUpdate(...pos1);
-            const fakeEl = document.createElement('img');
-            if (pos1[1] >= pos1[0].childNodes.length) {
-                pos1[0].appendChild(fakeEl);
-            } else {
-                pos1[0].insertBefore(fakeEl, pos1[0].childNodes[pos1[1]]);
-            }
-            if (pos1[0] === pos2[0] && pos2[1] > pos1[1]) {
-                // Update first backspace position offset if it was relative
-                // to the same element the fake element has been put in.
-                pos2[1]++;
-            }
-            restore();
-            // Check pos2 still make sense as the restoreState may have broken
-            // it, if that is is the case, set it just after the fake element.
-            if (!pos2[0].parentNode || pos2[1] > nodeSize(pos2[0])) {
-                pos2 = rightPos(fakeEl);
-            }
-
-            // Starting from the second position, hit backspace until the fake
-            // element we added is removed.
-            let result;
-            let gen;
-            do {
-                const histPos = this.history[this.history.length - 1].dom.length;
-                const err = this._protectUnbreakable(() => {
-                    result = pos2[0].oDeleteBackward(pos2[1]);
-                    gen = undefined;
-                }, histPos);
-                if (err === UNBREAKABLE_ROLLBACK_CODE) {
-                    gen = gen || leftDeepOnlyPath(...pos2);
-                    pos2 = rightPos(gen.next().value);
-                    continue;
-                }
-
-                sel = document.defaultView.getSelection();
-                pos2 = [sel.anchorNode, sel.anchorOffset];
-            } while (fakeEl.parentNode);
-
+            this.deleteRange(sel);
             if (BACKSPACE_ONLY_COMMANDS.includes(method)) {
-                return result;
+                return true;
             }
         }
-
-        return sel.anchorNode[method](sel.anchorOffset);
+        if (sel.anchorNode[method] !== undefined) {
+            return sel.anchorNode[method](sel.anchorOffset);
+        }
+        return this[method](sel);
     }
     /**
      * Same as @see _applyRawCommand but adapt history, protects unbreakables
@@ -781,19 +803,7 @@ export default class OdooEditor {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
-                let sel = document.defaultView.getSelection();
-                let pnode = closestBlock(sel.anchorNode);
-                if (pnode.tagName !== 'LI') {
-                    // TODO: better implementation
-                    let main = document.createElement(TAGS[buttonEl.id]);
-                    let li = document.createElement('LI');
-                    while (pnode.firstChild) {
-                        li.append(pnode.firstChild);
-                    }
-                    main.append(li);
-                    pnode.after(main);
-                    pnode.remove();
-                }
+                this.toggleList(undefined, TAGS[buttonEl.id])
             } else {
                 let sel = document.defaultView.getSelection();
                 let pnode = closestBlock(sel.anchorNode);

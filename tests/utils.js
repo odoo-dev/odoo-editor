@@ -260,6 +260,65 @@ export async function testEditor(Editor = OdooEditor, spec) {
     }
 }
 
+/**
+ * Unformat the given html in order to use it with `innerHTML`.
+ */
+export function unformat(html) {
+    return html
+        .replace(/(^|[^ ])[\s\n]+([^<>]*?)</g, '$1$2<')
+        .replace(/>([^<>]*?)[\s\n]+([^ ]|$)/g, '>$1$2');
+}
+
+/**
+ * await the next tick (as settimeout 0)
+ *
+ */
+export async function nexttick() {
+    await new promise((resolve) => {
+        settimeout(resolve);
+    });
+}
+
+/**
+ * await the next tick (as settimeout 0) after the next redrawing frame
+ *
+ */
+export async function nexttickframe() {
+    await new promise((resolve) => {
+        window.requestanimationframe(resolve);
+    });
+    await nexttick();
+}
+
+
+/**
+ * simple simulation of a click on an element
+ *
+ * @param el
+ * @param options
+ */
+export async function click(el, options) {
+    el.scrollIntoView();
+    await nextTickFrame();
+    const pos = el.getBoundingClientRect();
+    options = Object.assign(
+        {
+            bubbles: true,
+            clientX: pos.left + 1,
+            clientY: pos.top + 1,
+        },
+        options,
+    );
+    el.dispatchEvent(new MouseEvent('mousedown', options));
+    await nextTickFrame();
+    el.dispatchEvent(new MouseEvent('mouseup', options));
+    await nextTick();
+    el.dispatchEvent(new MouseEvent('click', options));
+    await nextTickFrame();
+}
+
+
+
 export async function deleteForward(editor) {
     editor.execCommand('oDeleteForward');
 }
@@ -274,6 +333,14 @@ export async function insertParagraphBreak(editor) {
 
 export async function insertLineBreak(editor) {
     editor.execCommand('oShiftEnter');
+}
+
+export async function indentList(editor) {
+    editor.execCommand('oShiftTag');
+}
+
+export async function outdentList(editor) {
+    editor.execCommand('oTab');
 }
 
 export class BasicEditor extends OdooEditor {
