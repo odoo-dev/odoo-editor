@@ -17,10 +17,13 @@ import {
     closestBlock,
     commonParentGet,
     containsUnbreakable,
+    getListMode,
     nodeSize,
+    leftDeepFirstPath,
     leftDeepOnlyPath,
     prepareUpdate,
     rightPos,
+    rightDeepFirstPath,
     setCursor,
     setTagName,
     splitTextNode,
@@ -570,8 +573,27 @@ export default class OdooEditor {
 
     }
 
-    toggleList(sel, ...args) {
-        this._applyCommand('oToggleList', ...args);
+    _toggleList(mode) {
+        let sel = document.defaultView.getSelection();
+        let li = new Set();
+        let blocks = new Set();
+
+        let end = leftDeepFirstPath(sel.anchorNode, sel.anchorOffset).next().value;
+
+        for (let node of leftDeepFirstPath(sel.focusNode, sel.focusOffset)) {
+            let block = closestBlock(node);
+            if (block.closest('ol, ul') && getListMode(block.closest('ol, ul')) == mode) {
+                li.add(block);
+            } else if (!['OL','UL'].includes(block.tagName)) {
+                blocks.add(block);
+            }
+            if (node==end) break;
+        }
+
+        let target = (blocks.size) ? blocks : li;
+        for (let node of target) {
+            node.oToggleList(0, mode);
+        }
     }
 
 
@@ -599,15 +621,12 @@ export default class OdooEditor {
                 return true;
             }
         }
-        if (sel.anchorNode[method] !== undefined) {
-            if (method=='oToggleList') {
-                return sel.anchorNode[method](sel.anchorOffset, ...args);
-            } else {
-                return sel.anchorNode[method](sel.anchorOffset);
-            }
+        if (method=='toggleList') {
+            return this._toggleList(...args);
         }
-        return this[method](sel, ...args);
+        return sel.anchorNode[method](sel.anchorOffset);
     }
+
     /**
      * Same as @see _applyRawCommand but adapt history, protects unbreakables
      * and sanitizes the result.
@@ -787,7 +806,8 @@ export default class OdooEditor {
             'heading3': 'H3',
             'blockquote': 'BLOCKQUOTE',
             'ordered': 'OL',
-            'unordered': 'UL'
+            'unordered': 'UL',
+            'checklist': 'CL'
         };
         this._protectUnbreakable(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
@@ -796,7 +816,7 @@ export default class OdooEditor {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
-                this.toggleList(undefined, TAGS[buttonEl.id])
+                this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else {
                 let sel = document.defaultView.getSelection();
                 let pnode = closestBlock(sel.anchorNode);

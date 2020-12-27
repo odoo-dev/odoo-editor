@@ -983,7 +983,7 @@ describe('List', () => {
                             contentBefore: '<p>ab</p><p>cd[ef]gh</p>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<p>ab</p><ul class="checklist"><li class="unchecked">cd[ef]gh</li></ul>',
+                                '<p>ab</p><ul class="checklist"><li>cd[ef]gh</li></ul>',
                         });
                     });
                     it('should turn a heading into a checklist', async () => {
@@ -991,7 +991,7 @@ describe('List', () => {
                             contentBefore: '<p>ab</p><h1>cd[ef]gh</h1>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<p>ab</p><ul class="checklist"><li class="unchecked"><h1>cd[ef]gh</h1></li></ul>',
+                                '<p>ab</p><ul class="checklist"><li><h1>cd[ef]gh</h1></li></ul>',
                         });
                     });
                     it('should turn two paragraphs into a checklist with two items', async () => {
@@ -999,7 +999,7 @@ describe('List', () => {
                             contentBefore: '<p>ab</p><p>cd[ef</p><p>gh]ij</p>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<p>ab</p><ul class="checklist"><li class="unchecked">cd[ef</li><li class="unchecked">gh]ij</li></ul>',
+                                '<p>ab</p><ul class="checklist"><li>cd[ef</li><li>gh]ij</li></ul>',
                         });
                     });
                     it('should turn two paragraphs in a div into a checklist with two items', async () => {
@@ -1007,7 +1007,7 @@ describe('List', () => {
                             contentBefore: '<div><p>ab[cd</p><p>ef]gh</p></div>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<div><ul class="checklist"><li class="unchecked">ab[cd</li><li class="unchecked">ef]gh</li></ul></div>',
+                                '<div><ul class="checklist"><li>ab[cd</li><li>ef]gh</li></ul></div>',
                         });
                     });
                     it('should turn a paragraph and a checklist item into two list items', async () => {
@@ -1016,14 +1016,14 @@ describe('List', () => {
                                 '<p>a[b</p><ul class="checklist"><li class="checked">c]d</li><li class="unchecked">ef</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="unchecked">a[b</li><li class="checked">c]d</li><li class="unchecked">ef</li></ul>',
+                                '<ul class="checklist"><li>a[b</li><li class="checked">c]d</li><li class="unchecked">ef</li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
                                 '<p>a[b</p><ul class="checklist"><li class="checked">c]d</li><li class="checked">ef</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="unchecked">a[b</li><li class="checked">c]d</li><li class="checked">ef</li></ul>',
+                                '<ul class="checklist"><li>a[b</li><li class="checked">c]d</li><li class="checked">ef</li></ul>',
                         });
                     });
                     it('should turn a checklist item and a paragraph into two list items', async () => {
@@ -1032,7 +1032,7 @@ describe('List', () => {
                                 '<ul class="checklist"><li class="unchecked">ab</li><li class="checked">c[d</li></ul><p>e]f</p>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="unchecked">ab</li><li class="checked">c[d</li><li class="unchecked">e]f</li></ul>',
+                                '<ul class="checklist"><li class="unchecked">ab</li><li class="checked">c[d</li><li>e]f</li></ul>',
                         });
                     });
                     it('should turn a checklist, a paragraph and another list into one list with three list items', async () => {
@@ -1041,7 +1041,7 @@ describe('List', () => {
                                 '<ul class="checklist"><li class="unchecked">a[b</li></ul><p>cd</p><ul class="checklist"><li class="checked">e]f</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="unchecked">a[b</li><li class="unchecked">cd</li><li class="checked">e]f</li></ul>',
+                                '<ul class="checklist"><li class="unchecked">a[b</li><li>cd</li><li class="checked">e]f</li></ul>',
                         });
                     });
                     it('should turn a checklist item, a paragraph and another list into one list with all three as list items', async () => {
@@ -1050,7 +1050,7 @@ describe('List', () => {
                                 '<ul class="checklist"><li class="checked">ab<li>c[d</li></ul><p>ef</p><ul class="checklist"><li class="checked">g]h</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="checked">ab</li><li class="unchecked">c[d</li><li class="unchecked">ef</li><li class="checked">g]h</li></ul>',
+                                '<ul class="checklist"><li class="checked">ab</li><li>c[d</li><li>ef</li><li class="checked">g]h</li></ul>',
                         });
                     });
                     it('should turn a checklist, a paragraph and a checklist item into one list with all three as list items', async () => {
@@ -1059,7 +1059,7 @@ describe('List', () => {
                                 '<ul class="checklist"><li class="checked">a[b</li></ul><p>cd</p><ul class="checklist"><li class="checked">e]f</li><li class="unchecked">gh</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter:
-                                '<ul class="checklist"><li class="checked">a[b</li><li class="unchecked">cd</li><li class="checked">e]f</li><li class="unchecked">gh</li></ul>',
+                                '<ul class="checklist"><li class="checked">a[b</li><li>cd</li><li class="checked">e]f</li><li class="unchecked">gh</li></ul>',
                         });
                     });
                 });
