@@ -343,6 +343,18 @@ export async function outdentList(editor) {
     editor.execCommand('oTab');
 }
 
+export const toggleOrderedList = async (editor) => {
+    editor.execCommand('toggleList', 'OL');
+};
+
+export const toggleUnorderedList = async (editor) => {
+    editor.execCommand('toggleList', 'UL');
+};
+
+export const toggleCheckList = async (editor) => {
+    editor.execCommand('toggleList', 'CL');
+};
+
 export class BasicEditor extends OdooEditor {
 
 }

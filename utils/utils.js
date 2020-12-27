@@ -366,18 +366,23 @@ export function setCursorEnd(node, normalize = true) {
  * @returns {(number|false)} the direction of false if the selection is collapsed
  */
 export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset) {
-    const range1 = new Range();
-    range1.setStart(anchorNode, anchorOffset);
-    range1.setEnd(focusNode, focusOffset);
-
-    const range2 = new Range();
-    range2.setStart(focusNode, focusOffset);
-    range2.setEnd(anchorNode, anchorOffset);
-
-    if (range1.collapsed && range2.collapsed) {
-        return false;
+    if (anchorNode==focusNode) {
+        if (anchorOffset == focusOffset)
+            return false;
+        return anchorOffset<focusOffset ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
     }
-    return range1.collapsed ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+    return (anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING) ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+}
+
+export function preserveCursor(sel) {
+    sel = sel || document.defaultView.getSelection();
+    let cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
+    return (replace) => {
+        replace = replace || new Map();
+        cursorPos[0] = replace.get(cursorPos[0]) || cursorPos[0];
+        cursorPos[2] = replace.get(cursorPos[2]) || cursorPos[2];
+        setCursor(...cursorPos);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -527,6 +532,7 @@ export function isContentTextNode(node) {
  * @returns {boolean}
  */
 export function isVisible(node) {
+    if (!node) return false;
     if (node.nodeType === Node.TEXT_NODE) {
         if (!node.length) {
             return false;
@@ -574,36 +580,26 @@ export function commonParentGet(node1, node2, root = undefined) {
     return n1p[0];
 }
 
-export function areSimilarElements(node, node2) {
-    if (!node || !node2 || node.nodeType !== Node.ELEMENT_NODE || node2.nodeType !== Node.ELEMENT_NODE) {
-        return false;
-    }
-    if (node.tagName !== node2.tagName) {
-        return false;
-    }
-    for (const att of node.attributes) {
-        const att2 = node2.attributes[att.name];
-        if ((att2 && att2.value) !== att.value) {
-            return false;
-        }
-    }
-    for (const att of node2.attributes) {
-        const att2 = node.attributes[att.name];
-        if ((att2 && att2.value) !== att.value) {
-            return false;
-        }
-    }
-    function isNotNoneValue(value) {
-        return value && value !== 'none';
-    }
-    if (isNotNoneValue(getComputedStyle(node, ':before').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node, ':after').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node2, ':before').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))) {
-        return false;
-    }
-    return !isBlock(node) && !isBlock(node2) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
+export function getListMode(pnode) {
+    if (pnode.tagName == 'OL')
+        return 'OL';
+    return pnode.classList.contains('checklist') ? 'CL' : 'UL';
 }
+
+export function createList(mode) {
+    let node = document.createElement(mode=='OL' ? 'OL': 'UL');
+    if (mode == 'CL') {
+        node.classList.add("checklist");
+    }
+    return node;
+}
+
+export function removeStyle(node) {
+    node.style.listStyle = null;
+    if (!node.style.all)
+        node.removeAttribute("style");
+}
+
 /**
  * Returns whether or not the given node is a BR element which does not really
  * act as a line break, but as a placeholder for the cursor or to make some left
@@ -711,6 +707,9 @@ export function clearEmpty(node) {
 }
 
 export function setTagName(el, newTagName) {
+    if (el.tagName == newTagName) {
+        return el;
+    }
     var n = document.createElement(newTagName);
     var attr = el.attributes;
     for (var i = 0, len = attr.length; i < len; ++i) {
@@ -783,7 +782,6 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
     } else {
         pos = setCursor(destinationEl, destinationOffset);
     }
-
     return pos;
 }
 

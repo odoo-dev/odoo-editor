@@ -6,6 +6,7 @@ import {} from "./commands/enter.js";
 import {} from "./commands/shiftEnter.js";
 import {} from "./commands/shiftTab.js";
 import {} from "./commands/tab.js";
+import {} from "./commands/toggleList.js";
 
 import {sanitize} from "./utils/sanitize.js";
 import {
@@ -569,20 +570,8 @@ export default class OdooEditor {
 
     }
 
-    toggleList(sel, mode='UL') {
-        sel = sel || document.defaultView.getSelection();
-        let pnode = closestBlock(sel.anchorNode);
-        if (pnode.tagName !== 'LI') {
-            // TODO: add support for ranges
-            let main = document.createElement(mode);
-            let li = document.createElement('LI');
-            while (pnode.firstChild) {
-                li.append(pnode.firstChild);
-            }
-            main.append(li);
-            pnode.after(main);
-            pnode.remove();
-        }
+    toggleList(sel, ...args) {
+        this._applyCommand('oToggleList', ...args);
     }
 
 
@@ -602,7 +591,7 @@ export default class OdooEditor {
      * @param {string} method
      * @returns {?}
      */
-    _applyRawCommand(method) {
+    _applyRawCommand(method, ...args) {
         let sel = document.defaultView.getSelection();
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
             this.deleteRange(sel);
@@ -611,9 +600,13 @@ export default class OdooEditor {
             }
         }
         if (sel.anchorNode[method] !== undefined) {
-            return sel.anchorNode[method](sel.anchorOffset);
+            if (method=='oToggleList') {
+                return sel.anchorNode[method](sel.anchorOffset, ...args);
+            } else {
+                return sel.anchorNode[method](sel.anchorOffset);
+            }
         }
-        return this[method](sel);
+        return this[method](sel, ...args);
     }
     /**
      * Same as @see _applyRawCommand but adapt history, protects unbreakables

@@ -1,8 +1,12 @@
 "use strict";
 
 import {
+    createList,
+    getListMode,
+    isUnbreakable,
+    preserveCursor,
     isBlock,
-    setCursorStart,
+    isVisible,
 } from "../utils/utils.js";
 
 Text.prototype.oShiftTab = function (offset) {
@@ -10,16 +14,17 @@ Text.prototype.oShiftTab = function (offset) {
 };
 
 HTMLElement.prototype.oShiftTab = function (offset = undefined) {
-    if (!isBlock(this)) {
+    if (!isUnbreakable(this)) {
         return this.parentElement.oShiftTab(offset);
     }
     return false;
 };
 
+// returns: is still in a <LI> nested list
 HTMLLIElement.prototype.oShiftTab = function (offset) {
     let li = this;
     if (li.nextElementSibling) {
-        let ul = document.createElement("ul");
+        let ul = createList(getListMode(li.parentElement));
         while (li.nextSibling) {
             ul.append(li.nextSibling);
         }
@@ -33,25 +38,35 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         }
     }
 
+    const restoreCursor = preserveCursor();
     if (li.parentNode.parentNode.tagName === 'LI') {
         let toremove = !li.previousElementSibling ? li.parentNode.parentNode : null;
         li.parentNode.parentNode.after(li);
         if (toremove) {
             toremove.remove();
         }
-        setCursorStart(li);
+        restoreCursor();
+        return li;
     } else {
         let ul = li.parentNode;
-        let p = document.createElement('P');
+        let p;
         while (li.firstChild) {
-            p.append(li.firstChild);
+            if (isBlock(li.firstChild)) {
+                p = isVisible(p) && ul.after(p) && undefined;
+                ul.after(li.firstChild)
+            } else {
+                p = p || document.createElement('P');
+                p.append(li.firstChild);
+            }
         }
-        li.parentNode.after(p);
+        if (isVisible(p))
+            ul.after(p);
+
+        restoreCursor(new Map([[li, ul.nextSibling]]));
         li.remove();
         if (!ul.firstElementChild) {
             ul.remove();
         }
-        setCursorStart(p);
     }
-    return true;
+    return false;
 };
