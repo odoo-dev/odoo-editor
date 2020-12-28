@@ -1147,7 +1147,7 @@ describe('List', () => {
                                         <li>ef</li>
                                     </ul>
                                 </li>
-                                <li value="3">gh</li>
+                                <li>gh</li>
                                 <li>i]j</li>
                             </ol>`),
                     });
@@ -1255,12 +1255,12 @@ describe('List', () => {
                                                         <li>mn</li>
                                                     </ol>
                                                 </li>
-                                                <li value="3">op</li>
+                                                <li>op</li>
                                             </ol>
                                         </li>
                                     </ol>
                                 </li>
-                                <li value="3">q]r</li>
+                                <li>q]r</li>
                                 <li>st</li>
                             </ol>`),
                     });
@@ -1310,7 +1310,7 @@ describe('List', () => {
                                                         <li>g</li>
                                                     </ul>
                                                 </li>
-                                                <li value="3">h</li>
+                                                <li>h</li>
                                             </ol>
                                         </li>
                                     </ol>
@@ -1939,13 +1939,13 @@ describe('List', () => {
                                                 <li>b</li>
                                             </ol>
                                         </li>
-                                        <li value="2">c[]d</li>
+                                        <li>c[]d</li>
                                         <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
                                         </li>
-                                        <li value="3">f</li>
+                                        <li>f</li>
                                     </ol>`),
                         });
                     });
@@ -3314,13 +3314,13 @@ describe('List', () => {
                                                 <li>b</li>
                                             </ol>
                                         </li>
-                                        <li value="2">c[]d</li>
+                                        <li>c[]d</li>
                                         <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
                                         </li>
-                                        <li value="3">f</li>
+                                        <li>f</li>
                                     </ol>`),
                             });
                         });
@@ -3477,7 +3477,7 @@ describe('List', () => {
                                     '<ol><li>abc</li><li class="nested"><ol><li>[]<br></li><li><br></li></ol></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ol><li><br></li></ol></li><li value="3">def</li></ol>',
+                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ol><li><br></li></ol></li><li>def</li></ol>',
                             });
                         });
                         it('should outdent an empty list within a list', async () => {
@@ -3743,7 +3743,7 @@ describe('List', () => {
                                                 <li>d</li>
                                             </ul>
                                         </li>
-                                        <li value="2">e</li>
+                                        <li>e</li>
                                     </ol>`),
                             });
                         });
@@ -4609,7 +4609,7 @@ describe('List', () => {
                                     '<ol><li>abc</li><li class="nested"><ul><li>[]<br></li><li><br></li></ul></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ul><li><br></li></ul></li><li value="3">def</li></ol>',
+                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ul><li><br></li></ul></li><li>def</li></ol>',
                             });
                         });
                         it('should outdent an empty unordered list within an ordered list', async () => {
@@ -5603,7 +5603,7 @@ describe('List', () => {
 //                                                 <li>b</li>
 //                                             </ol>
 //                                         </li>
-//                                         <li value="2">c[]</li>
+//                                         <li>c[]</li>
 //                                     </ol>`),
 //                                 stepFunction: async (editor): Promise<void> => {
 //                                     const ol = document.querySelector('ol');
@@ -5624,7 +5624,7 @@ describe('List', () => {
 //                                                 <li>b</li>
 //                                             </ol>
 //                                         </li>
-//                                         <li value="2">c</li>
+//                                         <li>c</li>
 //                                         <li>[]<br></li>
 //                                     </ol>`),
 //                             });
@@ -5650,7 +5650,7 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li>abc</li><li class="nested"><ol><li>def</li></ol></li><li value="2">[]<br></li><li>ghi</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>def</li></ol></li><li>[]<br></li><li>ghi</li></ol>',
                             });
                         });
                         it('should remove a list', async () => {
@@ -6530,7 +6530,7 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="checked">abc</li>
+                                <li class="unchecked">abc</li>
                                 <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">d[e]f</li>
@@ -6553,7 +6553,7 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="unchecked">abc</li>
+                                <li class="checked">abc</li>
                                 <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">d[e]f</li>
@@ -6579,7 +6579,7 @@ describe('List', () => {
                                 <li>abc</li>
                                 <li class="nested">
                                     <ul>
-                                        <li>[]<br></li>
+                                        <li>[]</li>
                                     </ul>
                                 </li>
                             </ul>
@@ -6594,8 +6594,8 @@ describe('List', () => {
                             </ul>
                             <p>def</p>`),
                         stepFunction: async (editor) => {
-                            await editor.execCommand<Core>('insertParagraphBreak');
-                            await editor.execCommand<List>('indent');
+                            await editor.execCommand('oEnter');
+                            await editor.execCommand('oTab');
                         },
                         contentAfter: unformat(`
                             <ul>

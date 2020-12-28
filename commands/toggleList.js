@@ -52,6 +52,7 @@ HTMLParagraphElement.prototype.oToggleList = function (offset, mode='UL') {
 
 HTMLLIElement.prototype.oToggleList = function (offset, mode) {
     let pnode = this.closest('ul, ol');
+    if (!pnode) return;
     const restoreCursor = preserveCursor();
     switch (getListMode(pnode)+mode) {
         case 'OLCL':
