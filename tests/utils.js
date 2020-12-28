@@ -273,9 +273,9 @@ export function unformat(html) {
  * await the next tick (as settimeout 0)
  *
  */
-export async function nexttick() {
-    await new promise((resolve) => {
-        settimeout(resolve);
+export async function nextTick() {
+    await new Promise((resolve) => {
+        setTimeout(resolve);
     });
 }
 
@@ -283,11 +283,11 @@ export async function nexttick() {
  * await the next tick (as settimeout 0) after the next redrawing frame
  *
  */
-export async function nexttickframe() {
-    await new promise((resolve) => {
-        window.requestanimationframe(resolve);
+export async function nextTickFrame() {
+    await new Promise((resolve) => {
+        window.requestAnimationFrame(resolve);
     });
-    await nexttick();
+    await nextTick();
 }
 
 
@@ -336,11 +336,11 @@ export async function insertLineBreak(editor) {
 }
 
 export async function indentList(editor) {
-    editor.execCommand('oShiftTag');
+    editor.execCommand('oTab');
 }
 
 export async function outdentList(editor) {
-    editor.execCommand('oTab');
+    editor.execCommand('oShiftTab');
 }
 
 export const toggleOrderedList = async (editor) => {

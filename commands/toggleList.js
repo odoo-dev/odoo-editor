@@ -7,8 +7,8 @@ import {
     isBlock,
     isUnbreakable,
     preserveCursor,
-    removeStyle,
     setTagName,
+    toggleClass,
 } from "../utils/utils.js";
 
 Text.prototype.oToggleList = function (offset, mode) {
@@ -57,20 +57,18 @@ HTMLLIElement.prototype.oToggleList = function (offset, mode) {
         case 'OLCL':
         case 'ULCL':
             pnode.classList.add('checklist');
-            for(let li=pnode.firstElementChild; li!==null; li=li.nextElementSibling) {
+            for (let li=pnode.firstElementChild; li!==null; li=li.nextElementSibling) {
                 if (li.style.listStyle != "none") {
-                    removeStyle(li, "listStyle")
+                    li.style.listStyle = null;
+                    if (!li.style.all)
+                        li.removeAttribute("style");
                 }
             }
             setTagName(pnode, 'UL');
             break;
         case 'CLOL':
         case 'CLUL':
-            if (pnode.className=="checklist") {
-                pnode.removeAttribute("class");
-            } else {
-                pnode.classList.remove('checklist');
-            }
+            toggleClass(pnode, "checklist");
         case 'OLUL':
         case 'ULOL':
             setTagName(pnode, mode);

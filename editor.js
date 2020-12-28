@@ -23,10 +23,10 @@ import {
     leftDeepOnlyPath,
     prepareUpdate,
     rightPos,
-    rightDeepFirstPath,
     setCursor,
     setTagName,
     splitTextNode,
+    toggleClass,
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -54,6 +54,7 @@ export default class OdooEditor {
 
         this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
         this.dom.addEventListener('input', this._onInput.bind(this));
+        this.dom.addEventListener('mousedown', this._onClick.bind(this));
 
         document.onselectionchange = this._onSelectionChange.bind(this);
 
@@ -277,12 +278,11 @@ export default class OdooEditor {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
                     return false;
                 }
-                this.idSet(record.node, newnode);
-                if (record.append) {
+                if (record.append && this.idFind(destel, record.append)) {
                     this.idFind(destel, record.append).append(newnode);
-                } else if (record.before) {
+                } else if (record.before && this.idFind(destel, record.before)) {
                     this.idFind(destel, record.before).before(newnode);
-                } else if (record.after) {
+                } else if (record.after && this.idFind(destel, record.after)) {
                     this.idFind(destel, record.after).after(newnode);
                 } else {
                     return false;
@@ -790,9 +790,19 @@ export default class OdooEditor {
         const sel = document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
     }
-    /**
-     * @private
-     */
+
+    _onClick(ev) {
+        let node = ev.target;
+        // handle checkbox lists
+        if (node.tagName == 'LI' && getListMode(node.parentElement)=='CL') {
+            if (ev.layerX < 0 && ev.layerY <= 16) {
+                node.classList.remove('unchecked');
+                toggleClass(node, 'checked');
+                ev.preventDefault();
+            }
+        }
+    }
+
     _onToolbarClick(ev) {
         const buttonEl = ev.target.closest('div.btn');
         if (!buttonEl) {

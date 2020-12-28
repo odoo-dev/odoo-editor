@@ -1,8 +1,12 @@
 "use strict";
 
 import {
+    createList,
+    getListMode,
     isBlock,
     setCursorStart,
+    preserveCursor,
+    toggleClass,
 } from "../utils/utils.js";
 
 Text.prototype.oTab = function (offset) {
@@ -18,14 +22,16 @@ HTMLElement.prototype.oTab = function (offset) {
 
 HTMLLIElement.prototype.oTab = function (offset) {
     let lip = document.createElement("li");
-    let ul = document.createElement(this.closest('ul, ol').tagName);
+    let ul = createList(getListMode(this.closest('ul, ol')));
 
     // TODO: improve DOM structure by joining same level sibling (oShiftTab already supports it)
 
     lip.append(ul);
-    lip.style.listStyle = "none";
+
+    const cr = preserveCursor();
+    toggleClass(lip, 'nested');
     this.before(lip);
     ul.append(this);
-    setCursorStart(this);
+    cr();
     return true;
 };

@@ -38,9 +38,9 @@ export function areSimilarElements(node, node2) {
             || isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))) {
         return false;
     }
-    if (node.tagName=='LI' && node.style.listStyle=="none" && node2.style.listStyle=="none") {
+    if (node.tagName=='LI') {
         let mode = undefined;
-        return getListMode(node.lastElementChild) == getListMode(node2.firstElementChild);
+        return node.lastElementChild && node2.firstElementChild && getListMode(node.lastElementChild) == getListMode(node2.firstElementChild);
     }
     return (['UL', 'OL'].includes(node.tagName) || !isBlock(node)) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
 }

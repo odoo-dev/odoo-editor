@@ -2,6 +2,8 @@
 
 import {
     BasicEditor,
+    click,
+    nextTickFrame,
     deleteBackward,
     deleteForward,
     insertLineBreak,
@@ -312,7 +314,7 @@ describe('List', () => {
 //                     contentBefore: unformat(`
 //                         <ul>
 //                             <li>title</li>
-//                             <li style="list-style: none;">
+//                             <li class="nested">
 //                                 <ul>
 //                                     <li>a[b]c</li>
 //                                 </ul>
@@ -330,7 +332,7 @@ describe('List', () => {
 //                     contentAfter: unformat(`
 //                         <ul>
 //                             <li>title</li>
-//                             <li style="list-style: none;">
+//                             <li class="nested">
 //                                 <ul>
 //                                     <li>a[b]c</li>
 //                                 </ul>
@@ -425,14 +427,14 @@ describe('List', () => {
                             contentBefore: unformat(`
                                 <ul>
                                     <li>a</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul>
                                             <li>[]b</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul>
-                                            <li style="list-style: none;">
+                                            <li class="nested">
                                                 <ul>
                                                     <li>c</li>
                                                 </ul>
@@ -447,9 +449,9 @@ describe('List', () => {
                                 </ul>
                                 <p>[]b</p>
                                 <ul>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul>
-                                            <li style="list-style: none;">
+                                            <li class="nested">
                                                 <ul>
                                                     <li>c</li>
                                                 </ul>
@@ -614,17 +616,17 @@ describe('List', () => {
                             contentBefore: unformat(`
                                 <ul class="checklist">
                                     <li class="checked">abc</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">def</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul>
                                             <li>g[]hi</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">jkl</li>
                                         </ul>
@@ -634,7 +636,7 @@ describe('List', () => {
                             contentAfter: unformat(`
                                 <ul class="checklist">
                                     <li class="checked">abc</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">def</li>
                                             <li>g[]hi</li>
@@ -647,17 +649,17 @@ describe('List', () => {
                             contentBefore: unformat(`
                                 <ul class="checklist">
                                     <li class="checked">abc</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">def</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul>
                                             <li class="a">g[]hi</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">jkl</li>
                                         </ul>
@@ -667,7 +669,7 @@ describe('List', () => {
                             contentAfter: unformat(`
                                 <ul class="checklist">
                                     <li class="checked">abc</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">def</li>
                                             <li class="a">g[]hi</li>
@@ -739,14 +741,14 @@ describe('List', () => {
                             contentBefore: unformat(`
                                 <ul class="checklist">
                                     <li class="checked">a</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">[]b</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
-                                            <li style="list-style: none;">
+                                            <li class="nested">
                                                 <ul class="checklist">
                                                     <li class="checked">c</li>
                                                 </ul>
@@ -761,9 +763,9 @@ describe('List', () => {
                                 </ul>
                                 <p>[]b</p>
                                 <ul class="checklist">
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
-                                            <li style="list-style: none;">
+                                            <li class="nested">
                                                 <ul class="checklist">
                                                     <li class="checked">c</li>
                                                 </ul>
@@ -1127,7 +1129,7 @@ describe('List', () => {
                             <p>a[b</p>
                             <ul>
                                 <li>cd</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>ef</li>
                                     </ul>
@@ -1140,7 +1142,7 @@ describe('List', () => {
                             <ol>
                                 <li>a[b</li>
                                 <li>cd</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>ef</li>
                                     </ul>
@@ -1186,7 +1188,7 @@ describe('List', () => {
                         contentBefore: unformat(`
                             <ul>
                                 <li>ab</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>c[d</li>
                                         <li>e]f</li>
@@ -1198,7 +1200,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul>
                                 <li>ab</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ol>
                                         <li>c[d</li>
                                         <li>e]f</li>
@@ -1214,15 +1216,15 @@ describe('List', () => {
                             <ul>
                                 <li>a[b</li>
                                 <li>cd</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>ef</li>
                                         <li>gh</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>ij</li>
                                                 <li>kl</li>
-                                                <li style="list-style: none;">
+                                                <li class="nested">
                                                     <ul>
                                                         <li>mn</li>
                                                     </ul>
@@ -1240,15 +1242,15 @@ describe('List', () => {
                             <ol>
                                 <li>a[b</li>
                                 <li>cd</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ol>
                                         <li>ef</li>
                                         <li>gh</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>ij</li>
                                                 <li>kl</li>
-                                                <li style="list-style: none;">
+                                                <li class="nested">
                                                     <ol>
                                                         <li>mn</li>
                                                     </ol>
@@ -1269,15 +1271,15 @@ describe('List', () => {
                             <ul>
                                 <li>a</li>
                                 <li>b</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ol>
                                         <li>c</li>
                                         <li>d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>[]e</li>
                                                 <li>f</li>
-                                                <li style="list-style: none;">
+                                                <li class="nested">
                                                     <ul>
                                                         <li>g</li>
                                                     </ul>
@@ -1295,15 +1297,15 @@ describe('List', () => {
                             <ul>
                                 <li>a</li>
                                 <li>b</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ol>
                                         <li>c</li>
                                         <li>d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>[]e</li>
                                                 <li>f</li>
-                                                <li style="list-style: none;">
+                                                <li class="nested">
                                                     <ul>
                                                         <li>g</li>
                                                     </ul>
@@ -1348,7 +1350,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">title</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">abc</li>
                                         <li class="unchecked">d[e]f</li>
@@ -1411,7 +1413,7 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="unchecked">1</li>
+                        <li>1</li>
                     </ul>`),
             });
         });
@@ -1456,7 +1458,7 @@ describe('List', () => {
                 contentBefore: unformat(`
                 <ul class="checklist">
                     <li class="unchecked">2</li>
-                    <li style="list-style: none;">
+                    <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
                             <li class="unchecked">2.2</li>
@@ -1471,8 +1473,8 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                 <ul class="checklist">
-                    <li class="checked">2</li>
-                    <li style="list-style: none;">
+                    <li class="unchecked">2</li>
+                    <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
                             <li class="checked">2.2</li>
@@ -1486,7 +1488,7 @@ describe('List', () => {
                 contentBefore: unformat(`
                 <ul class="checklist">
                     <li class="checked">2</li>
-                    <li style="list-style: none;">
+                    <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
                             <li class="checked">2.2</li>
@@ -1501,11 +1503,11 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                 <ul class="checklist">
-                    <li class="unchecked">2</li>
-                    <li style="list-style: none;">
+                    <li class="checked">2</li>
+                    <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
-                            <li class="unchecked">2.2</li>
+                            <li>2.2</li>
                         </ul>
                     </li>
                 </ul>`),
@@ -1516,10 +1518,10 @@ describe('List', () => {
                 contentBefore: unformat(`
                     <ul class="checklist">
                         <li class="unchecked">3</li>
-                        <li style="list-style: none;">
+                        <li class="nested">
                             <ul class="checklist">
                                 <li class="unchecked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
                                         <li class="unchecked">3.2.2</li>
@@ -1536,11 +1538,11 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="checked">3</li>
-                        <li style="list-style: none;">
+                        <li class="unchecked">3</li>
+                        <li class="nested">
                             <ul class="checklist">
-                                <li class="checked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="unchecked">3.1</li>
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
                                         <li class="checked">3.2.2</li>
@@ -1556,10 +1558,10 @@ describe('List', () => {
                 contentBefore: unformat(`
                     <ul class="checklist">
                         <li class="checked">3</li>
-                        <li style="list-style: none;">
+                        <li class="nested">
                             <ul class="checklist">
                                 <li class="checked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.1.1</li>
                                         <li class="checked">3.1.2</li>
@@ -1576,14 +1578,14 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="unchecked">3</li>
-                        <li style="list-style: none;">
+                        <li class="checked">3</li>
+                        <li class="nested">
                             <ul class="checklist">
-                                <li class="unchecked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="checked">3.1</li>
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.1.1</li>
-                                        <li class="unchecked">3.1.2</li>
+                                        <li>3.1.2</li>
                                     </ul>
                                 </li>
                             </ul>
@@ -1596,16 +1598,16 @@ describe('List', () => {
                 contentBefore: unformat(`
                         <ul class="checklist">
                             <li class="unchecked">3</li>
-                            <li style="list-style: none;">
+                            <li class="nested">
                                 <ul class="checklist">
                                     <li class="unchecked">3.1</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">3.1.1</li>
                                             <li class="unchecked">3.1.2</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">3.2.1</li>
                                             <li class="unchecked">3.2.2</li>
@@ -1624,22 +1626,22 @@ describe('List', () => {
                 contentAfter: unformat(`
                     <ul class="checklist">
                         <li class="checked">3</li>
-                        <li style="list-style: none;">
+                        <li class="nested">
                             <ul class="checklist">
-                                <li class="checked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="unchecked">3.1</li>
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.1.1</li>
-                                        <li class="checked">3.1.2</li>
+                                        <li class="unchecked">3.1.2</li>
                                     </ul>
                                 </li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
-                                        <li class="checked">3.2.2</li>
+                                        <li class="unchecked">3.2.2</li>
                                     </ul>
                                 </li>
-                                <li class="checked">3.3</li>
+                                <li class="unchecked">3.3</li>
                             </ul>
                         </li>
                     </ul>`),
@@ -1650,16 +1652,16 @@ describe('List', () => {
                 contentBefore: unformat(`
                         <ul class="checklist">
                             <li class="checked">3</li>
-                            <li style="list-style: none;">
+                            <li class="nested">
                                 <ul class="checklist">
                                     <li class="checked">3.1</li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">3.1.1</li>
                                             <li class="checked">3.1.2</li>
                                         </ul>
                                     </li>
-                                    <li style="list-style: none;">
+                                    <li class="nested">
                                         <ul class="checklist">
                                             <li class="checked">3.2.1</li>
                                             <li class="checked">3.2.2</li>
@@ -1677,23 +1679,23 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="unchecked">3</li>
-                        <li style="list-style: none;">
+                        <li>3</li>
+                        <li class="nested">
                             <ul class="checklist">
-                                <li class="unchecked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="checked">3.1</li>
+                                <li class="nested">
                                     <ul class="checklist">
-                                        <li class="unchecked">3.1.1</li>
-                                        <li class="unchecked">3.1.2</li>
+                                        <li class="checked">3.1.1</li>
+                                        <li class="checked">3.1.2</li>
                                     </ul>
                                 </li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
-                                        <li class="unchecked">3.2.1</li>
-                                        <li class="unchecked">3.2.2</li>
+                                        <li class="checked">3.2.1</li>
+                                        <li class="checked">3.2.2</li>
                                     </ul>
                                 </li>
-                                <li class="unchecked">3.3</li>
+                                <li class="checked">3.3</li>
                             </ul>
                         </li>
                     </ul>`),
@@ -1704,10 +1706,10 @@ describe('List', () => {
                 contentBefore: unformat(`
                     <ul class="checklist">
                         <li class="unchecked">3</li>
-                        <li style="list-style: none;">
+                        <li class="nested">
                             <ul class="checklist">
                                 <li class="unchecked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
                                         <li class="unchecked">3.2.2</li>
@@ -1724,14 +1726,14 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="checked">3</li>
-                        <li style="list-style: none;">
+                        <li class="unchecked">3</li>
+                        <li class="nested">
                             <ul class="checklist">
                                 <li class="checked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
-                                        <li class="checked">3.2.2</li>
+                                        <li class="unchecked">3.2.2</li>
                                     </ul>
                                 </li>
                             </ul>
@@ -1744,10 +1746,10 @@ describe('List', () => {
                 contentBefore: unformat(`
                     <ul class="checklist">
                         <li class="checked">3</li>
-                        <li style="list-style: none;">
+                        <li class="nested">
                             <ul class="checklist">
                                 <li class="checked">3.1</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">3.2.1</li>
                                         <li class="checked">3.2.2</li>
@@ -1764,14 +1766,14 @@ describe('List', () => {
                 },
                 contentAfter: unformat(`
                     <ul class="checklist">
-                        <li class="unchecked">3</li>
-                        <li style="list-style: none;">
+                        <li class="checked">3</li>
+                        <li class="nested">
                             <ul class="checklist">
-                                <li class="unchecked">3.1</li>
-                                <li style="list-style: none;">
+                                <li>3.1</li>
+                                <li class="nested">
                                     <ul class="checklist">
-                                        <li class="unchecked">3.2.1</li>
-                                        <li class="unchecked">3.2.2</li>
+                                        <li class="checked">3.2.1</li>
+                                        <li class="checked">3.2.2</li>
                                     </ul>
                                 </li>
                             </ul>
@@ -1792,10 +1794,10 @@ describe('List', () => {
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li style="list-style: none;"><ul><li>abc[]</li></ul></li></ul>',
+                                '<ul><li class="nested"><ul><li>abc[]</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<ul><li style="list-style: none;"><ul><li>abc[]</li></ul></li></ul>',
+                                '<ul><li class="nested"><ul><li>abc[]</li></ul></li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
@@ -1806,10 +1808,10 @@ describe('List', () => {
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">abc[]</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">abc[]</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">abc[]</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">abc[]</li></ul></li></ul>',
                         });
                     });
                     it('should delete the first character in a list item', async () => {
@@ -1878,7 +1880,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]</li>
                                             </ul>
@@ -1886,7 +1888,7 @@ describe('List', () => {
                                     </ul>
                                     <p>c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -1897,7 +1899,7 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                                 <li>d</li>
@@ -1912,7 +1914,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b</li>
                                             </ol>
@@ -1921,7 +1923,7 @@ describe('List', () => {
                                     </ol>
                                     <p>d</p>
                                     <ol>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
@@ -1932,13 +1934,13 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b</li>
                                             </ol>
                                         </li>
                                         <li value="2">c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
@@ -1959,7 +1961,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]</li>
                                             </ul>
@@ -1967,7 +1969,7 @@ describe('List', () => {
                                     </ol>
                                     <p>c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -1978,14 +1980,14 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                             </ul>
                                         </li>
                                     </ol>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -2078,7 +2080,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b[]</li>
                                             </ul>
@@ -2086,7 +2088,7 @@ describe('List', () => {
                                     </ul>
                                     <p>c</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked">d</li>
                                             </ul>
@@ -2097,7 +2099,7 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b[]c</li>
                                                 <li class="unchecked">d</li>
@@ -2112,7 +2114,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
@@ -2121,7 +2123,7 @@ describe('List', () => {
                                     </ul>
                                     <p>d</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked">e</li>
                                             </ul>
@@ -2132,13 +2134,13 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
                                         </li>
                                         <li class="checked">c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked">e</li>
                                             </ul>
@@ -2161,7 +2163,7 @@ describe('List', () => {
                             contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li class="checked">b[]</li>
                                             </ul>
@@ -2169,7 +2171,7 @@ describe('List', () => {
                                     </ul>
                                     <p>c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -2180,14 +2182,14 @@ describe('List', () => {
                             contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li class="checked">b[]c</li>
                                             </ul>
                                         </li>
                                     </ul>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -2201,25 +2203,25 @@ describe('List', () => {
                     it('should merge an indented list item into a non-indented list item', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ol><li>abc[]</li><li style="list-style: none;"><ol><li>def</li><li>ghi</li></ol></li></ol>',
+                                '<ol><li>abc[]</li><li class="nested"><ol><li>def</li><li>ghi</li></ol></li></ol>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<ol><li>abc[]def</li><li style="list-style: none;"><ol><li>ghi</li></ol></li></ol>',
+                                '<ol><li>abc[]def</li><li class="nested"><ol><li>ghi</li></ol></li></ol>',
                         });
                     });
                     it('should merge a non-indented list item into an indented list item', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li style="list-style: none;"><ul><li>abc[]</li></ul></li><li>def</li></ul>',
+                                '<ul><li class="nested"><ul><li>abc[]</li></ul></li><li>def</li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<ul><li style="list-style: none;"><ul><li>abc[]def</li></ul></li></ul>',
+                                '<ul><li class="nested"><ul><li>abc[]def</li></ul></li></ul>',
                         });
                     });
                     it('should merge the only item in an indented list into a non-indented list item and remove the now empty indented list', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li>abc[]</li><li style="list-style: none;"><ul><li>def</li></ul></li></ul>',
+                                '<ul><li>abc[]</li><li class="nested"><ul><li>def</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter: '<ul><li>abc[]def</li></ul>',
                         });
@@ -2227,16 +2229,16 @@ describe('List', () => {
                     it('should merge an indented list item into a non-indented list item', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="unchecked">abc[]</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">def</li><li class="checked">ghi</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="unchecked">abc[]</li><li class="nested"><ul class="checklist"><li class="unchecked">def</li><li class="checked">ghi</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<ul class="checklist"><li class="checked">abc[]def</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">abc[]def</li><li class="nested"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
                         });
                     });
                     it('should merge the only item in an indented list into a non-indented list item and remove the now empty indented list', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="unchecked">abc[]</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">def</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="unchecked">abc[]</li><li class="nested"><ul class="checklist"><li class="unchecked">def</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
                                 '<ul class="checklist"><li class="unchecked">abc[]def</li></ul>',
@@ -2514,14 +2516,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ol><li>ab[cd</li><li style="list-style: none;"><ol><li>ef]gh</li></ol></li></ol>',
+                                '<ol><li>ab[cd</li><li class="nested"><ol><li>ef]gh</li></ol></li></ol>',
                             stepFunction: deleteForward,
                             contentAfter: '<ol><li>ab[]gh</li></ol>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ol><li>ab]cd</li><li style="list-style: none;"><ol><li>ef[gh</li></ol></li></ol>',
+                                '<ol><li>ab]cd</li><li class="nested"><ol><li>ef[gh</li></ol></li></ol>',
                             stepFunction: deleteForward,
                             contentAfter: '<ol><li>ab[]gh</li></ol>',
                         });
@@ -2604,14 +2606,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li>ab[cd</li><li style="list-style: none;"><ul><li>ef]gh</li></ul></li></ul>',
+                                '<ul><li>ab[cd</li><li class="nested"><ul><li>ef]gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter: '<ul><li>ab[]gh</li></ul>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li>ab]cd</li><li style="list-style: none;"><ul><li>ef[gh</li></ul></li></ul>',
+                                '<ul><li>ab]cd</li><li class="nested"><ul><li>ef[gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter: '<ul><li>ab[]gh</li></ul>',
                         });
@@ -2776,14 +2778,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab[cd</li><li class="nested"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
                                 '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li>ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">ef]gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li>ab[cd</li><li class="nested"><ul class="checklist"><li class="unchecked">ef]gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             // The indented list's parent gets rendered as
                             // checked because its only child is checked.
@@ -2792,7 +2794,7 @@ describe('List', () => {
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li>ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li>ab[cd</li><li class="nested"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             // The indented list's parent gets rendered as
                             // checked because its only child is checked. When
@@ -2804,14 +2806,14 @@ describe('List', () => {
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab]cd</li><li class="nested"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             contentAfter:
                                 '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li>ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">ef[gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li>ab]cd</li><li class="nested"><ul class="checklist"><li class="unchecked">ef[gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             // The indented list's parent gets rendered as
                             // checked because its only child is checked.
@@ -2820,7 +2822,7 @@ describe('List', () => {
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li>ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li>ab]cd</li><li class="nested"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
                             stepFunction: deleteForward,
                             // The indented list's parent gets rendered as
                             // checked because its only child is checked. When
@@ -2927,14 +2929,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>ab[cd</li><li style="list-style: none;"><ul><li>ef]gh</li></ul></li></ol>',
+                                    '<ol><li>ab[cd</li><li class="nested"><ul><li>ef]gh</li></ul></li></ol>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ol><li>ab[]gh</li></ol>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>ab]cd</li><li style="list-style: none;"><ul><li>ef[gh</li></ul></li></ol>',
+                                    '<ol><li>ab]cd</li><li class="nested"><ul><li>ef[gh</li></ul></li></ol>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ol><li>ab[]gh</li></ol>',
                             });
@@ -2975,14 +2977,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab[cd</li><li style="list-style: none;"><ol><li>ef]gh</li></ol></li></ul>',
+                                    '<ul><li>ab[cd</li><li class="nested"><ol><li>ef]gh</li></ol></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab]cd</li><li style="list-style: none;"><ol><li>ef[gh</li></ol></li></ul>',
+                                    '<ul><li>ab]cd</li><li class="nested"><ol><li>ef[gh</li></ol></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
@@ -3069,14 +3071,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">ab[cd</li><li style="list-style: none;"><ul><li class="checked">ef]gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">ab[cd</li><li class="nested"><ul><li class="checked">ef]gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                             });
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">ab[cd</li><li style="list-style: none;"><ul><li class="unchecked">ef]gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">ab[cd</li><li class="nested"><ul><li class="unchecked">ef]gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">ab[]gh</li></ul>',
@@ -3084,14 +3086,14 @@ describe('List', () => {
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">ab]cd</li><li style="list-style: none;"><ul><li class="checked">ef[gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">ab]cd</li><li class="nested"><ul><li class="checked">ef[gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                             });
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">ab]cd</li><li style="list-style: none;"><ul><li class="unchecked">ef[gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">ab]cd</li><li class="nested"><ul><li class="unchecked">ef[gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">ab[]gh</li></ul>',
@@ -3135,14 +3137,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
+                                    '<ul><li>ab[cd</li><li class="nested"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
+                                    '<ul><li>ab]cd</li><li class="nested"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
                                 stepFunction: deleteForward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
@@ -3181,10 +3183,10 @@ describe('List', () => {
                             });
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ol><li>[]abc</li></ol></li></ol>',
+                                    '<ol><li class="nested"><ol><li>[]abc</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li style="list-style: none;"><ol><li>[]abc</li></ol></li></ol>',
+                                    '<ol><li class="nested"><ol><li>[]abc</li></ol></li></ol>',
                             });
                         });
                         it('should delete the first character in a list item', async () => {
@@ -3253,7 +3255,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
@@ -3261,7 +3263,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3272,7 +3274,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                                 <li>d</li>
@@ -3287,7 +3289,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b</li>
                                             </ol>
@@ -3296,7 +3298,7 @@ describe('List', () => {
                                     </ol>
                                     <p>[]d</p>
                                     <ol>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
@@ -3307,13 +3309,13 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b</li>
                                             </ol>
                                         </li>
                                         <li value="2">c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>e</li>
                                             </ol>
@@ -3334,7 +3336,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
@@ -3342,7 +3344,7 @@ describe('List', () => {
                                     </ol>
                                     <p>[]c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3353,14 +3355,14 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ol>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                             </ul>
                                         </li>
                                     </ol>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3374,25 +3376,25 @@ describe('List', () => {
                         it('should merge an indented list item into a non-indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>[]def</li><li>ghi</li></ol></li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>[]def</li><li>ghi</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li>abc[]def</li><li style="list-style: none;"><ol><li>ghi</li></ol></li></ol>',
+                                    '<ol><li>abc[]def</li><li class="nested"><ol><li>ghi</li></ol></li></ol>',
                             });
                         });
                         it('should merge a non-indented list item into an indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ol><li>abc</li></ol></li><li>[]def</li></ol>',
+                                    '<ol><li class="nested"><ol><li>abc</li></ol></li><li>[]def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li style="list-style: none;"><ol><li>abc[]def</li></ol></li></ol>',
+                                    '<ol><li class="nested"><ol><li>abc[]def</li></ol></li></ol>',
                             });
                         });
                         it('should merge the only item in an indented list into a non-indented list item and remove the now empty indented list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>[]def</li></ol></li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>[]def</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>abc[]def</li></ol>',
                             });
@@ -3400,14 +3402,14 @@ describe('List', () => {
                         it('should outdent a list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ol><li>[]abc</li></ol></li></ol>',
+                                    '<ol><li class="nested"><ol><li>[]abc</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>[]abc</li></ol>',
                             });
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ol><li style="list-style: none;"><ol><li>[]def</li></ol></li></ol>',
+                                    '<p>abc</p><ol><li class="nested"><ol><li>[]def</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<p>abc</p><ol><li>[]def</li></ol>',
                             });
@@ -3472,16 +3474,16 @@ describe('List', () => {
                         it('should outdent an empty list item within a list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>[]<br></li><li><br></li></ol></li><li>def</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>[]<br></li><li><br></li></ol></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li>abc</li><li>[]<br></li><li style="list-style: none;"><ol><li><br></li></ol></li><li value="3">def</li></ol>',
+                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ol><li><br></li></ol></li><li value="3">def</li></ol>',
                             });
                         });
                         it('should outdent an empty list within a list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>[]<br></li></ol></li><li>def</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>[]<br></li></ol></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>abc</li><li>[]<br></li><li>def</li></ol>',
                             });
@@ -3489,7 +3491,7 @@ describe('List', () => {
                         it('should outdent an empty list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ol><li><br>[]</li></ol></li></ol>',
+                                    '<ol><li class="nested"><ol><li><br>[]</li></ol></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>[]<br></li></ol>',
                             });
@@ -3557,10 +3559,10 @@ describe('List', () => {
                             });
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul><li>[]abc</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul><li>[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li style="list-style: none;"><ul><li>[]abc</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul><li>[]abc</li></ul></li></ul>',
                             });
                         });
                         it('should delete the first character in a list item', async () => {
@@ -3629,7 +3631,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
@@ -3637,7 +3639,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3648,7 +3650,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                                 <li>d</li>
@@ -3663,7 +3665,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
@@ -3672,7 +3674,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]d</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>e</li>
                                             </ul>
@@ -3683,13 +3685,13 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
                                         </li>
                                         <li>c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>e</li>
                                             </ul>
@@ -3710,7 +3712,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b</li>
                                             </ol>
@@ -3718,7 +3720,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ol>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3729,14 +3731,14 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul>
                                         <li>a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ol>
                                                 <li>b[]c</li>
                                             </ol>
                                         </li>
                                     </ul>
                                     <ol>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -3752,7 +3754,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul>
                                         <li>abc</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>[]def</li>
                                                 <li>ghi</li>
@@ -3763,7 +3765,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul>
                                         <li>abc[]def</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>ghi</li>
                                             </ul>
@@ -3774,16 +3776,16 @@ describe('List', () => {
                         it('should merge a non-indented list item into an indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul><li>abc</li></ul></li><li>[]def</li></ul>',
+                                    '<ul><li class="nested"><ul><li>abc</li></ul></li><li>[]def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li style="list-style: none;"><ul><li>abc[]def</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul><li>abc[]def</li></ul></li></ul>',
                             });
                         });
                         it('should merge the only item in an indented list into a non-indented list item and remove the now empty indented list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul><li>[]def</li></ul></li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul><li>[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc[]def</li></ul>',
                             });
@@ -3791,14 +3793,14 @@ describe('List', () => {
                         it('should outdent a list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul><li>[]abc</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul><li>[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]abc</li></ul>',
                             });
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ul><li style="list-style: none;"><ul><li>[]def</li></ul></li></ul>',
+                                    '<p>abc</p><ul><li class="nested"><ul><li>[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<p>abc</p><ul><li>[]def</li></ul>',
                             });
@@ -3806,16 +3808,16 @@ describe('List', () => {
                         it('should outdent an empty list item within a list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul><li>[]<br></li><li><br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul><li>[]<br></li><li><br></li></ul></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li>abc</li><li>[]<br></li><li style="list-style: none;"><ul><li><br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li>[]<br></li><li class="nested"><ul><li><br></li></ul></li><li>def</li></ul>',
                             });
                         });
                         it('should outdent an empty list within a list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul><li>[]<br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul><li>[]<br></li></ul></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc</li><li>[]<br></li><li>def</li></ul>',
                             });
@@ -3823,7 +3825,7 @@ describe('List', () => {
                         it('should outdent an empty list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul><li><br>[]</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul><li><br>[]</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]<br></li></ul>',
                             });
@@ -3909,10 +3911,10 @@ describe('List', () => {
                             });
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
                             });
                         });
                         it('should delete the first character in a list item', async () => {
@@ -4028,7 +4030,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
@@ -4036,7 +4038,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">d</li>
                                             </ul>
@@ -4047,7 +4049,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b[]c</li>
                                                 <li class="checked">d</li>
@@ -4060,7 +4062,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
@@ -4068,7 +4070,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked">d</li>
                                             </ul>
@@ -4079,7 +4081,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="unchecked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b[]c</li>
                                                 <li class="unchecked">d</li>
@@ -4094,7 +4096,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
@@ -4103,7 +4105,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]d</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">e</li>
                                             </ul>
@@ -4114,13 +4116,13 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
                                         </li>
                                         <li class="checked">c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">e</li>
                                             </ul>
@@ -4132,7 +4134,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
@@ -4141,7 +4143,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]d</p>
                                     <ul class="checklist">
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">e</li>
                                             </ul>
@@ -4152,13 +4154,13 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">b</li>
                                             </ul>
                                         </li>
                                         <li class="checked">c[]d</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="checked">e</li>
                                             </ul>
@@ -4181,7 +4183,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b</li>
                                             </ul>
@@ -4189,7 +4191,7 @@ describe('List', () => {
                                     </ul>
                                     <p>[]c</p>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -4200,14 +4202,14 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">a</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>b[]c</li>
                                             </ul>
                                         </li>
                                     </ul>
                                     <ul>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>d</li>
                                             </ul>
@@ -4221,25 +4223,25 @@ describe('List', () => {
                         it('should merge an indented list item into a non-indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li><li class="checked">ghi</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul class="checklist"><li class="checked">[]def</li><li class="checked">ghi</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li class="checked">abc[]def</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc[]def</li><li class="nested"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
                             });
                         });
                         it('should merge a non-indented list item into an indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">abc</li></ul></li><li class="checked">[]def</li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">abc</li></ul></li><li class="checked">[]def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">abc[]def</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">abc[]def</li></ul></li></ul>',
                             });
                         });
                         it('should merge the only item in an indented list into a non-indented list item and remove the now empty indented list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">abc[]def</li></ul>',
@@ -4248,7 +4250,7 @@ describe('List', () => {
                         it('should outdent a list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">[]abc</li></ul>',
@@ -4256,7 +4258,7 @@ describe('List', () => {
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
+                                    '<p>abc</p><ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<p>abc</p><ul class="checklist"><li class="checked">[]def</li></ul>',
@@ -4290,7 +4292,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="unchecked">abc</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked">[]<br></li>
                                                 <li class="unchecked"><br></li>
@@ -4303,7 +4305,7 @@ describe('List', () => {
                                     <ul class="checklist">
                                         <li class="unchecked">abc</li>
                                         <li class="unchecked">[]<br></li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul class="checklist">
                                                 <li class="unchecked"><br></li>
                                             </ul>
@@ -4315,7 +4317,7 @@ describe('List', () => {
                         it('should outdent an empty list within a list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">[]<br></li></ul></li><li class="checked">def</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="nested"><ul class="checklist"><li class="unchecked">[]<br></li></ul></li><li class="checked">def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">abc</li><li class="unchecked">[]<br></li><li class="checked">def</li></ul>',
@@ -4324,7 +4326,7 @@ describe('List', () => {
                         it('should outdent an empty list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul class="checklist"><li class="checked"><br>[]</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul class="checklist"><li class="checked"><br>[]</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">[]<br></li></ul>',
@@ -4454,25 +4456,25 @@ describe('List', () => {
                         it('should merge an ordered list item that is in an unordered list item into a non-indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ol><li>[]def</li><li>ghi</li></ol></li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ol><li>[]def</li><li>ghi</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li>abc[]def</li><li style="list-style: none;"><ol><li>ghi</li></ol></li></ul>',
+                                    '<ul><li>abc[]def</li><li class="nested"><ol><li>ghi</li></ol></li></ul>',
                             });
                         });
                         it('should merge an ordered list item into an unordered list item that is in the same ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ul><li>abc</li></ul></li><li>[]def</li></ol>',
+                                    '<ol><li class="nested"><ul><li>abc</li></ul></li><li>[]def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li style="list-style: none;"><ul><li>abc[]def</li></ul></li></ol>',
+                                    '<ol><li class="nested"><ul><li>abc[]def</li></ul></li></ol>',
                             });
                         });
                         it('should merge the only item in an ordered list that is in an unordered list into a list item that is in the same unordered list, and remove the now empty ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ol><li>[]def</li></ol></li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ol><li>[]def</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc[]def</li></ul>',
                             });
@@ -4480,14 +4482,14 @@ describe('List', () => {
                         it('should outdent an ordered list item that is within a unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ol><li>[]abc</li></ol></li></ul>',
+                                    '<ul><li class="nested"><ol><li>[]abc</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]abc</li></ul>',
                             });
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ul><li style="list-style: none;"><ol><li>[]def</li></ol></li></ul>',
+                                    '<p>abc</p><ul><li class="nested"><ol><li>[]def</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<p>abc</p><ul><li>[]def</li></ul>',
                             });
@@ -4495,16 +4497,16 @@ describe('List', () => {
                         it('should outdent an empty ordered list item within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ol><li>[]<br></li><li><br></li></ol></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ol><li>[]<br></li><li><br></li></ol></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li>abc</li><li>[]<br></li><li style="list-style: none;"><ol><li><br></li></ol></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li>[]<br></li><li class="nested"><ol><li><br></li></ol></li><li>def</li></ul>',
                             });
                         });
                         it('should outdent an empty ordered list within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ol><li>[]<br></li></ol></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ol><li>[]<br></li></ol></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc</li><li>[]<br></li><li>def</li></ul>',
                             });
@@ -4512,7 +4514,7 @@ describe('List', () => {
                         it('should outdent an empty ordered list within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ol><li><br>[]</li></ol></li></ul>',
+                                    '<ul><li class="nested"><ol><li><br>[]</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]<br></li></ul>',
                             });
@@ -4550,7 +4552,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ol>
                                         <li>abc</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>[]def</li>
                                                 <li>ghi</li>
@@ -4561,7 +4563,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ol>
                                         <li>abc[]def</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>ghi</li>
                                             </ul>
@@ -4572,16 +4574,16 @@ describe('List', () => {
                         it('should merge an unordered list item into an ordered list item that is in the same unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ol><li>abc</li></ol></li><li>[]def</li></ul>',
+                                    '<ul><li class="nested"><ol><li>abc</li></ol></li><li>[]def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li style="list-style: none;"><ol><li>abc[]def</li></ol></li></ul>',
+                                    '<ul><li class="nested"><ol><li>abc[]def</li></ol></li></ul>',
                             });
                         });
                         it('should merge the only item in an unordered list that is in an ordered list into a list item that is in the same ordered list, and remove the now empty unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ul><li>[]def</li></ul></li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ul><li>[]def</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>abc[]def</li></ol>',
                             });
@@ -4589,14 +4591,14 @@ describe('List', () => {
                         it('should outdent an unordered list item that is within a ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ul><li>[]abc</li></ul></li></ol>',
+                                    '<ol><li class="nested"><ul><li>[]abc</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>[]abc</li></ol>',
                             });
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ol><li style="list-style: none;"><ul><li>[]def</li></ul></li></ol>',
+                                    '<p>abc</p><ol><li class="nested"><ul><li>[]def</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<p>abc</p><ol><li>[]def</li></ol>',
                             });
@@ -4604,16 +4606,16 @@ describe('List', () => {
                         it('should outdent an empty unordered list item within an ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ul><li>[]<br></li><li><br></li></ul></li><li>def</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ul><li>[]<br></li><li><br></li></ul></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ol><li>abc</li><li>[]<br></li><li style="list-style: none;"><ul><li><br></li></ul></li><li value="3">def</li></ol>',
+                                    '<ol><li>abc</li><li>[]<br></li><li class="nested"><ul><li><br></li></ul></li><li value="3">def</li></ol>',
                             });
                         });
                         it('should outdent an empty unordered list within an ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ul><li>[]<br></li></ul></li><li>def</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ul><li>[]<br></li></ul></li><li>def</li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>abc</li><li>[]<br></li><li>def</li></ol>',
                             });
@@ -4621,7 +4623,7 @@ describe('List', () => {
                         it('should outdent an empty unordered list within an ordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li style="list-style: none;"><ul><li><br>[]</li></ul></li></ol>',
+                                    '<ol><li class="nested"><ul><li><br>[]</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>[]<br></li></ol>',
                             });
@@ -4660,25 +4662,25 @@ describe('List', () => {
                         it('should merge an checklist list item that is in an unordered list item into a non-indented list item', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li><li class="checked">ghi</li></ul></li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul class="checklist"><li class="checked">[]def</li><li class="checked">ghi</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li>abc[]def</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
+                                    '<ul><li>abc[]def</li><li class="nested"><ul class="checklist"><li class="checked">ghi</li></ul></li></ul>',
                             });
                         });
                         it('should merge an checklist list item into an unordered list item that is in the same checklist list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul><li>abc</li></ul></li><li>[]def</li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul><li>abc</li></ul></li><li>[]def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul><li>abc[]def</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul><li>abc[]def</li></ul></li></ul>',
                             });
                         });
                         it('should merge the only item in an checklist list that is in an unordered list into a checklist item that is in the same unordered list, and remove the now empty checklist list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc[]def</li></ul>',
                             });
@@ -4686,14 +4688,14 @@ describe('List', () => {
                         it('should outdent an checklist list item that is within a unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul class="checklist"><li class="checked">[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]abc</li></ul>',
                             });
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ul><li style="list-style: none;"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
+                                    '<p>abc</p><ul><li class="nested"><ul class="checklist"><li class="checked">[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<p>abc</p><ul><li>[]def</li></ul>',
                             });
@@ -4701,16 +4703,16 @@ describe('List', () => {
                         it('should outdent an empty checklist list item within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">[]<br></li><li><br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul class="checklist"><li class="unchecked">[]<br></li><li><br></li></ul></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li>abc</li><li>[]<br></li><li style="list-style: none;"><ul class="checklist"><li class="unchecked"><br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li>[]<br></li><li class="nested"><ul class="checklist"><li class="unchecked"><br></li></ul></li><li>def</li></ul>',
                             });
                         });
                         it('should outdent an empty checklist list within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">[]<br></li></ul></li><li>def</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul class="checklist"><li class="unchecked">[]<br></li></ul></li><li>def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>abc</li><li>[]<br></li><li>def</li></ul>',
                             });
@@ -4718,7 +4720,7 @@ describe('List', () => {
                         it('should outdent an empty checklist list within an unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul class="checklist"><li class="unchecked"><br>[]</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul class="checklist"><li class="unchecked"><br>[]</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>[]<br></li></ul>',
                             });
@@ -4763,7 +4765,7 @@ describe('List', () => {
                                 contentBefore: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">abc</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>[]def</li>
                                                 <li>ghi</li>
@@ -4774,7 +4776,7 @@ describe('List', () => {
                                 contentAfter: unformat(`
                                     <ul class="checklist">
                                         <li class="checked">abc[]def</li>
-                                        <li style="list-style: none;">
+                                        <li class="nested">
                                             <ul>
                                                 <li>ghi</li>
                                             </ul>
@@ -4785,16 +4787,16 @@ describe('List', () => {
                         it('should merge an unordered list item into an checklist list item that is in the same unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li style="list-style: none;"><ul class="checklist"><li class="checked">abc</li></ul></li><li>[]def</li></ul>',
+                                    '<ul><li class="nested"><ul class="checklist"><li class="checked">abc</li></ul></li><li>[]def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul><li style="list-style: none;"><ul class="checklist"><li class="checked">abc[]def</li></ul></li></ul>',
+                                    '<ul><li class="nested"><ul class="checklist"><li class="checked">abc[]def</li></ul></li></ul>',
                             });
                         });
                         it('should merge the only item in an unordered list that is in an checklist list into a checklist item that is in the same checklist list, and remove the now empty unordered list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul><li>[]def</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul><li>[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">abc[]def</li></ul>',
@@ -4803,7 +4805,7 @@ describe('List', () => {
                         it('should outdent an unordered list item that is within a checklist list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul><li>[]abc</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul><li>[]abc</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">[]abc</li></ul>',
@@ -4811,7 +4813,7 @@ describe('List', () => {
                             // With a paragraph before the list:
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<p>abc</p><ul class="checklist"><li style="list-style: none;"><ul><li>[]def</li></ul></li></ul>',
+                                    '<p>abc</p><ul class="checklist"><li class="nested"><ul><li>[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<p>abc</p><ul class="checklist"><li class="unchecked">[]def</li></ul>',
@@ -4823,19 +4825,19 @@ describe('List', () => {
                             // `Modifier`).
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul><li>[]<br></li><li><br></li></ul></li><li class="checked">def</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul><li>[]<br></li><li><br></li></ul></li><li class="checked">def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li class="checked">abc</li><li class="unchecked">[]<br></li><li style="list-style: none;"><ul><li><br></li></ul></li><li class="checked">def</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="unchecked">[]<br></li><li class="nested"><ul><li><br></li></ul></li><li class="checked">def</li></ul>',
                             });
                         });
                         it('should outdent an empty unordered list item within an checklist list (unchecked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li style="list-style: none;"><ul><li>[]<br></li><li><br></li></ul></li><li class="unchecked">def</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="nested"><ul><li>[]<br></li><li><br></li></ul></li><li class="unchecked">def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="unchecked">[]<br></li><li style="list-style: none;"><ul><li><br></li></ul></li><li class="unchecked">def</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="unchecked">[]<br></li><li class="nested"><ul><li><br></li></ul></li><li class="unchecked">def</li></ul>',
                             });
                         });
                         it.skip('should outdent an empty unordered list within an checklist list (checked)', async () => {
@@ -4844,7 +4846,7 @@ describe('List', () => {
                             // `Modifier`).
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul><li>[]<br></li></ul></li><li class="checked">def</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul><li>[]<br></li></ul></li><li class="checked">def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">abc</li><li class="unchecked">[]<br></li><li class="checked">def</li></ul>',
@@ -4853,7 +4855,7 @@ describe('List', () => {
                         it('should outdent an empty unordered list within an checklist list (unchecked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li style="list-style: none;"><ul><li>[]<br></li></ul></li><li class="unchecked">def</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="nested"><ul><li>[]<br></li></ul></li><li class="unchecked">def</li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">abc</li><li class="unchecked">[]<br></li><li class="unchecked">def</li></ul>',
@@ -4862,7 +4864,7 @@ describe('List', () => {
                         it('should outdent an empty unordered list within an otherwise empty checklist list', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li style="list-style: none;"><ul><li><br>[]</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="nested"><ul><li><br>[]</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="unchecked">[]<br></li></ul>',
@@ -5013,14 +5015,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ol><li>ab[cd</li><li style="list-style: none;"><ol><li>ef]gh</li></ol></li></ol>',
+                                '<ol><li>ab[cd</li><li class="nested"><ol><li>ef]gh</li></ol></li></ol>',
                             stepFunction: deleteBackward,
                             contentAfter: '<ol><li>ab[]gh</li></ol>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ol><li>ab]cd</li><li style="list-style: none;"><ol><li>ef[gh</li></ol></li></ol>',
+                                '<ol><li>ab]cd</li><li class="nested"><ol><li>ef[gh</li></ol></li></ol>',
                             stepFunction: deleteBackward,
                             contentAfter: '<ol><li>ab[]gh</li></ol>',
                         });
@@ -5103,14 +5105,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li>ab[cd</li><li style="list-style: none;"><ul><li>ef]gh</li></ul></li></ul>',
+                                '<ul><li>ab[cd</li><li class="nested"><ul><li>ef]gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             contentAfter: '<ul><li>ab[]gh</li></ul>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul><li>ab]cd</li><li style="list-style: none;"><ul><li>ef[gh</li></ul></li></ul>',
+                                '<ul><li>ab]cd</li><li class="nested"><ul><li>ef[gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             contentAfter: '<ul><li>ab[]gh</li></ul>',
                         });
@@ -5219,14 +5221,14 @@ describe('List', () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab[cd</li><li class="nested"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             contentAfter:
                                 '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">ef]gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab[cd</li><li class="nested"><ul class="checklist"><li class="unchecked">ef]gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             // The indented list cannot be unchecked while its
                             // parent is checked: it gets checked automatically
@@ -5239,14 +5241,14 @@ describe('List', () => {
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab]cd</li><li class="nested"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             contentAfter:
                                 '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<ul class="checklist"><li class="checked">ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">ef[gh</li></ul></li></ul>',
+                                '<ul class="checklist"><li class="checked">ab]cd</li><li class="nested"><ul class="checklist"><li class="unchecked">ef[gh</li></ul></li></ul>',
                             stepFunction: deleteBackward,
                             // The indented list cannot be unchecked while its
                             // parent is checked: it gets checked automatically
@@ -5312,14 +5314,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>ab[cd</li><li style="list-style: none;"><ul><li>ef]gh</li></ul></li></ol>',
+                                    '<ol><li>ab[cd</li><li class="nested"><ul><li>ef]gh</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>ab[]gh</li></ol>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>ab]cd</li><li style="list-style: none;"><ul><li>ef[gh</li></ul></li></ol>',
+                                    '<ol><li>ab]cd</li><li class="nested"><ul><li>ef[gh</li></ul></li></ol>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ol><li>ab[]gh</li></ol>',
                             });
@@ -5360,14 +5362,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab[cd</li><li style="list-style: none;"><ol><li>ef]gh</li></ol></li></ul>',
+                                    '<ul><li>ab[cd</li><li class="nested"><ol><li>ef]gh</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab]cd</li><li style="list-style: none;"><ol><li>ef[gh</li></ol></li></ul>',
+                                    '<ul><li>ab]cd</li><li class="nested"><ol><li>ef[gh</li></ol></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
@@ -5412,7 +5414,7 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">ab[cd</li><li style="list-style: none;"><ul><li>ef]gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">ab[cd</li><li class="nested"><ul><li>ef]gh</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
@@ -5420,7 +5422,7 @@ describe('List', () => {
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">ab]cd</li><li style="list-style: none;"><ul><li>ef[gh</li></ul></li></ul>',
+                                    '<ul class="checklist"><li class="checked">ab]cd</li><li class="nested"><ul><li>ef[gh</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter:
                                     '<ul class="checklist"><li class="checked">ab[]gh</li></ul>',
@@ -5464,14 +5466,14 @@ describe('List', () => {
                             // Forward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab[cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
+                                    '<ul><li>ab[cd</li><li class="nested"><ul class="checklist"><li class="checked">ef]gh</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
                             // Backward selection
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>ab]cd</li><li style="list-style: none;"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
+                                    '<ul><li>ab]cd</li><li class="nested"><ul class="checklist"><li class="checked">ef[gh</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
                                 contentAfter: '<ul><li>ab[]gh</li></ul>',
                             });
@@ -5596,7 +5598,7 @@ describe('List', () => {
 //                                 contentBefore: unformat(`
 //                                     <ol>
 //                                         <li>a</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ol>
 //                                                 <li>b</li>
 //                                             </ol>
@@ -5617,7 +5619,7 @@ describe('List', () => {
 //                                 contentAfter: unformat(`
 //                                     <ol>
 //                                         <li>a</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ol>
 //                                                 <li>b</li>
 //                                             </ol>
@@ -5642,13 +5644,13 @@ describe('List', () => {
                         it('should add an empty list item at the end of an indented list, then remove it', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>def[]</li></ol></li><li>ghi</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>def[]</li></ol></li><li>ghi</li></ol>',
                                 stepFunction: async (editor) => {
                                     await insertParagraphBreak(editor);
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li>abc</li><li style="list-style: none;"><ol><li>def</li></ol></li><li value="2">[]<br></li><li>ghi</li></ol>',
+                                    '<ol><li>abc</li><li class="nested"><ol><li>def</li></ol></li><li value="2">[]<br></li><li>ghi</li></ol>',
                             });
                         });
                         it('should remove a list', async () => {
@@ -5720,7 +5722,7 @@ describe('List', () => {
 //                                contentBefore: unformat(`
 //                                    <ul>
 //                                        <li>ab</li>
-//                                        <li style="list-style: none;">
+//                                        <li class="nested">
 //                                            <ul>
 //                                                <li>
 //                                                    <font style="color: red;">cd[]</font>
@@ -5737,7 +5739,7 @@ describe('List', () => {
 //                                contentAfter: unformat(`
 //                                    <ul>
 //                                        <li>ab</li>
-//                                        <li style="list-style: none;">
+//                                        <li class="nested">
 //                                            <ul>
 //                                                <li><font style="color: red;">cd</font></li>
 //                                                <li><font style="color: red;">b</font></li>
@@ -5788,13 +5790,13 @@ describe('List', () => {
                         it('should add an empty list item at the end of an indented list, then remove it', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul><li>def[]</li></ul></li><li>ghi</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul><li>def[]</li></ul></li><li>ghi</li></ul>',
                                 stepFunction: async (editor) => {
                                     await insertParagraphBreak(editor);
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul><li>abc</li><li style="list-style: none;"><ul><li>def</li></ul></li><li>[]<br></li><li>ghi</li></ul>',
+                                    '<ul><li>abc</li><li class="nested"><ul><li>def</li></ul></li><li>[]<br></li><li>ghi</li></ul>',
                             });
                         });
                         it('should remove a list', async () => {
@@ -5962,25 +5964,25 @@ describe('List', () => {
                             // `Modifier`).
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">def[]</li></ul></li><li class="checked">ghi</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul class="checklist"><li class="checked">def[]</li></ul></li><li class="checked">ghi</li></ul>',
                                 stepFunction: async (editor) => {
                                     await insertParagraphBreak(editor);
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul class="checklist"><li class="checked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="checked">def</li></ul></li><li class="unchecked">[]<br></li><li class="checked">ghi</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul class="checklist"><li class="checked">def</li></ul></li><li class="unchecked">[]<br></li><li class="checked">ghi</li></ul>',
                             });
                         });
                         it('should add an empty list item at the end of an indented list, then outdent it (unchecked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">def[]</li></ul></li><li class="checked">ghi</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="nested"><ul class="checklist"><li class="unchecked">def[]</li></ul></li><li class="checked">ghi</li></ul>',
                                 stepFunction: async (editor) => {
                                     await insertParagraphBreak(editor);
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul class="checklist"><li class="unchecked">abc</li><li style="list-style: none;"><ul class="checklist"><li class="unchecked">def</li></ul></li><li class="unchecked">[]<br></li><li class="checked">ghi</li></ul>',
+                                    '<ul class="checklist"><li class="unchecked">abc</li><li class="nested"><ul class="checklist"><li class="unchecked">def</li></ul></li><li class="unchecked">[]<br></li><li class="checked">ghi</li></ul>',
                             });
                         });
                         it('should remove a checklist', async () => {
@@ -6059,7 +6061,7 @@ describe('List', () => {
 //                                     contentBefore: unformat(`
 //                                     <ul class="checklist">
 //                                         <li class="unchecked">ab</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ul class="checklist">
 //                                                 <li class="unchecked">
 //                                                     <font style="color: red;">cd[]</font>
@@ -6076,7 +6078,7 @@ describe('List', () => {
 //                                     contentAfter: unformat(`
 //                                     <ul class="checklist">
 //                                         <li class="unchecked">ab</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ul class="checklist">
 //                                                 <li class="unchecked"><font style="color: red;">cd</font></li>
 //                                                 <li class="unchecked"><font style="color: red;">0</font></li>
@@ -6149,7 +6151,7 @@ describe('List', () => {
 //                                     contentBefore: unformat(`
 //                                     <ul class="checklist">
 //                                         <li class="checked">ab</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ul class="checklist">
 //                                                 <li class="checked">
 //                                                     <font style="color: red;">cd[]</font>
@@ -6166,7 +6168,7 @@ describe('List', () => {
 //                                     contentAfter: unformat(`
 //                                     <ul class="checklist">
 //                                         <li class="unchecked">ab</li>
-//                                         <li style="list-style: none;">
+//                                         <li class="nested">
 //                                             <ul class="checklist">
 //                                                 <li class="checked"><font style="color: red;">cd</font></li>
 //                                                 <li class="unchecked"><font style="color: red;">0</font></li>
@@ -6326,7 +6328,7 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">a[b]c</li>
                                     </ul>
@@ -6341,7 +6343,7 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">a[b]c</li>
                                     </ul>
@@ -6360,7 +6362,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                     <li class="checked">d[e]f</li>
                                     </ul>
@@ -6376,10 +6378,10 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="checked">abc</li>
+                                <li class="nested">
                                     <ul class="checklist">
-                                    <li class="unchecked">d[e]f</li>
+                                        <li class="unchecked">d[e]f</li>
                                     </ul>
                                 </li>
                             </ul>`),
@@ -6394,7 +6396,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                     <li class="unchecked">d[e]f</li>
                                     </ul>
@@ -6410,8 +6412,8 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="unchecked">abc</li>
+                                <li class="nested">
                                     <ul class="checklist">
                                     <li class="checked">d[e]f</li>
                                     </ul>
@@ -6423,8 +6425,7 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: unformat(`
                             <ul class="checklist">
-                                <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">def</li>
                                     </ul>
@@ -6434,8 +6435,7 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">def</li>
                                         <li class="checked">g[h]i</li>
@@ -6443,11 +6443,13 @@ describe('List', () => {
                                 </li>
                             </ul>`),
                     });
+
+
                     await testEditor(BasicEditor, {
                         contentBefore: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">def</li>
                                     </ul>
@@ -6458,7 +6460,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">def</li>
                                         <li class="checked">g[h]i</li>
@@ -6470,7 +6472,7 @@ describe('List', () => {
                         contentBefore: unformat(`
                             <ul class="checklist">
                                 <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">def</li>
                                     </ul>
@@ -6480,8 +6482,8 @@ describe('List', () => {
                         stepFunction: indentList,
                         contentAfter: unformat(`
                             <ul class="checklist">
-                                <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="checked">abc</li>
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">def</li>
                                         <li class="unchecked">g[h]i</li>
@@ -6496,7 +6498,7 @@ describe('List', () => {
                             <ul class="checklist">
                                 <li class="checked">abc</li>
                                 <li class="checked">d[e]f</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">ghi</li>
                                     </ul>
@@ -6506,7 +6508,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">d[e]f</li>
                                         <li class="checked">ghi</li>
@@ -6519,7 +6521,7 @@ describe('List', () => {
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
                                 <li class="checked">d[e]f</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">ghi</li>
                                     </ul>
@@ -6529,7 +6531,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">d[e]f</li>
                                         <li class="checked">ghi</li>
@@ -6542,7 +6544,7 @@ describe('List', () => {
                             <ul class="checklist">
                                 <li class="checked">abc</li>
                                 <li class="unchecked">d[e]f</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">ghi</li>
                                     </ul>
@@ -6552,7 +6554,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">d[e]f</li>
                                         <li class="unchecked">ghi</li>
@@ -6575,7 +6577,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul>
                                 <li>abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>[]<br></li>
                                     </ul>
@@ -6598,7 +6600,7 @@ describe('List', () => {
                         contentAfter: unformat(`
                             <ul>
                                 <li>abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul>
                                         <li>[]<br></li>
                                     </ul>
@@ -6634,7 +6636,7 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: unformat(`
                             <ul class="checklist">
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">a[b]c</li>
                                     </ul>
@@ -6649,7 +6651,7 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: unformat(`
                             <ul class="checklist">
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">a[b]c</li>
                                     </ul>
@@ -6667,7 +6669,7 @@ describe('List', () => {
                         contentBefore: unformat(`
                             <ul class="checklist">
                                 <li class="checked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="checked">d[e]f</li>
                                     </ul>
@@ -6684,7 +6686,7 @@ describe('List', () => {
                         contentBefore: unformat(`
                             <ul class="checklist">
                                 <li class="unchecked">abc</li>
-                                <li style="list-style: none;">
+                                <li class="nested">
                                     <ul class="checklist">
                                         <li class="unchecked">d[e]f</li>
                                     </ul>

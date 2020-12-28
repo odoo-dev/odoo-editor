@@ -594,10 +594,11 @@ export function createList(mode) {
     return node;
 }
 
-export function removeStyle(node) {
-    node.style.listStyle = null;
-    if (!node.style.all)
-        node.removeAttribute("style");
+export function toggleClass(node, className) {
+    node.classList.toggle(className);
+    if (!node.className) {
+        node.removeAttribute("class");
+    }
 }
 
 /**

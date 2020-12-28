@@ -5,6 +5,7 @@ import {
     getListMode,
     isUnbreakable,
     preserveCursor,
+    toggleClass,
     isBlock,
     isVisible,
 } from "../utils/utils.js";
@@ -30,8 +31,8 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         }
         if (li.parentNode.parentNode.tagName === 'LI') {
             let lip = document.createElement("li");
+            toggleClass(lip, 'nested');
             lip.append(ul);
-            lip.style.listStyle = "none";
             li.parentNode.parentNode.after(lip);
         } else {
             li.parentNode.after(ul);
