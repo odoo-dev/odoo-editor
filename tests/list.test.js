@@ -5653,7 +5653,7 @@ describe('List', () => {
                                     '<ol><li>abc</li><li class="nested"><ol><li>def</li></ol></li><li>[]<br></li><li>ghi</li></ol>',
                             });
                         });
-                        it('should remove a list', async () => {
+                        it('should remove a list with p', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore: '<ol><li><p>[]<br></p></li></ol>',
                                 stepFunction: insertParagraphBreak,
@@ -6207,13 +6207,15 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<ul><li>[abc]</li></ul>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        // JW cAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        contentAfter: '<p>[]<br></p>',
                     });
                     // Backward selection
                     await testEditor(BasicEditor, {
                         contentBefore: '<ul><li>]abc[</li></ul>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        contentAfter: '<p>[]<br></p>',
+                        // JW cAfter: '<ul><li><br></li><li>[]<br></li></ul>',
                     });
                 });
                 it("should delete across two list items, then split what's left", async () => {
@@ -6249,13 +6251,15 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<ul><li>[abc]</li></ul>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        // JW cAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        contentAfter: '<p>[]<br></p>',
                     });
                     // Backward selection
                     await testEditor(BasicEditor, {
                         contentBefore: '<ul><li>]abc[</li></ul>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        // JW cAfter: '<ul><li><br></li><li>[]<br></li></ul>',
+                        contentAfter: '<p>[]<br></p>',
                     });
                 });
                 it("should delete across two list items, then split what's left", async () => {

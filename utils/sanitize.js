@@ -3,8 +3,10 @@
 import {
     closestBlock,
     endPos,
+    fillEmpty,
     getListMode,
     isBlock,
+    isEmptyBlock,
     isVisibleEmpty,
     moveNodes,
     preserveCursor,
@@ -72,6 +74,20 @@ class Sanitize {
             moveNodes(...endPos(node.previousSibling), node);
             restoreCursor();
             node = nodeP;
+        }
+
+        // Remove empty blocks in <li>
+        if (node.nodeName=='P' && node.parentElement.tagName=='LI') {
+            let next = node.nextSibling;
+            let pnode = node.parentElement;
+            if (isEmptyBlock(node)) {
+                let restoreCursor = preserveCursor();
+                node.remove();
+                fillEmpty(pnode);
+                this._parse(next);
+                restoreCursor(new Map([[node, pnode]]));
+                return;
+            }
         }
 
         // FIXME not parse out of editable zone...

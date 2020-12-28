@@ -1,6 +1,7 @@
 "use strict";
 
 import OdooEditor from "../editor.js";
+import {sanitize} from "../utils/sanitize.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -222,13 +223,15 @@ export async function testEditor(Editor = OdooEditor, spec) {
     testNode.innerHTML = spec.contentBefore;
     let selection = _parseTextualSelection(testNode);
 
-    const editor = new Editor(testNode);
-
+    const editor = new Editor(testNode, false);
     if (selection) {
         setSelection(selection);
     } else {
         document.getSelection().removeAllRanges();
     }
+
+    // we have to sanitize after having put the cursor
+    sanitize(editor.dom);
 
     let firefoxExecCommandError = false;
     if (spec.stepFunction) {

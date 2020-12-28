@@ -630,7 +630,7 @@ export function isEmptyBlock(blockEl) {
     for (const node of nodes) {
         // There is no text and no double BR, the only thing that could make
         // this visible is a "visible empty" node like an image.
-        if (isVisibleEmpty(node)) {
+        if ((node.nodeName != 'BR') && isVisibleEmpty(node)) {
             return false;
         }
     }

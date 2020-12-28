@@ -34,9 +34,9 @@ export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
 
 export default class OdooEditor {
-    constructor(dom) {
+    constructor(dom, toSanitize=true) {
         dom.oid = 1; // convention: root node is ID 1
-        this.dom = sanitize(dom);
+        this.dom = toSanitize ? sanitize(dom) : dom;
         this.history = [{
             cursor: { // cursor at beginning of step
                 anchorNode: undefined, anchorOffset: undefined,
