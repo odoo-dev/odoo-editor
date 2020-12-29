@@ -520,14 +520,14 @@ describe('Editor', () => {
                     contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
                     stepFunction: deleteForward,
                     // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]<br></b></p>', // Note: this is actually like that on google doc
+                    contentAfter: '<p><b>[]</b><br></p>', // Note: this is actually like that on google doc
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
                     stepFunction: deleteForward,
                     // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]<br></b></p>', // Note: this is actually like that on google doc
+                    contentAfter: '<p><b>[]</b><br></p>', // Note: this is actually like that on google doc
                 });
             });
             it('should delete a selection accross a heading1 and a paragraph', async () => {
@@ -1315,14 +1315,14 @@ describe('Editor', () => {
                     contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
                     stepFunction: deleteBackward,
                     // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]<br></b></p>',
+                    contentAfter: '<p><b>[]</b><br></p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
                     stepFunction: deleteBackward,
                     // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]<br></b></p>',
+                    contentAfter: '<p><b>[]</b><br></p>',
                 });
             });
             it('should delete a selection accross a heading1 and a paragraph', async () => {
@@ -1632,14 +1632,14 @@ describe('Editor', () => {
                         contentBefore: '<p><b>abc[]</b></p>',
                         stepFunction: insertParagraphBreak,
                         // JW cAfter: '<p><b>abc</b></p><p>[]<br></p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]<br></b></p>',
+                        contentAfter: '<p><b>abc</b></p><p><b>[]</b><br></p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>abc[] </b></p>',
                         stepFunction: insertParagraphBreak,
                         // The space should have been parsed away.
                         // JW cAfter: '<p><b>abc</b></p><p>[]<br></p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]<br></b></p>',
+                        contentAfter: '<p><b>abc</b></p><p><b>[]</b><br></p>',
                     });
                 });
             });

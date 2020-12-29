@@ -40,7 +40,7 @@ export function areSimilarElements(node, node2) {
             || isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))) {
         return false;
     }
-    if (node.tagName=='LI') {
+    if ((node.tagName=='LI') && (node.classList.contains('nested'))) {
         let mode = undefined;
         return node.lastElementChild && node2.firstElementChild && getListMode(node.lastElementChild) == getListMode(node2.firstElementChild);
     }

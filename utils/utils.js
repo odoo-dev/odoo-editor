@@ -689,7 +689,7 @@ export function splitTextNode(textNode, offset) {
 export function fillEmpty(el) {
     const blockEl = closestBlock(el);
     if (isShrunkBlock(blockEl)) {
-        el.appendChild(document.createElement('br'));
+        blockEl.appendChild(document.createElement('br'));
     }
 }
 /**

@@ -8,6 +8,7 @@ import {
     deleteForward,
     insertLineBreak,
     insertParagraphBreak,
+    insertText,
     indentList,
     outdentList,
     testEditor,
@@ -1369,9 +1370,8 @@ describe('List', () => {
                     <ul class="checklist">
                         <li class="unchecked">1</li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left + 10 });
                 },
@@ -1387,9 +1387,8 @@ describe('List', () => {
                     <ul class="checklist">
                         <li class="unchecked">1</li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1405,9 +1404,8 @@ describe('List', () => {
                     <ul class="checklist">
                         <li class="checked">1</li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1423,9 +1421,8 @@ describe('List', () => {
                     <ul class="checklist">
                         <li class="unchecked"><br></li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1441,9 +1438,8 @@ describe('List', () => {
                     <ul class="checklist">
                         <li class="unchecked"><br></li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1465,9 +1461,8 @@ describe('List', () => {
                         </ul>
                     </li>
                 </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[2];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1495,9 +1490,8 @@ describe('List', () => {
                         </ul>
                     </li>
                 </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[2];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1530,9 +1524,8 @@ describe('List', () => {
                             </ul>
                         </li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[3];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1570,9 +1563,8 @@ describe('List', () => {
                             </ul>
                         </li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[3];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1617,9 +1609,8 @@ describe('List', () => {
                                 </ul>
                             </li>
                         </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1671,9 +1662,8 @@ describe('List', () => {
                                 </ul>
                             </li>
                         </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1718,9 +1708,8 @@ describe('List', () => {
                             </ul>
                         </li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[1];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1758,9 +1747,8 @@ describe('List', () => {
                             </ul>
                         </li>
                     </ul>`),
-                stepFunction: async () => {
-                    const editable = document.querySelector('[contenteditable=true]');
-                    const lis = editable.querySelectorAll('li.checked, li.unchecked');
+                stepFunction: async (editor) => {
+                    const lis = editor.dom.querySelectorAll('.checklist > li');
                     const li = lis[1];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -5668,89 +5656,89 @@ describe('List', () => {
                             });
                         });
                     });
-//                    describe('With attributes', () => {
-//                        it('should add two list items at the end of a list with a class', async () => {
-//                            await testEditor(BasicEditor, {
-//                                contentBefore: '<ol class="a"><li>abc[]</li></ol>',
-//                                stepFunction: async (editor) => {
-//                                    await insertParagraphBreak(editor);
-//                                    await insertText(editor, 'b');
-//                                    await insertParagraphBreak(editor);
-//                                },
-//                                contentAfter:
-//                                    '<ol class="a"><li>abc</li><li>b</li><li>[]<br></li></ol>',
-//                            });
-//                        });
-//                        it('should add two list items with a class at the end of a list', async () => {
-//                            await testEditor(BasicEditor, {
-//                                contentBefore: '<ol><li class="a">abc[]</li></ol>',
-//                                stepFunction: async (editor) => {
-//                                    await insertParagraphBreak(editor);
-//                                    await insertText(editor, 'b');
-//                                    await insertParagraphBreak(editor);
-//                                },
-//                                contentAfter:
-//                                    '<ol><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ol>',
-//                            });
-//                        });
-//                        it('should split dividers insite the li rather than create new list items', async () => {
-//                            await testEditor(BasicEditor, {
-//                                contentBefore: '<ol><li class="a"><div>abc[]</div></li></ol>',
-//                                stepFunction: async (editor) => {
-//                                    await insertParagraphBreak(editor);
-//                                    await insertText(editor, 'b');
-//                                    await insertParagraphBreak(editor);
-//                                },
-//                                contentAfter:
-//                                    '<ol><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ol>',
-//                            });
-//                        });
-//                        it('should split dividers instead of creating new list items', async () => {
-//                            await testEditor(BasicEditor, {
-//                                contentBefore: '<ol><li><div class="a">abc[]</div></li></ol>',
-//                                stepFunction: async (editor) => {
-//                                    await insertParagraphBreak(editor);
-//                                    await insertText(editor, 'b');
-//                                    await insertParagraphBreak(editor);
-//                                },
-//                                contentAfter:
-//                                    '<ol><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ol>',
-//                            });
-//                        });
-//                        it('should add two list items with a font at the end of a list within a list', async () => {
-//                            await testEditor(BasicEditor, {
-//                                contentBefore: unformat(`
-//                                    <ul>
-//                                        <li>ab</li>
-//                                        <li class="nested">
-//                                            <ul>
-//                                                <li>
-//                                                    <font style="color: red;">cd[]</font>
-//                                                </li>
-//                                            </ul>
-//                                        </li>
-//                                        <li>ef</li>
-//                                    </ul>`),
-//                                stepFunction: async (editor) => {
-//                                    await insertParagraphBreak(editor);
-//                                    await insertText(editor, 'b');
-//                                    await insertParagraphBreak(editor);
-//                                },
-//                                contentAfter: unformat(`
-//                                    <ul>
-//                                        <li>ab</li>
-//                                        <li class="nested">
-//                                            <ul>
-//                                                <li><font style="color: red;">cd</font></li>
-//                                                <li><font style="color: red;">b</font></li>
-//                                                <li>[]<br></li>
-//                                            </ul>
-//                                        </li>
-//                                        <li>ef</li>
-//                                    </ul>`),
-//                            });
-//                        });
-//                    });
+                    describe('With attributes', () => {
+                        it('should add two list items at the end of a list with a class', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ol class="a"><li>abc[]</li></ol>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ol class="a"><li>abc</li><li>b</li><li>[]<br></li></ol>',
+                            });
+                        });
+                        it('should add two list items with a class at the end of a list', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ol><li class="a">abc[]</li></ol>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ol><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ol>',
+                            });
+                        });
+                        it('should split dividers insite the li rather than create new list items', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ol><li class="a"><div>abc[]</div></li></ol>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ol><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ol>',
+                            });
+                        });
+                        it('should split dividers instead of creating new list items', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ol><li><div class="a">abc[]</div></li></ol>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ol><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ol>',
+                            });
+                        });
+                        it('should add two list items with a font at the end of a list within a list', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: unformat(`
+                                    <ul>
+                                        <li>ab</li>
+                                        <li class="nested">
+                                            <ul>
+                                                <li>
+                                                    <font style="color: red;">cd[]</font>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>ef</li>
+                                    </ul>`),
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter: unformat(`
+                                    <ul>
+                                        <li>ab</li>
+                                        <li class="nested">
+                                            <ul>
+                                                <li><font style="color: red;">cd</font></li>
+                                                <li><font style="color: red;">b</font></li>
+                                                <li><font style="color: red;">[]</font><br></li>
+                                            </ul>
+                                        </li>
+                                        <li>ef</li>
+                                    </ul>`),
+                            });
+                        });
+                    });
                 });
                 describe('Unordered', () => {
                     describe('Basic', () => {

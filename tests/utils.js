@@ -2,6 +2,7 @@
 
 import OdooEditor from "../editor.js";
 import {sanitize} from "../utils/sanitize.js";
+import {setCursor} from "../utils/utils.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -346,17 +347,35 @@ export async function outdentList(editor) {
     editor.execCommand('oShiftTab');
 }
 
-export const toggleOrderedList = async (editor) => {
+export async function toggleOrderedList(editor) {
     editor.execCommand('toggleList', 'OL');
 };
 
-export const toggleUnorderedList = async (editor) => {
+export async function toggleUnorderedList(editor) {
     editor.execCommand('toggleList', 'UL');
 };
 
-export const toggleCheckList = async (editor) => {
+export async function toggleCheckList(editor) {
     editor.execCommand('toggleList', 'CL');
 };
+
+export async function insertText(editor, text) {
+    const sel = document.defaultView.getSelection()
+    let node = sel.anchorNode;
+    if (node.nodeType == Node.TEXT_NODE) {
+        node.nodeValue = node.nodeValue.substring(0,sel.anchorOffset)+text+node.nodeValue.substring(sel.anchorOffset)
+        setCursor(node, sel.anchorOffset+text.length);
+    } else {
+        const txt = document.createTextNode(text);
+        if (sel.anchorOffset>=node.childNodes.length) {
+            node.append(txt)
+        } else {
+            node.insertBefore(txt, node.childNodes[sel.anchorOffset])
+        }
+        setCursor(txt, text.length);
+    }
+};
+
 
 export class BasicEditor extends OdooEditor {
 
