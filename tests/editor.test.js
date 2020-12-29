@@ -7,6 +7,8 @@ import {
     insertLineBreak,
     insertParagraphBreak,
     testEditor,
+    testVdom,
+    toggleBold,
 } from './utils.js';
 
 describe('Editor', () => {
@@ -2081,6 +2083,14 @@ describe('Editor', () => {
             });
         });
     });
+
+    it('should not delete content from the vdom', async () => {
+        await testVdom(BasicEditor, {
+            contentBefore: '<p><b>a[b]c</b></p>',
+            stepFunction: toggleBold,
+            contentAfter: '<p><b>a</b>b<b>c</b></p>',
+        })
+    })
 });
 
 /**
