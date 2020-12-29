@@ -360,24 +360,29 @@ export async function toggleCheckList(editor) {
 };
 
 export async function toggleBold(editor) {
-    document.execCommand('bold')
+    document.execCommand('bold');
+}
+
+export async function createLink(editor, content) {
+    editor.execCommand('oCreateLink', content);
 }
 
 export async function insertText(editor, text) {
-    const sel = document.defaultView.getSelection()
-    let node = sel.anchorNode;
-    if (node.nodeType == Node.TEXT_NODE) {
-        node.nodeValue = node.nodeValue.substring(0,sel.anchorOffset)+text+node.nodeValue.substring(sel.anchorOffset)
-        setCursor(node, sel.anchorOffset+text.length);
-    } else {
-        const txt = document.createTextNode(text);
-        if (sel.anchorOffset>=node.childNodes.length) {
-            node.append(txt)
-        } else {
-            node.insertBefore(txt, node.childNodes[sel.anchorOffset])
-        }
-        setCursor(txt, text.length);
-    }
+    document.execCommand('insertText', false, text);
+    // const sel = document.defaultView.getSelection()
+    // let node = sel.anchorNode;
+    // if (node.nodeType == Node.TEXT_NODE) {
+    //     node.nodeValue = node.nodeValue.substring(0,sel.anchorOffset)+text+node.nodeValue.substring(sel.anchorOffset)
+    //     setCursor(node, sel.anchorOffset+text.length);
+    // } else {
+    //     const txt = document.createTextNode(text);
+    //     if (sel.anchorOffset>=node.childNodes.length) {
+    //         node.append(txt)
+    //     } else {
+    //         node.insertBefore(txt, node.childNodes[sel.anchorOffset])
+    //     }
+    //     setCursor(txt, text.length);
+    // }
 };
 
 export async function testVdom(Editor, spec) {

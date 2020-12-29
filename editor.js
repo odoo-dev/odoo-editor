@@ -7,6 +7,8 @@ import {} from "./commands/shiftEnter.js";
 import {} from "./commands/shiftTab.js";
 import {} from "./commands/tab.js";
 import {} from "./commands/toggleList.js";
+import { } from "./commands/createLink.js";
+import { } from "./commands/unlink.js";
 
 import {sanitize} from "./utils/sanitize.js";
 import {
@@ -15,6 +17,7 @@ import {
 } from "./utils/serialize.js";
 import {
     closestBlock,
+    closestPath,
     commonParentGet,
     containsUnbreakable,
     getListMode,
@@ -28,6 +31,7 @@ import {
     setTagName,
     splitTextNode,
     toggleClass,
+    findNode,
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -59,6 +63,7 @@ export default class OdooEditor {
         this.dom.addEventListener('mousedown', this._onClick.bind(this));
 
         document.onselectionchange = this._onSelectionChange.bind(this);
+        document.onclick = this._onSelectionChange.bind(this);
 
         this.toolbar = document.querySelector('#toolbar');
         this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
@@ -619,7 +624,7 @@ export default class OdooEditor {
         if (method=='toggleList') {
             return this._toggleList(...args);
         }
-        return sel.anchorNode[method](sel.anchorOffset);
+        return sel.anchorNode[method](sel.anchorOffset, ...args);
     }
 
     /**
@@ -700,9 +705,10 @@ export default class OdooEditor {
         if (!sel.anchorNode) {
             show = false;
         }
+        this.toolbar.style.visibility = 'visible';
 
         if (show !== undefined) {
-            this.toolbar.style.visibility = show ? 'visible' : 'hidden';
+            // this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
         if (show === false) {
             return;
@@ -721,6 +727,9 @@ export default class OdooEditor {
         this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
         this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "UL"));
         this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "OL"));
+        const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+        this.toolbar.querySelector('#oCreateLink').classList.toggle('active', linkNode);
+        this.toolbar.querySelector('#oUnlink').classList.toggle('active', linkNode);
     }
 
     //--------------------------------------------------------------------------
@@ -818,6 +827,8 @@ export default class OdooEditor {
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
+            } else if (['oCreateLink', 'oUnlink'].includes(buttonEl.id)) {
+                this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else {
