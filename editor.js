@@ -118,9 +118,6 @@ export default class OdooEditor {
         }
         let cur = dom.firstChild;
         while (cur) {
-            if (dom.oid === id && ((!parentid) || dom.parentNode.oid === parentid)) {
-                return dom;
-            }
             let result = this.idFind(cur, id, parentid);
             if (result) {
                 return result;
