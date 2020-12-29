@@ -740,7 +740,7 @@ export function setTagName(el, newTagName) {
  * @param {number} [startIndex=0]
  * @param {number} [endIndex=sourceEl.childNodes.length]
  * @returns {Array.<HTMLElement, number} The position at the left of the moved
- *     nodes after the move was done (and where the cursor was repositioned).
+ *     nodes after the move was done (and where the cursor was returned).
  */
 export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
     // For table elements, there just cannot be a meaningful move, add them
@@ -775,17 +775,9 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
         restoreOrigin();
     }
 
-    // Replace cursor before the first moved node that remains after restore.
-
-    // TODO: moveNodes should not set the cursor position!
+    // Return cursor position, but don't change it
     const firstNode = nodes.find(node => !!node.parentNode);
-    let pos;
-    if (firstNode) {
-        pos = setCursor(...leftPos(firstNode));
-    } else {
-        pos = setCursor(destinationEl, destinationOffset);
-    }
-    return pos;
+    return firstNode ? leftPos(firstNode) : [destinationEl, destinationOffset];
 }
 
 //------------------------------------------------------------------------------
