@@ -291,6 +291,7 @@ export default class OdooEditor {
         }
     }
 
+
     // send changes to server
     historyFetch() {
         if (!this.collaborate) {

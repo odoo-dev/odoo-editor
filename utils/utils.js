@@ -776,6 +776,8 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
     }
 
     // Replace cursor before the first moved node that remains after restore.
+
+    // TODO: moveNodes should not set the cursor position!
     const firstNode = nodes.find(node => !!node.parentNode);
     let pos;
     if (firstNode) {

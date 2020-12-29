@@ -1371,7 +1371,7 @@ describe('List', () => {
                         <li class="unchecked">1</li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left + 10 });
                 },
@@ -1388,7 +1388,7 @@ describe('List', () => {
                         <li class="unchecked">1</li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1405,7 +1405,7 @@ describe('List', () => {
                         <li class="checked">1</li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1422,7 +1422,7 @@ describe('List', () => {
                         <li class="unchecked"><br></li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1439,7 +1439,7 @@ describe('List', () => {
                         <li class="unchecked"><br></li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1453,22 +1453,22 @@ describe('List', () => {
             await testEditor(BasicEditor, {
                 contentBefore: unformat(`
                 <ul class="checklist">
-                    <li class="unchecked">2</li>
+                    <li>2</li>
                     <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
-                            <li class="unchecked">2.2</li>
+                            <li>2.2</li>
                         </ul>
                     </li>
                 </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[2];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
                 contentAfter: unformat(`
                 <ul class="checklist">
-                    <li class="unchecked">2</li>
+                    <li>2</li>
                     <li class="nested">
                         <ul class="checklist">
                             <li class="checked">2.1</li>
@@ -1491,7 +1491,7 @@ describe('List', () => {
                     </li>
                 </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[2];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1525,7 +1525,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[3];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1564,7 +1564,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[3];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1610,7 +1610,7 @@ describe('List', () => {
                             </li>
                         </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1624,10 +1624,6 @@ describe('List', () => {
                                     <ul class="checklist">
                                         <li class="checked">3.1.1</li>
                                         <li class="unchecked">3.1.2</li>
-                                    </ul>
-                                </li>
-                                <li class="nested">
-                                    <ul class="checklist">
                                         <li class="checked">3.2.1</li>
                                         <li class="unchecked">3.2.2</li>
                                     </ul>
@@ -1663,7 +1659,7 @@ describe('List', () => {
                             </li>
                         </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[0];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1709,7 +1705,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[1];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
@@ -1748,7 +1744,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async (editor) => {
-                    const lis = editor.dom.querySelectorAll('.checklist > li');
+                    const lis = editor.dom.querySelectorAll('.checklist > li:not([class^="nested"])');
                     const li = lis[1];
                     await click(li, { clientX: li.getBoundingClientRect().left - 10 });
                 },
