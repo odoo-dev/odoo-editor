@@ -214,7 +214,7 @@ export function renderTextualSelection() {
     _insertCharAt(']', focusNode, focusOffset);
 }
 
-export async function testEditor(Editor = OdooEditor, spec) {
+export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
 
@@ -253,7 +253,7 @@ export async function testEditor(Editor = OdooEditor, spec) {
 
     if (spec.contentAfter && !firefoxExecCommandError) {
         renderTextualSelection();
-        const value = testNode.innerHTML;
+        const value = useVDom ? editor.vdom.innerHTML : testNode.innerHTML;
         window.chai.expect(value).to.be.equal(spec.contentAfter);
     }
     testNode.remove();
@@ -359,6 +359,10 @@ export async function toggleCheckList(editor) {
     editor.execCommand('toggleList', 'CL');
 };
 
+export async function toggleBold(editor) {
+    document.execCommand('bold')
+}
+
 export async function insertText(editor, text) {
     const sel = document.defaultView.getSelection()
     let node = sel.anchorNode;
@@ -375,6 +379,10 @@ export async function insertText(editor, text) {
         setCursor(txt, text.length);
     }
 };
+
+export async function testVdom(Editor, spec) {
+    return testEditor(Editor, spec, true);
+}
 
 
 export class BasicEditor extends OdooEditor {
