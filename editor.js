@@ -276,7 +276,7 @@ export default class OdooEditor {
                 let destnode = this.idFind(destel, record.node.oid);
                 if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
-                    return false;
+                    continue;
                 }
                 if (record.append && this.idFind(destel, record.append)) {
                     this.idFind(destel, record.append).append(newnode);
@@ -285,7 +285,7 @@ export default class OdooEditor {
                 } else if (record.after && this.idFind(destel, record.after)) {
                     this.idFind(destel, record.after).after(newnode);
                 } else {
-                    return false;
+                    continue;
                 }
             }
         }
