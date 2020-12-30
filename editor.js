@@ -475,19 +475,6 @@ export default class OdooEditor {
      */
     execCommand(method) {
         this._computeHistoryCursor();
-
-        // For backspace / delete command and execute the same operations as
-        // when using the editor, we have to rollback the input after the
-        // contentEditable management of the backspace/delete event. For that,
-        // we ask for that management through the contentEditable execCommand
-        // and let our input event management handle the rest.
-        if (method === 'oDeleteBackward') {
-            document.execCommand('delete');
-            return true;
-        } else if (method === 'oDeleteForward') {
-            document.execCommand('forwardDelete');
-            return true;
-        }
         return this._applyCommand(...arguments);
     }
 
@@ -757,16 +744,14 @@ export default class OdooEditor {
             this.historyStep();
         }
     }
+
     /**
      * @private
      */
     _onKeyDown(ev) {
-        console.log(`Keyboard Event ${ev.keyCode}`);
-
         // Compute the current cursor on keydown but do not record it. Leave
         // that to the command execution or the 'input' event handler.
         this._computeHistoryCursor();
-
         if (ev.keyCode === 13) { // Enter
             ev.preventDefault();
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {

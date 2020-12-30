@@ -160,10 +160,6 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
 };
 
 HTMLLIElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
-    // FIXME On Firefox, backspace in LI at offset 0 is not detected if the LI
-    // still contains text as contentEditable does nothing so no 'input' event
-    // is fired and nothing can be rollbacked: how to handle that ??
-
     if (offset > 0 || this.previousElementSibling) {
         // If backspace inside li content or if the li is not the first one,
         // it behaves just like in a normal element.
@@ -172,3 +168,14 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false
     }
     this.oShiftTab(offset);
 };
+
+
+HTMLBRElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
+    let parentOffset = childNodeIndex(this);
+    const rightState = getState(this.parentElement, parentOffset+1, DIRECTIONS.RIGHT).cType;
+    if (rightState & CTYPES.BLOCK_INSIDE) {
+        this.parentElement.oDeleteBackward(parentOffset, alreadyMoved);
+    } else {
+        HTMLElement.prototype.oDeleteBackward.call(this, offset, alreadyMoved);
+    }
+}
