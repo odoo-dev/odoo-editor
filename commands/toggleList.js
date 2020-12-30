@@ -47,6 +47,7 @@ HTMLParagraphElement.prototype.oToggleList = function (offset, mode='UL') {
     this.remove();
 
     restoreCursor(new Map([[this, li]]));
+    return true;
 };
 
 
@@ -82,5 +83,6 @@ HTMLLIElement.prototype.oToggleList = function (offset, mode) {
             }
     }
     restoreCursor();
+    return false;
 }
 

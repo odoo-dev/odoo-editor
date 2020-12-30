@@ -567,17 +567,20 @@ export default class OdooEditor {
 
         for (let node of leftDeepFirstPath(sel.focusNode, sel.focusOffset)) {
             let block = closestBlock(node);
-            if (block.closest('ol, ul') && getListMode(block.closest('ol, ul')) == mode) {
-                li.add(block);
-            } else if (!['OL','UL'].includes(block.tagName)) {
-                blocks.add(block);
+            if (!['OL','UL'].includes(block.tagName)) {
+                let ublock = block.closest('ol, ul');
+                (ublock && getListMode(ublock) == mode) ? li.add(block) : blocks.add(block);
             }
             if (node==end) break;
         }
 
-        let target = (blocks.size) ? blocks : li;
-        for (let node of target) {
-            node.oToggleList(0, mode);
+        let target = [...((blocks.size) ? blocks : li)];
+        while (target.length) {
+            let node = target.pop();
+            // only apply one li per ul
+            if (! node.oToggleList(0, mode)) {
+                target = target.filter(li => (li.parentNode != node.parentNode) || (li.tagName != 'LI'));
+            };
         }
     }
 

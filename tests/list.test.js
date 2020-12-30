@@ -1121,7 +1121,7 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>a[b</p><ul><li>c]d</li><li>ef</li></ul>',
                         stepFunction: toggleOrderedList,
-                        contentAfter: '<ol><li>a[b</li><li>c]d</li></ol><ul><li>ef</li></ul>',
+                        contentAfter: '<ol><li>a[b</li><li>c]d</li><li>ef</li></ol>',
                     });
                 });
                 it('should turn a p, an ul list with ao. one nested ul, and another p into one ol with a nested ol', async () => {
@@ -1144,9 +1144,9 @@ describe('List', () => {
                                 <li>a[b</li>
                                 <li>cd</li>
                                 <li class="nested">
-                                    <ul>
+                                    <ol>
                                         <li>ef</li>
-                                    </ul>
+                                    </ol>
                                 </li>
                                 <li>gh</li>
                                 <li>i]j</li>
@@ -1157,7 +1157,7 @@ describe('List', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<ul><li>ab</li><li>c[d</li></ul><p>e]f</p>',
                         stepFunction: toggleOrderedList,
-                        contentAfter: '<ul><li>ab</li></ul><ol><li>c[d</li><li>e]f</li></ol>',
+                        contentAfter: '<ol><li>ab</li><li>c[d</li><li>e]f</li></ol>',
                     });
                 });
                 it('should turn an unordered list, a paragraph and an ordered list into one ordered list with three list items', async () => {
@@ -1172,7 +1172,7 @@ describe('List', () => {
                         contentBefore: '<ul><li>ab<li>c[d</li></ul><p>ef</p><ol><li>g]h</li></ol>',
                         stepFunction: toggleOrderedList,
                         contentAfter:
-                            '<ul><li>ab</li></ul><ol><li>c[d</li><li>ef</li><li>g]h</li></ol>',
+                            '<ol><li>ab</li><li>c[d</li><li>ef</li><li>g]h</li></ol>',
                     });
                 });
                 it('should turn an ordered list, a paragraph and an unordered list item into one ordered list with all three as list items', async () => {
@@ -1181,7 +1181,7 @@ describe('List', () => {
                             '<ol><li>a[b</li></ol><p>cd</p><ul><li>e]f</li><li>gh</li></ul>',
                         stepFunction: toggleOrderedList,
                         contentAfter:
-                            '<ol><li>a[b</li><li>cd</li><li>e]f</li></ol><ul><li>gh</li></ul>',
+                            '<ol><li>a[b</li><li>cd</li><li>e]f</li><li>gh</li></ol>',
                     });
                 });
                 it('should turn an unordered list within an unordered list into an ordered list within an unordered list', async () => {
