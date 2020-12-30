@@ -99,7 +99,7 @@ ul.checklist > li:not(.nested):after {
     opacity: 0;
     cursor: pointer;
 }
-ul.checklist > li.checked:after {
+ul.checklist > li.checked:before {
     content: "✓";
     transition: opacity .5s;
     opacity: 1;
