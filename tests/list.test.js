@@ -19,330 +19,6 @@ import {
 } from './utils.js';
 
 describe('List', () => {
-    describe('parse', () => {
-        describe('Regular list', () => {
-//             let editor: JWEditor;
-//             let engine: XmlDomParsingEngine;
-//             beforeEach(async () => {
-//                 editor = new JWEditor();
-//                 editor.configure({
-//                     defaults: {
-//                         Container: ParagraphNode,
-//                     },
-//                 });
-//                 engine = new XmlDomParsingEngine(editor);
-//                 engine.register(CharXmlDomParser);
-//                 engine.register(HeadingXmlDomParser);
-//                 engine.register(LineBreakXmlDomParser);
-//                 engine.register(ParagraphXmlDomParser);
-//                 engine.register(ListXmlDomParser);
-//                 engine.register(ListItemXmlDomParser);
-//                 engine.register(ItalicXmlDomParser);
-//                 engine.register(BoldXmlDomParser);
-//                 engine.register(UnderlineXmlDomParser);
-//                 engine.register(SpanXmlDomParser);
-//                 engine.register(LinkXmlDomParser);
-//                 engine.register(SuperscriptXmlDomParser);
-//             });
-//             it('should parse a complex list', async () => {
-//                 const element = document.createElement('div');
-//                 element.innerHTML = [
-//                     '<ul>',
-//                     '    <li>', // li0: becomes P
-//                     '        a',
-//                     '        <ul>', // li1
-//                     '            <li>         ', // li1_0: becomes P
-//                     '                <b>a.</b>a',
-//                     '            </li>',
-//                     '            <li><p>a.b</p></li>', // li1_1
-//                     '            <li><h1>a.c</h1></li>', // li1_2
-//                     '            <li>a.d</li>', // li1_3: becomes P
-//                     '            <li>',
-//                     '                <ul>', // li1_4
-//                     '                    <li>a.d.a</li>', // li1_4_0: becomes P
-//                     '                </ul>',
-//                     '            </li>',
-//                     '        </ul>',
-//                     '    </li>',
-//                     '    <li>b</li>', // li2: becomes P
-//                     '    <ol>', // li3
-//                     '        <li>b.1</li>', // li3_0: becomes P
-//                     '        <li><p>b.2</p></li>', // li3_1
-//                     '        <li><h1>b.3</h1></li>', // li3_2
-//                     '        <li>b.4</li>', // li3_3
-//                     '    </ol>',
-//                     '    <ul class="checklist">', // li4
-//                     '        <li>c.1</li>', // li4_0
-//                     '        <li class="checked">c.2</li>', // li4_1
-//                     '        <li class="checked"></li>', // li4_2
-//                     '    </ol>',
-//                     '</ul>',
-//                 ].join('\n');
-//                 const node = (await engine.parse(element))[0];
-// 
-//                 expect(node.childVNodes.length).to.equal(1);
-//                 const list = node.firstChild() as ListNode;
-//                 expect(list.toString()).to.equal('ListNode: ' + ListType.UNORDERED);
-//                 expect(list.listType).to.equal(ListType.UNORDERED);
-//                 expect(list.childVNodes.length).to.equal(5); // li0, li1, li2, li3, li4
-// 
-//                 const li0 = list.children()[0];
-//                 expect(li0.toString()).to.equal('ParagraphNode');
-//                 expect(li0.children().length).to.equal(1);
-//                 expect(li0.firstChild().toString()).to.equal('a');
-// 
-//                 const li1 = list.children()[1] as ListNode;
-//                 expect(li1.toString()).to.equal('ListNode: ' + ListType.UNORDERED);
-//                 expect(li1.listType).to.equal(ListType.UNORDERED);
-//                 expect(li1.children().length).to.equal(5);
-// 
-//                 /* eslint-disable @typescript-eslint/camelcase */
-//                 const li1_0 = li1.children()[0];
-//                 expect(li1_0.toString()).to.equal('ParagraphNode');
-//                 expect(li1_0.children().length).to.equal(3);
-//                 expect(li1_0.children()[0].toString()).to.equal('a');
-//                 expect(li1_0.children()[1].toString()).to.equal('.');
-//                 expect(li1_0.children()[1].modifiers.length).to.equal(1);
-//                 expect(li1_0.children()[1].modifiers.map(m => m.constructor.name)).to.deep.equal([
-//                     'BoldFormat',
-//                 ]);
-//                 expect(li1_0.children()[2].toString()).to.equal('a');
-// 
-//                 const li1_1 = li1.children()[1];
-//                 expect(li1_1.toString()).to.equal('ParagraphNode');
-//                 expect(li1_1.children().length).to.equal(3);
-//                 expect(li1_1.children()[0].toString()).to.equal('a');
-//                 expect(li1_1.children()[1].toString()).to.equal('.');
-//                 expect(li1_1.children()[2].toString()).to.equal('b');
-// 
-//                 const li1_2 = li1.children()[2];
-//                 expect(li1_2.toString()).to.equal('HeadingNode: 1');
-//                 expect(li1_2.children().length).to.equal(3);
-//                 expect(li1_2.children()[0].toString()).to.equal('a');
-//                 expect(li1_2.children()[1].toString()).to.equal('.');
-//                 expect(li1_2.children()[2].toString()).to.equal('c');
-// 
-//                 const li1_3 = li1.children()[3];
-//                 expect(li1_3.toString()).to.equal('ParagraphNode');
-//                 expect(li1_3.children().length).to.equal(3);
-//                 expect(li1_3.children()[0].toString()).to.equal('a');
-//                 expect(li1_3.children()[1].toString()).to.equal('.');
-//                 expect(li1_3.children()[2].toString()).to.equal('d');
-// 
-//                 const li1_4 = li1.children()[4] as ListNode;
-//                 expect(li1_4.toString()).to.equal('ListNode: ' + ListType.UNORDERED);
-//                 expect(li1_4.listType).to.equal(ListType.UNORDERED);
-//                 expect(li1_4.children().length).to.equal(1);
-// 
-//                 const li1_4_0 = li1_4.firstChild();
-//                 expect(li1_4_0.toString()).to.equal('ParagraphNode');
-//                 expect(li1_4_0.children().length).to.equal(5);
-//                 expect(li1_4_0.children()[0].toString()).to.equal('a');
-//                 expect(li1_4_0.children()[1].toString()).to.equal('.');
-//                 expect(li1_4_0.children()[2].toString()).to.equal('d');
-//                 expect(li1_4_0.children()[3].toString()).to.equal('.');
-//                 expect(li1_4_0.children()[4].toString()).to.equal('a');
-// 
-//                 const li2 = list.children()[2];
-//                 expect(li2.toString()).to.equal('ParagraphNode');
-//                 expect(li2.children().length).to.equal(1);
-//                 expect(li2.firstChild().toString()).to.equal('b');
-// 
-//                 const li3 = list.children()[3] as ListNode;
-//                 expect(li3.toString()).to.equal('ListNode: ' + ListType.ORDERED);
-//                 expect(li3.listType).to.equal(ListType.ORDERED);
-//                 expect(li3.children().length).to.equal(4);
-// 
-//                 const li3_0 = li3.children()[0];
-//                 expect(li3_0.toString()).to.equal('ParagraphNode');
-//                 expect(li3_0.children().length).to.equal(3);
-//                 expect(li3_0.children()[0].toString()).to.equal('b');
-//                 expect(li3_0.children()[1].toString()).to.equal('.');
-//                 expect(li3_0.children()[2].toString()).to.equal('1');
-// 
-//                 const li3_1 = li3.children()[1];
-//                 expect(li3_1.toString()).to.equal('ParagraphNode');
-//                 expect(li3_1.children().length).to.equal(3);
-//                 expect(li3_1.children()[0].toString()).to.equal('b');
-//                 expect(li3_1.children()[1].toString()).to.equal('.');
-//                 expect(li3_1.children()[2].toString()).to.equal('2');
-// 
-//                 const li3_2 = li3.children()[2];
-//                 expect(li3_2.toString()).to.equal('HeadingNode: 1');
-//                 expect(li3_2.children().length).to.equal(3);
-//                 expect(li3_2.children()[0].toString()).to.equal('b');
-//                 expect(li3_2.children()[1].toString()).to.equal('.');
-//                 expect(li3_2.children()[2].toString()).to.equal('3');
-// 
-//                 const li3_3 = li3.children()[3];
-//                 expect(li3_3.toString()).to.equal('ParagraphNode');
-//                 expect(li3_3.children().length).to.equal(3);
-//                 expect(li3_3.children()[0].toString()).to.equal('b');
-//                 expect(li3_3.children()[1].toString()).to.equal('.');
-//                 expect(li3_3.children()[2].toString()).to.equal('4');
-// 
-//                 const li4 = list.children()[4] as ListNode;
-//                 expect(li4.toString()).to.equal('ListNode: ' + ListType.CHECKLIST);
-//                 expect(li4.listType).to.equal(ListType.CHECKLIST);
-//                 expect(li4.children().length).to.equal(3);
-// 
-//                 const li4_0 = li4.children()[0];
-//                 expect(li4_0.toString()).to.equal('ParagraphNode');
-//                 expect(li4_0.children().length).to.equal(3);
-//                 expect(li4_0.children()[0].toString()).to.equal('c');
-//                 expect(li4_0.children()[1].toString()).to.equal('.');
-//                 expect(li4_0.children()[2].toString()).to.equal('1');
-// 
-//                 const li4_1 = li4.children()[1];
-//                 expect(li4_1.toString()).to.equal('ParagraphNode');
-//                 expect(li4_1.children().length).to.equal(3);
-//                 expect(li4_1.children()[0].toString()).to.equal('c');
-//                 expect(li4_1.children()[1].toString()).to.equal('.');
-//                 expect(li4_1.children()[2].toString()).to.equal('2');
-// 
-//                 const li4_2 = li4.children()[2];
-//                 expect(li4_2.toString()).to.equal('ParagraphNode');
-//                 expect(li4_2.children().length).to.equal(0);
-//                 /* eslint-enable @typescript-eslint/camelcase */
-//             });
-//             it('should parse a list item with several blocks, inlines and whitespace', async () => {
-//                 const element = document.createElement('div');
-//                 /* eslint-disable prettier/prettier */
-//                 element.innerHTML = [
-//                     '<ol>\n',
-//                     '    <li>\n',
-//                     '        <h1>heading</h1> \n',
-//                     '        <span>a \n',
-//                                 '<a href="a"><sup><i><b>b</b></i></sup></a> \n',
-//                                 '<a href="b"><sup><i><b>c</b></i></sup></a>',
-//                             '</span> \n',
-//                             '<span>d \n',
-//                                 '<i>e</i> \n',
-//                                 'f \n',
-//                                 '<a href="c">g</a> \n',
-//                                 '<a href="d"">h</a>',
-//                             '</span>',
-//                     '    </li>',
-//                     '</ol>'
-//                 ].join('');
-//                 /* eslint-enable prettier/prettier */
-//                 const node = (await engine.parse(element))[0];
-// 
-//                 expect(node.children().length).to.equal(1);
-//                 const list = node.firstChild() as ListNode;
-//                 expect(list.toString()).to.equal('ListNode: ' + ListType.ORDERED);
-//                 expect(list.listType).to.equal(ListType.ORDERED);
-// 
-//                 expect(list.children().length).to.equal(1);
-// 
-//                 const li = list.children()[0];
-//                 expect(li.toString()).to.equal('DividerNode');
-//                 expect(li.children().length).to.equal(16);
-// 
-//                 const headingLi = li.children()[0];
-//                 expect(headingLi.toString()).to.equal('HeadingNode: 1');
-//                 expect(headingLi.children().length).to.equal(7);
-//                 expect(headingLi.children()[0].toString()).to.equal('h');
-//                 expect(headingLi.children()[1].toString()).to.equal('e');
-//                 expect(headingLi.children()[2].toString()).to.equal('a');
-//                 expect(headingLi.children()[3].toString()).to.equal('d');
-//                 expect(headingLi.children()[4].toString()).to.equal('i');
-//                 expect(headingLi.children()[5].toString()).to.equal('n');
-//                 expect(headingLi.children()[6].toString()).to.equal('g');
-// 
-//                 function mapFormats(node: VNode): string[] {
-//                     return node.modifiers.map(format => format.constructor.name);
-//                 }
-// 
-//                 expect(li.children()[1].toString()).to.equal('a');
-//                 expect(mapFormats(li.children()[1])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[2].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[2])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[3].toString()).to.equal('b');
-//                 expect(mapFormats(li.children()[3])).to.deep.equal([
-//                     'SpanFormat',
-//                     'LinkFormat',
-//                     'SuperscriptFormat',
-//                     'ItalicFormat',
-//                     'BoldFormat',
-//                 ]);
-// 
-//                 expect(li.children()[4].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[4])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[5].toString()).to.equal('c');
-//                 expect(mapFormats(li.children()[5])).to.deep.equal([
-//                     'SpanFormat',
-//                     'LinkFormat',
-//                     'SuperscriptFormat',
-//                     'ItalicFormat',
-//                     'BoldFormat',
-//                 ]);
-// 
-//                 expect(li.children()[6].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[6])).to.deep.equal([]);
-// 
-//                 expect(li.children()[7].toString()).to.equal('d');
-//                 expect(mapFormats(li.children()[7])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[8].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[8])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[9].toString()).to.equal('e');
-//                 expect(mapFormats(li.children()[9])).to.deep.equal(['SpanFormat', 'ItalicFormat']);
-//                 expect(li.children()[10].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[10])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[11].toString()).to.equal('f');
-//                 expect(mapFormats(li.children()[11])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[12].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[12])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[13].toString()).to.equal('g');
-//                 expect(mapFormats(li.children()[13])).to.deep.equal(['SpanFormat', 'LinkFormat']);
-// 
-//                 expect(li.children()[14].toString()).to.equal(' ');
-//                 expect(mapFormats(li.children()[14])).to.deep.equal(['SpanFormat']);
-// 
-//                 expect(li.children()[15].toString()).to.equal('h');
-//                 expect(mapFormats(li.children()[15])).to.deep.equal(['SpanFormat', 'LinkFormat']);
-//             });
-//             it('should remove the list-style:none in VDom from the indented list', async () => {
-//                 await testEditor(BasicEditor, {
-//                     contentBefore: unformat(`
-//                         <ul>
-//                             <li>title</li>
-//                             <li class="nested">
-//                                 <ul>
-//                                     <li>a[b]c</li>
-//                                 </ul>
-//                             </li>
-//                         </ul>`),
-//                     stepFunction: (editor: JWEditor) => {
-//                         const p = editor.selection.anchor.parent;
-//                         const containerLiAttribute = p.parent;
-//                         expect(
-//                             containerLiAttribute.modifiers
-//                                 .get(ListItemAttributes)
-//                                 .style.get('list-style'),
-//                         ).to.equal(undefined);
-//                     },
-//                     contentAfter: unformat(`
-//                         <ul>
-//                             <li>title</li>
-//                             <li class="nested">
-//                                 <ul>
-//                                     <li>a[b]c</li>
-//                                 </ul>
-//                             </li>
-//                         </ul>`),
-//                 });
-//             });
-        });
-    });
     describe('toggleList', () => {
         describe('Range collapsed', () => {
             describe('Unordered', () => {
@@ -464,13 +140,13 @@ describe('List', () => {
                     });
                 });
                 describe('Transform', () => {
-                    // it('should turn an empty ordered list into an unordered list', async () => {
-                    //     await testEditor(BasicEditor, {
-                    //         contentBefore: '<ol><li>[]<br></li></ol>',
-                    //         stepFunction: toggleUnorderedList,
-                    //         contentAfter: '<ul><li>[]<br></li></ul>',
-                    //     });
-                    // });
+                    it('should turn an empty ordered list into an unordered list', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<ol><li>[]<br></li></ol>',
+                            stepFunction: toggleUnorderedList,
+                            contentAfter: '<ul><li>[]<br></li></ul>',
+                        });
+                    });
                     it('should turn an empty ordered list into an unordered list', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<ul class="checklist"><li>[]<br></li></ul>',
@@ -5659,42 +5335,40 @@ describe('List', () => {
                                 contentAfter: '<ol><li>abc</li><li>[]<br></li></ol>',
                             });
                         });
-//                         it('should indent an item in an ordered list and add value (with dom mutations)', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: unformat(`
-//                                     <ol>
-//                                         <li>a</li>
-//                                         <li class="nested">
-//                                             <ol>
-//                                                 <li>b</li>
-//                                             </ol>
-//                                         </li>
-//                                         <li>c[]</li>
-//                                     </ol>`),
-//                                 stepFunction: async (editor): Promise<void> => {
-//                                     const ol = document.querySelector('ol');
-//                                     const li = document.createElement('li');
-//                                     const br = document.createElement('br');
-//                                     li.append(br);
-//                                     ol.insertBefore(li, ol.lastElementChild);
-//                                     const layout = editor.plugins.get(Layout);
-//                                     const domLayoutEngine = layout.engines.dom as DomLayoutEngine;
-//                                     domLayoutEngine.markForRedraw(new Set([ol, li, br]));
-//                                     await editor.execCommand<Core>('insertParagraphBreak'); // new line
-//                                 },
-//                                 contentAfter: unformat(`
-//                                     <ol>
-//                                         <li>a</li>
-//                                         <li class="nested">
-//                                             <ol>
-//                                                 <li>b</li>
-//                                             </ol>
-//                                         </li>
-//                                         <li>c</li>
-//                                         <li>[]<br></li>
-//                                     </ol>`),
-//                             });
-//                         });
+                        it('should indent an item in an ordered list and add value (with dom mutations)', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: unformat(`
+                                    <ol>
+                                        <li>a</li>
+                                        <li class="nested">
+                                            <ol>
+                                                <li>b</li>
+                                            </ol>
+                                        </li>
+                                        <li>c[]</li>
+                                    </ol>`),
+                                stepFunction: async (editor) => {
+                                    const ol = editor.dom.querySelector('ol');
+                                    const li = document.createElement('li');
+                                    const br = document.createElement('br');
+                                    li.append(br);
+                                    ol.insertBefore(li, ol.lastElementChild);
+                                    await editor.execCommand('oEnter'); // new line
+                                },
+                                contentAfter: unformat(`
+                                    <ol>
+                                        <li>a</li>
+                                        <li class="nested">
+                                            <ol>
+                                                <li>b</li>
+                                            </ol>
+                                        </li>
+                                        <li><br></li>
+                                        <li>c</li>
+                                        <li>[]<br></li>
+                                    </ol>`),
+                            });
+                        });
                     });
                     describe('Removing items', () => {
                         it('should add an empty list item at the end of a list, then remove it', async () => {
@@ -5880,70 +5554,70 @@ describe('List', () => {
                             });
                         });
                     });
-//                     describe('With attributes', () => {
-//                         it('should add two list items at the end of a list with a class', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: '<ul class="a"><li>abc[]</li></ul>',
-//                                 stepFunction: async (editor) => {
-//                                     await insertParagraphBreak(editor);
-//                                     await insertText(editor, 'b');
-//                                     await insertParagraphBreak(editor);
-//                                 },
-//                                 contentAfter:
-//                                     '<ul class="a"><li>abc</li><li>b</li><li>[]<br></li></ul>',
-//                             });
-//                         });
-//                         it('should add two list items with a class at the end of a list', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: '<ul><li class="a">abc[]</li></ul>',
-//                                 stepFunction: async (editor) => {
-//                                     await insertParagraphBreak(editor);
-//                                     await insertText(editor, 'b');
-//                                     await insertParagraphBreak(editor);
-//                                 },
-//                                 contentAfter:
-//                                     '<ul><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ul>',
-//                             });
-//                         });
-//                         it('should split dividers instead of creating new list items', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: '<ul><li class="a"><div>abc[]</div></li></ul>',
-//                                 stepFunction: async (editor) => {
-//                                     await insertParagraphBreak(editor);
-//                                     await insertText(editor, 'b');
-//                                     await insertParagraphBreak(editor);
-//                                 },
-//                                 contentAfter:
-//                                     '<ul><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ul>',
-//                             });
-//                         });
-//                         it('should split the div rather than create new list items', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: '<ul><li><div class="a">abc[]</div></li></ul>',
-//                                 stepFunction: async (editor) => {
-//                                     await insertParagraphBreak(editor);
-//                                     await insertText(editor, 'b');
-//                                     await insertParagraphBreak(editor);
-//                                 },
-//                                 contentAfter:
-//                                     '<ul><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ul>',
-//                             });
-//                         });
-//                         it('should keep the list-style when add li', async () => {
-//                             await testEditor(BasicEditor, {
-//                                 contentBefore: unformat(`
-//                                     <ul>
-//                                         <li style="list-style: cambodian;">a[]</li>
-//                                     </ul>`),
-//                                 stepFunction: insertParagraphBreak,
-//                                 contentAfter: unformat(`
-//                                 <ul>
-//                                     <li style="list-style: cambodian;">a</li>
-//                                     <li style="list-style: cambodian;">[]<br></li>
-//                                 </ul>`),
-//                             });
-//                         });
-//                     });
+                    describe('With attributes', () => {
+                        it('should add two list items at the end of a list with a class', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ul class="a"><li>abc[]</li></ul>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ul class="a"><li>abc</li><li>b</li><li>[]<br></li></ul>',
+                            });
+                        });
+                        it('should add two list items with a class at the end of a list', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ul><li class="a">abc[]</li></ul>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ul><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ul>',
+                            });
+                        });
+                        it('should split dividers instead of creating new list items', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ul><li class="a"><div>abc[]</div></li></ul>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ul><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ul>',
+                            });
+                        });
+                        it('should split the div rather than create new list items', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: '<ul><li><div class="a">abc[]</div></li></ul>',
+                                stepFunction: async (editor) => {
+                                    await insertParagraphBreak(editor);
+                                    await insertText(editor, 'b');
+                                    await insertParagraphBreak(editor);
+                                },
+                                contentAfter:
+                                    '<ul><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ul>',
+                            });
+                        });
+                        it('should keep the list-style when add li', async () => {
+                            await testEditor(BasicEditor, {
+                                contentBefore: unformat(`
+                                    <ul>
+                                        <li style="list-style: cambodian;">a[]</li>
+                                    </ul>`),
+                                stepFunction: insertParagraphBreak,
+                                contentAfter: unformat(`
+                                <ul>
+                                    <li style="list-style: cambodian;">a</li>
+                                    <li style="list-style: cambodian;">[]<br></li>
+                                </ul>`),
+                            });
+                        });
+                    });
                 });
                 describe('Checklist', () => {
                     describe('Basic', () => {
@@ -5956,10 +5630,7 @@ describe('List', () => {
                                     '<ul class="checklist"><li><br></li><li>[]abc</li></ul>',
                             });
                         });
-                        it.skip('should add an empty list item before a checklist item (checked)', async () => {
-                            // TODO: do not clone the `IsChecked` modifier
-                            // on split (waiting for `preserve` property of
-                            // `Modifier`).
+                        it('should add an empty list item before a checklist item (checked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul class="checklist"><li>[]abc</li></ul>',
@@ -5977,10 +5648,7 @@ describe('List', () => {
                                     '<ul class="checklist"><li>ab</li><li>[]cd</li></ul>',
                             });
                         });
-                        it.skip('should split a checklist item in two (checked)', async () => {
-                            // TODO: do not clone the `IsChecked` modifier
-                            // on split (waiting for `preserve` property of
-                            // `Modifier`).
+                        it('should split a checklist item in two (checked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul class="checklist"><li class="checked">ab[]cd</li></ul>',
@@ -5992,16 +5660,13 @@ describe('List', () => {
                         it('should add an empty list item after a checklist item (unchecked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
-                                    '<ul class="checklist"><li>abc[]</li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc[]</li></ul>',
                                 stepFunction: insertParagraphBreak,
                                 contentAfter:
-                                    '<ul class="checklist"><li>abc</li><li>[]<br></li></ul>',
+                                    '<ul class="checklist"><li class="checked">abc</li><li>[]<br></li></ul>',
                             });
                         });
-                        it.skip('should add an empty list item after a checklist item (checked)', async () => {
-                            // TODO: do not clone the `IsChecked` modifier
-                            // on split (waiting for `preserve` property of
-                            // `Modifier`).
+                        it('should add an empty list item after a checklist item (checked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul class="checklist"><li class="checked">abc[]</li></ul>',
@@ -6024,10 +5689,7 @@ describe('List', () => {
                                     '<ul class="checklist"><li class="checked">abc</li></ul><p>[]<br></p>',
                             });
                         });
-                        it.skip('should add an empty list item at the end of an indented list, then outdent it (checked)', async () => {
-                            // TODO: do not clone the `IsChecked` modifier
-                            // on split (waiting for `preserve` property of
-                            // `Modifier`).
+                        it('should add an empty list item at the end of an indented list, then outdent it (checked)', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul class="checklist"><li class="checked">abc</li><li class="nested"><ul class="checklist"><li class="checked">def[]</li></ul></li><li class="checked">ghi</li></ul>',
@@ -6068,185 +5730,185 @@ describe('List', () => {
                             });
                         });
                     });
-//                     describe('With attributes', () => {
-//                         describe('after unchecked item', () => {
-//                             it('should add two list items at the end of a checklist with a class', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist a"><li>abc[]</li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist a"><li>abc</li><li>d</li><li>[]<br></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a class at the end of a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li class="a unchecked">abc[]</li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li class="a unchecked">abc</li><li class="a unchecked">d</li><li class="a unchecked">[]<br></li></ul>',
-//                                 });
-//                             });
-//                             it('should split dividers rather than create new list items', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li class="a unchecked"><div>abc[]</div></li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li class="a unchecked"><div>abc</div><div>d</div><div>[]<br></div></li></ul>',
-//                                 });
-//                             });
-//                             it('should split diviers rather than create new list items', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li><div class="a">abc[]</div></li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li><div class="a">abc</div><div class="a">d</div><div class="a">[]<br></div></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a font at the end of a checklist within a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore: unformat(`
-//                                     <ul class="checklist">
-//                                         <li>ab</li>
-//                                         <li class="nested">
-//                                             <ul class="checklist">
-//                                                 <li>
-//                                                     <font style="color: red;">cd[]</font>
-//                                                 </li>
-//                                             </ul>
-//                                         </li>
-//                                         <li class="checked">ef</li>
-//                                     </ul>`),
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, '0');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter: unformat(`
-//                                     <ul class="checklist">
-//                                         <li>ab</li>
-//                                         <li class="nested">
-//                                             <ul class="checklist">
-//                                                 <li><font style="color: red;">cd</font></li>
-//                                                 <li><font style="color: red;">0</font></li>
-//                                                 <li>[]<br></li>
-//                                             </ul>
-//                                         </li>
-//                                         <li class="checked">ef</li>
-//                                     </ul>`),
-//                                 });
-//                             });
-//                         });
-//                         describe.skip('after checked item', () => {
-//                             // TODO: do not clone the `IsChecked` modifier
-//                             // on split (waiting for `preserve` property of
-//                             // `Modifier`).
-//                             it('should add two list items at the end of a checklist with a class', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist a"><li class="checked">abc[]</li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist a"><li class="checked">abc</li><li>d</li><li>[]<br></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a class at the end of a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li class="a checked">abc[]</li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li class="a checked">abc</li><li class="a unchecked">d</li><li class="a unchecked">[]<br></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a class and a div at the end of a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li class="a checked"><div>abc[]</div></li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li class="a checked"><div>abc</div></li><li class="a unchecked"><div>d</div></li><li class="a unchecked"><div>[]<br></div></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a div with a class at the end of a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore:
-//                                         '<ul class="checklist"><li class="checked"><div class="a">abc[]</div></li></ul>',
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, 'd');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter:
-//                                         '<ul class="checklist"><li class="checked"><div class="a">abc</div></li><li><div class="a">d</div></li><li><div class="a">[]<br></div></li></ul>',
-//                                 });
-//                             });
-//                             it('should add two list items with a font at the end of a checklist within a checklist', async () => {
-//                                 await testEditor(BasicEditor, {
-//                                     contentBefore: unformat(`
-//                                     <ul class="checklist">
-//                                         <li class="checked">ab</li>
-//                                         <li class="nested">
-//                                             <ul class="checklist">
-//                                                 <li class="checked">
-//                                                     <font style="color: red;">cd[]</font>
-//                                                 </li>
-//                                             </ul>
-//                                         </li>
-//                                         <li class="checked">ef</li>
-//                                     </ul>`),
-//                                     stepFunction: async (editor) => {
-//                                         await insertParagraphBreak(editor);
-//                                         await insertText(editor, '0');
-//                                         await insertParagraphBreak(editor);
-//                                     },
-//                                     contentAfter: unformat(`
-//                                     <ul class="checklist">
-//                                         <li>ab</li>
-//                                         <li class="nested">
-//                                             <ul class="checklist">
-//                                                 <li class="checked"><font style="color: red;">cd</font></li>
-//                                                 <li><font style="color: red;">0</font></li>
-//                                                 <li>[]<br></li>
-//                                             </ul>
-//                                         </li>
-//                                         <li class="checked">ef</li>
-//                                     </ul>`),
-//                                 });
-//                             });
-//                         });
-//                     });
+                    describe('With attributes', () => {
+                        describe('after unchecked item', () => {
+                            it('should add two list items at the end of a checklist with a class', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist a"><li>abc[]</li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist a"><li>abc</li><li>d</li><li>[]<br></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a class at the end of a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li class="a unchecked">abc[]</li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li class="a unchecked">abc</li><li class="a unchecked">d</li><li class="a unchecked">[]<br></li></ul>',
+                                });
+                            });
+                            it('should split dividers rather than create new list items', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li class="a unchecked"><div>abc[]</div></li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li class="a unchecked"><div>abc</div><div>d</div><div>[]<br></div></li></ul>',
+                                });
+                            });
+                            it('should split diviers rather than create new list items', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li><div class="a">abc[]</div></li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li><div class="a">abc</div><div class="a">d</div><div class="a">[]<br></div></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a font at the end of a checklist within a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore: unformat(`
+                                    <ul class="checklist">
+                                        <li>ab</li>
+                                        <li class="nested">
+                                            <ul class="checklist">
+                                                <li>
+                                                    <font style="color: red;">cd[]</font>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="checked">ef</li>
+                                    </ul>`),
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, '0');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter: unformat(`
+                                    <ul class="checklist">
+                                        <li>ab</li>
+                                        <li class="nested">
+                                            <ul class="checklist">
+                                                <li><font style="color: red;">cd</font></li>
+                                                <li><font style="color: red;">0</font></li>
+                                                <li><font style="color: red;">[]</font><br></li>
+                                            </ul>
+                                        </li>
+                                        <li class="checked">ef</li>
+                                    </ul>`),
+                                });
+                            });
+                        });
+                        describe.skip('after checked item', () => {
+                            // TODO: do not clone the `IsChecked` modifier
+                            // on split (waiting for `preserve` property of
+                            // `Modifier`).
+                            it('should add two list items at the end of a checklist with a class', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist a"><li class="checked">abc[]</li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist a"><li class="checked">abc</li><li>d</li><li>[]<br></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a class at the end of a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li class="a checked">abc[]</li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li class="a checked">abc</li><li class="a unchecked">d</li><li class="a unchecked">[]<br></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a class and a div at the end of a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li class="a checked"><div>abc[]</div></li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li class="a checked"><div>abc</div></li><li class="a unchecked"><div>d</div></li><li class="a unchecked"><div>[]<br></div></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a div with a class at the end of a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore:
+                                        '<ul class="checklist"><li class="checked"><div class="a">abc[]</div></li></ul>',
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, 'd');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter:
+                                        '<ul class="checklist"><li class="checked"><div class="a">abc</div></li><li><div class="a">d</div></li><li><div class="a">[]<br></div></li></ul>',
+                                });
+                            });
+                            it('should add two list items with a font at the end of a checklist within a checklist', async () => {
+                                await testEditor(BasicEditor, {
+                                    contentBefore: unformat(`
+                                    <ul class="checklist">
+                                        <li class="checked">ab</li>
+                                        <li class="nested">
+                                            <ul class="checklist">
+                                                <li class="checked">
+                                                    <font style="color: red;">cd[]</font>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="checked">ef</li>
+                                    </ul>`),
+                                    stepFunction: async (editor) => {
+                                        await insertParagraphBreak(editor);
+                                        await insertText(editor, '0');
+                                        await insertParagraphBreak(editor);
+                                    },
+                                    contentAfter: unformat(`
+                                    <ul class="checklist">
+                                        <li>ab</li>
+                                        <li class="nested">
+                                            <ul class="checklist">
+                                                <li class="checked"><font style="color: red;">cd</font></li>
+                                                <li><font style="color: red;">0</font></li>
+                                                <li>[]<br></li>
+                                            </ul>
+                                        </li>
+                                        <li class="checked">ef</li>
+                                    </ul>`),
+                                });
+                            });
+                        });
+                    });
                 });
                 describe('Mixed', () => {
                     describe('Ordered to unordered', () => {});

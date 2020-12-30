@@ -12,6 +12,7 @@ import {
     setCursorStart,
     setTagName,
     splitTextNode,
+    toggleClass
 } from "../utils/utils.js";
 
 Text.prototype.oEnter = function (offset) {
@@ -68,6 +69,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
 
         setCursorStart(splitEl);
     }
+    return splitEl;
 };
 /**
  * Specific behavior for headings: do not split in two if cursor at the end but
@@ -76,8 +78,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
  * Cursor in the line: <h1>tit[]le</h1> + ENTER <=> <h1>tit</h1><h1>[]le</h1>
  */
 HTMLHeadingElement.prototype.oEnter = function () {
-    HTMLElement.prototype.oEnter.call(this, ...arguments);
-    const newEl = this.nextSibling;
+    const newEl = HTMLElement.prototype.oEnter.call(this, ...arguments);
     if (!newEl.textContent) {
         let node = setTagName(newEl, 'P');
         setCursorStart(node);
@@ -93,7 +94,11 @@ HTMLQuoteElement.prototype.oEnter = HTMLHeadingElement.prototype.oEnter;
 HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
-        return HTMLElement.prototype.oEnter.call(this, ...arguments);
+        let node = HTMLElement.prototype.oEnter.call(this, ...arguments);
+        if (node.classList.contains('checked')) {
+            toggleClass(node, "checked");
+        }
+        return node;
     }
     this.oShiftTab();
 };
