@@ -6,12 +6,10 @@
 - mobile support
 - colors
 
-Optimizations
-- deleteBackward: optimize to remove consecutive spaces in one shot
-- deleteRange: optimize to remove included full TextNode at once
 
-Lists
-- implement click
-- sanitizer
-    - remove <p> alone element in <li>
-    - implement value="?" on <ol>
+Optimizations to do
+- deleteBackward: optimize to remove consecutive spaces in one shot
+- deleteRange: optimize to remove included full Nodes at once
+- idFind is probably very slow
+- idSet: assign ouid by reusing parents' ouid
+

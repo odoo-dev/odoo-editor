@@ -25,7 +25,7 @@ HTMLElement.prototype.oShiftTab = function (offset = undefined) {
 HTMLLIElement.prototype.oShiftTab = function (offset) {
     let li = this;
     if (li.nextElementSibling) {
-        let ul = createList(getListMode(li.parentElement));
+        let ul = li.parentElement.cloneNode(false);
         while (li.nextSibling) {
             ul.append(li.nextSibling);
         }
