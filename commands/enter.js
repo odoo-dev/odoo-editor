@@ -31,11 +31,6 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
-    if (isUnbreakable(this)) {
-        // FIXME to see if to be handled by the mutation observer
-        throw UNBREAKABLE_ROLLBACK_CODE;
-    }
-
     let restore;
     if (firstSplit) {
         restore = prepareUpdate(this, offset);
