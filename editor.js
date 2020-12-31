@@ -18,6 +18,7 @@ import {
     commonParentGet,
     containsUnbreakable,
     getListMode,
+    inUnbreakable,
     nodeSize,
     leftDeepFirstPath,
     leftDeepOnlyPath,
@@ -35,7 +36,7 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 
 export default class OdooEditor {
     constructor(dom, toSanitize=true) {
-        dom.oid = 1; // convention: root node is ID 1
+        dom.oid = 1;                                      // convention: root node is ID 1
         this.dom = toSanitize ? sanitize(dom) : dom;
         this.history = [{
             cursor: { // cursor at beginning of step
@@ -47,9 +48,10 @@ export default class OdooEditor {
         }];
         this.undos = new Map();
         this.vdom = dom.cloneNode(true);
-        this.idSet(dom, this.vdom);
 
         dom.setAttribute("contentEditable", true);
+        this.idSet(dom, this.vdom);
+
         this.observerActive();
 
         this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
@@ -95,9 +97,16 @@ export default class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined) {
+    idSet(src, dest = undefined, testunbreak=false) {
         if (!src.oid) {
             src.oid = Math.random() * 2 ** 31 | 0; // TODO: uuid4 or higher number
+        }
+        if (!src.ouid) {
+            const unbreak = inUnbreakable(src);    // TODO: improve for perfs: we can reuse the parent if ouid is set
+            src.ouid = unbreak && unbreak.oid;
+        } else if (testunbreak) {
+            const unbreak = inUnbreakable(src);
+            this.torollback |= (unbreak && unbreak.ouid != src.ouid);
         }
         if (dest && !dest.oid) {
             dest.oid = src.oid;
@@ -105,7 +114,7 @@ export default class OdooEditor {
         let childsrc = src.firstChild;
         let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
-            this.idSet(childsrc, childdest);
+            this.idSet(childsrc, childdest, testunbreak);
             childsrc = childsrc.nextSibling;
             childdest = dest ? childdest.nextSibling : undefined;
         }
@@ -182,8 +191,6 @@ export default class OdooEditor {
                 case "childList": {
                     record.addedNodes.forEach((added, index) => {
                         this.torollback |= containsUnbreakable(added);
-                        // TODO: check that a node does not move from one unBreakable to another
-                        // this.torollback |= dest && (inUnbreakable(added).oid != inUnbreakable(dest).oid);
                         let action = {
                             'type': "add",
                         };
@@ -196,7 +203,7 @@ export default class OdooEditor {
                         } else {
                             return false;
                         }
-                        this.idSet(added);
+                        this.idSet(added, undefined, true);
                         action['id'] = added.oid;
                         action['node'] = this.serialize(added);
                         this.history[this.history.length - 1].dom.push(action);
