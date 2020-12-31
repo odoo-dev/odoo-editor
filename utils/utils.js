@@ -487,11 +487,14 @@ export function containsUnbreakable(node) {
     return isUnbreakable(node) || containsUnbreakable(node.firstChild);
 }
 
-export function inUnbreakable(node) {
+// optimize: use the parent Oid to speed up detection
+export function getOuid(node, optimize=false) {
     while (node && !isUnbreakable(node)) {
+        if (node.ouid && optimize)
+            return node.ouid
         node = node.parentNode;
     }
-    return node || null;
+    return node && node.oid;
 }
 /**
  * Returns whether the given node is a element that could be considered to be

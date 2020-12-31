@@ -18,7 +18,7 @@ import {
     commonParentGet,
     containsUnbreakable,
     getListMode,
-    inUnbreakable,
+    getOuid,
     nodeSize,
     leftDeepFirstPath,
     leftDeepOnlyPath,
@@ -47,9 +47,11 @@ export default class OdooEditor {
             id: undefined
         }];
         this.undos = new Map();
-        this.vdom = dom.cloneNode(true);
 
+        // set contentEditable before clone as FF updates the content at this point
         dom.setAttribute("contentEditable", true);
+        this.vdom = dom.cloneNode(true);
+        this.vdom.removeAttribute("contentEditable");
         this.idSet(dom, this.vdom);
 
         this.observerActive();
@@ -101,13 +103,13 @@ export default class OdooEditor {
         if (!src.oid) {
             src.oid = Math.random() * 2 ** 31 | 0; // TODO: uuid4 or higher number
         }
-        if (!src.ouid) {
-            const unbreak = inUnbreakable(src);    // TODO: improve for perfs: we can reuse the parent if ouid is set
-            src.ouid = unbreak && unbreak.oid;
-        } else if (testunbreak) {
-            const unbreak = inUnbreakable(src);
-            this.torollback |= (unbreak && unbreak.ouid != src.ouid);
+        // rollback if src.ouid changed
+        src.ouid ||= getOuid(src, true);
+        if (testunbreak) {
+            const ouid = getOuid(src);
+            this.torollback ||= ouid && (ouid != src.ouid);
         }
+
         if (dest && !dest.oid) {
             dest.oid = src.oid;
         }
