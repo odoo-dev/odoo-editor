@@ -719,8 +719,9 @@ export default class OdooEditor {
         this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
         this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
         this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
-        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "UL"));
-        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (pnode.parentElement.tagName === "OL"));
+        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "UL"));
+        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "OL"));
+        this.toolbar.querySelector('#checklist').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "CL"));
     }
 
     //--------------------------------------------------------------------------
@@ -818,7 +819,7 @@ export default class OdooEditor {
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
-            } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
+            } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else {
                 let sel = document.defaultView.getSelection();
