@@ -654,6 +654,9 @@ export default class OdooEditor {
         if (['toggleList', 'createLink', 'unLink'].includes(method)) {
             return this['_'+method](...args);
         }
+        if (method.startsWith('justify')) {
+            return document.execCommand(method, false, '');
+        }
         return sel.anchorNode[method](sel.anchorOffset, ...args);
     }
 
@@ -741,12 +744,9 @@ export default class OdooEditor {
         if (show === false) {
             return;
         }
-
-        this.toolbar.querySelector('#bold').classList.toggle('active', document.queryCommandState("bold"));
-        this.toolbar.querySelector('#italic').classList.toggle('active', document.queryCommandState("italic"));
-        this.toolbar.querySelector('#underline').classList.toggle('active', document.queryCommandState("underline"));
-        this.toolbar.querySelector('#strikeThrough').classList.toggle('active', document.queryCommandState("strikeTrough"));
-
+        for (let commandState of ["bold", "italic", "underline", "strikeThrough", "justifyLeft", "justifyRight", "justifyCenter", "justifyFull"]) {
+            this.toolbar.querySelector('#'+commandState).classList.toggle('active', document.queryCommandState(commandState));
+        }
         let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
         this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
@@ -758,7 +758,7 @@ export default class OdooEditor {
         this.toolbar.querySelector('#checklist').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "CL"));
         const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
         this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
-        this.toolbar.querySelector('#unlink').classList.toggle('active', linkNode);
+        this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
     }
 
     //--------------------------------------------------------------------------
@@ -861,6 +861,8 @@ export default class OdooEditor {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
+            } else if (buttonEl.id.startsWith('justify')) {
+                this.execCommand(buttonEl.id);
             } else {
                 let sel = document.defaultView.getSelection();
                 let pnode = closestBlock(sel.anchorNode);
