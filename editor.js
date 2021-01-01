@@ -858,13 +858,9 @@ export default class OdooEditor {
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
-<<<<<<< HEAD
-            } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
-=======
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
-            } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
->>>>>>> master-link-edu
+            } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else {
                 let sel = document.defaultView.getSelection();
