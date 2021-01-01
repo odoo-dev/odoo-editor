@@ -578,7 +578,7 @@ export default class OdooEditor {
             this.deleteRange(sel);
         }
         if (sel.isCollapsed) {
-            insertText(sel, content || '#');
+            insertText(sel, content || 'link');
         }
         if (document.execCommand('createLink', false, '#')) {
             const node = findNode(closestPath(sel.focusNode), node => node.tagName === "A");
@@ -735,10 +735,8 @@ export default class OdooEditor {
         if (!sel.anchorNode) {
             show = false;
         }
-        this.toolbar.style.visibility = 'visible';
-
         if (show !== undefined) {
-            // this.toolbar.style.visibility = show ? 'visible' : 'hidden';
+            this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
         if (show === false) {
             return;
@@ -759,8 +757,8 @@ export default class OdooEditor {
         this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "OL"));
         this.toolbar.querySelector('#checklist').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "CL"));
         const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
-        this.toolbar.querySelector('#oCreateLink').classList.toggle('active', linkNode);
-        this.toolbar.querySelector('#oUnlink').classList.toggle('active', linkNode);
+        this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
+        this.toolbar.querySelector('#unlink').classList.toggle('active', linkNode);
     }
 
     //--------------------------------------------------------------------------
