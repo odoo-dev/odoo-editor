@@ -2,18 +2,19 @@ import { BasicEditor, insertText, insertParagraphBreak, insertLineBreak, testEdi
 
 const convertToLink = createLink;
 const unLink = async function (editor) {
-    editor.execCommand('oUnlink');
+    editor.execCommand('unLink');
 };
+
 describe('Link', () => {
     describe('insert Link', () => {
         // This fails, but why would the cursor stay inside the link
         // if the next text insert should be outside of the link (see next test)
         describe('range collapsed', () => {
-            it('should insert a link', async () => {
+            it('should insert a link and preserve spacing', async () => {
                 await testEditor(BasicEditor, {
-                    contentBefore: '<p>a[]c</p>',
+                    contentBefore: '<p>a [] c</p>',
                     stepFunction: createLink,
-                    contentAfter: '<p>a<a href="#">x[]</a>c</p>',
+                    contentAfter: '<p>a <a href="#">#</a>[]c</p>',
                 });
             });
             it('should insert a link and write a character after the link', async () => {
@@ -23,7 +24,7 @@ describe('Link', () => {
                         await createLink(editor);
                         await insertText(editor, 'b');
                     },
-                    contentAfter: '<p>a<a href="#">x</a>b[]c</p>',
+                    contentAfter: '<p>a<a href="#">#</a>b[]c</p>',
                 });
             });
             it('should write two characters after the link', async () => {
@@ -34,7 +35,7 @@ describe('Link', () => {
                         await insertText(editor, 'b');
                         await insertText(editor, 'c');
                     },
-                    contentAfter: '<p>a<a href="#">x</a>bc[]d</p>',
+                    contentAfter: '<p>a<a href="#">#</a>bc[]d</p>',
                 });
             });
             it('should insert a link and write a character after the link then create a new <p>', async () => {
@@ -45,7 +46,7 @@ describe('Link', () => {
                         await insertText(editor, 'b');
                         await insertParagraphBreak(editor);
                     },
-                    contentAfter: '<p>a<a href="#">x</a>b</p><p>[]c</p>',
+                    contentAfter: '<p>a<a href="#">#</a>b</p><p>[]c</p>',
                 });
             });
             it('should insert a link and write a character, a new <p> and another character', async () => {
@@ -57,7 +58,7 @@ describe('Link', () => {
                         await insertParagraphBreak(editor);
                         await insertText(editor, 'c');
                     },
-                    contentAfter: '<p>a<a href="#">x</a>b</p><p>c[]d</p>',
+                    contentAfter: '<p>a<a href="#">#</a>b</p><p>c[]d</p>',
                 });
             });
             it('should insert a link and write a character at the end of the link then insert a <br>', async () => {
@@ -69,7 +70,7 @@ describe('Link', () => {
                         await insertLineBreak(editor);
                     },
                     // Writing at the end of a link writes outside the link.
-                    contentAfter: '<p>a<a href="#">x</a>b<br>[]c</p>',
+                    contentAfter: '<p>a<a href="#">#</a>b<br>[]c</p>',
                 });
             });
             it('should insert a link and write a character insert a <br> and another character', async () => {
@@ -82,7 +83,7 @@ describe('Link', () => {
                         await insertText(editor, 'c');
                     },
                     // Writing at the end of a link writes outside the link.
-                    contentAfter: '<p>a<a href="#">x</a>b<br>c[]d</p>',
+                    contentAfter: '<p>a<a href="#">#</a>b<br>c[]d</p>',
                 });
             });
             it('should insert a <br> inside a link', async () => {
@@ -104,7 +105,7 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await convertToLink(editor);
                     },
-                    contentAfter: '<p>a<a href="#">bc[]</a>d</p>',
+                    contentAfter: '<p>a<a href="#">bc</a>[]d</p>',
                 });
             });
             it('should set the link on two existing characters, lose range and add a character', async () => {
@@ -123,9 +124,9 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a[bc]d</p>',
                     stepFunction: async editor => {
-                        await createLink(editor, 'x');
+                        await createLink(editor, '#');
                     },
-                    contentAfter: '<p>a<a href="#">x[]</a>d</p>',
+                    contentAfter: '<p>a<a href="#">#</a>[]d</p>',
                 });
             });
         });
@@ -177,7 +178,8 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">bc[</a>d]e</p>',
+                    // JW cAfter: '<p>a<a href="exist">bc[</a>d]e</p>',
+                    contentAfter: '<p>a<a href="exist">bc</a>[d]e</p>',
                 });
             });
             it('should remove the link in the selected range in the middle of a link', async () => {
@@ -186,7 +188,8 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">b[</a>c]<a href="exist">d</a>e</p>',
+                    // JW cAfter: '<p>a<a href="exist">b[</a>c]<a href="exist">d</a>e</p>',
+                    contentAfter: '<p>a<a href="exist">b</a>[c]<a href="exist">d</a>e</p>',
                 });
             });
             it('should remove the link in the selected range at the start of a link', async () => {
@@ -204,7 +207,7 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">bc[</a>de]f</p>',
+                    contentAfter: '<p>a<a href="exist">bc</a>[de]f</p>',
                 });
             });
             it('should remove the link in the selected range overlapping the start of a link', async () => {
@@ -252,7 +255,8 @@ describe('Link', () => {
                 stepFunction: async editor => {
                     await insertText(editor, 'c');
                 },
-                contentAfter: '<p>a<span><a href="exist">b</a>c[]</span>d</p>',
+                // JW cAfter: '<p>a<span><a href="exist">b</a>c[]</span>d</p>',
+                contentAfter: '<p>a<a href="exist"><span>bc[]</span></a>d</p>',
             });
         });
         it('should parse correctly a span inside a Link then add a char 2', async () => {
@@ -270,7 +274,8 @@ describe('Link', () => {
                 stepFunction: async editor => {
                     await insertText(editor, 'd');
                 },
-                contentAfter: '<p>a<a href="exist"><span>b</span>c</a>d[]e</p>',
+                // JW cAfter: '<p>a<a href="exist"><span>b</span>c</a>d[]e</p>',
+                contentAfter: '<p>a<a href="exist"><span>b</span>cd[]</a>e</p>',
             });
         });
         it('should add a character after the link', async () => {
@@ -279,7 +284,8 @@ describe('Link', () => {
                 stepFunction: async editor => {
                     await insertText(editor, 'c');
                 },
-                contentAfter: '<p>a<a href="exist">b</a>c[]d</p>',
+                // JW cAfter: '<p>a<a href="exist">b</a>c[]d</p>',
+                contentAfter: '<p>a<a href="exist">bc[]</a>d</p>',
             });
         });
         it('should add a character after the link if range just after link', async () => {

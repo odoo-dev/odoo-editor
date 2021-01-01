@@ -7,8 +7,6 @@ import {} from "./commands/shiftEnter.js";
 import {} from "./commands/shiftTab.js";
 import {} from "./commands/tab.js";
 import {} from "./commands/toggleList.js";
-import { } from "./commands/createLink.js";
-import { } from "./commands/unlink.js";
 
 import {sanitize} from "./utils/sanitize.js";
 import {
@@ -16,16 +14,19 @@ import {
     objectToNode,
 } from "./utils/serialize.js";
 import {
+    childNodeIndex,
     closestBlock,
     closestPath,
     commonParentGet,
     containsUnbreakable,
     getListMode,
+    insertText,
     inUnbreakable,
     nodeSize,
     leftDeepFirstPath,
     leftDeepOnlyPath,
     prepareUpdate,
+    preserveCursor,
     rightPos,
     setCursor,
     setTagName,
@@ -567,7 +568,34 @@ export default class OdooEditor {
             sel = document.defaultView.getSelection();
             pos2 = [sel.anchorNode, sel.anchorOffset];
         } while (fakeEl.parentNode);
+    }
 
+    _createLink(link="#", content) {
+        const sel = document.defaultView.getSelection();
+        if (content && !sel.isCollapsed) {
+            this.deleteRange(sel);
+        }
+        if (sel.isCollapsed) {
+            insertText(sel, content || '#');
+        }
+        if (document.execCommand('createLink', false, '#')) {
+            const node = findNode(closestPath(sel.focusNode), node => node.tagName === "A");
+            let pos = [node.parentElement, childNodeIndex(node)+1]
+            setCursor(...pos, ...pos, false);
+        }
+    }
+
+    _unLink(offset, content) {
+        const sel = document.defaultView.getSelection();
+        if (sel.isCollapsed) {
+            const cr = preserveCursor();
+            const node = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+            setCursor(node, 0, node, node.childNodes.length, false);
+            document.execCommand('unlink');
+            cr();
+        } else {
+            document.execCommand('unlink');
+        }
     }
 
     _toggleList(mode) {
@@ -621,8 +649,8 @@ export default class OdooEditor {
                 return true;
             }
         }
-        if (method=='toggleList') {
-            return this._toggleList(...args);
+        if (['toggleList', 'createLink', 'unLink'].includes(method)) {
+            return this['_'+method](...args);
         }
         return sel.anchorNode[method](sel.anchorOffset, ...args);
     }
@@ -827,7 +855,7 @@ export default class OdooEditor {
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
-            } else if (['oCreateLink', 'oUnlink'].includes(buttonEl.id)) {
+            } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);

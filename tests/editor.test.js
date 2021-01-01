@@ -1130,11 +1130,18 @@ describe('Editor', () => {
                         contentAfter: '<p>[]&nbsp;bc</p>',
                     });
                 });
+                it('should delete a space', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab [] de</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab[]de</p>',
+                    });
+                });
                 it('should delete a one letter word', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab c[] de</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<p>ab&nbsp;[] de</p>',
+                        contentAfter: '<p>ab []&nbsp;de</p>',
                     });
                 });
                 it('should fill empty block with a <br>', async () => {

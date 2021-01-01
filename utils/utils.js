@@ -680,6 +680,19 @@ export function splitTextNode(textNode, offset) {
     }
     return parentOffset;
 }
+
+export function insertText(sel, content) {
+    if (sel.anchorNode.nodeType == Node.TEXT_NODE) {
+        let pos = [sel.anchorNode.parentElement, splitTextNode(sel.anchorNode, sel.anchorOffset)]
+        setCursor(...pos, ...pos, false);
+    }
+    const txt = document.createTextNode(content || '#')
+    const restore = prepareUpdate(sel.anchorNode, sel.anchorOffset);
+    sel.getRangeAt(0).insertNode(txt);
+    restore();
+    setCursor(...boundariesOut(txt), false);
+}
+
 /**
  * Add a BR in the given node if its closest ancestor block has nothing to make
  * it visible.
@@ -888,19 +901,11 @@ export function getState(el, offset, direction, leftCType) {
                     lastSpace = node;
                 }
             } else {
+                leftCType = leftCType || getState(el, offset, DIRECTIONS.LEFT).cType;
                 if (expr.test(value)) {
-                    if (leftCType === undefined) {
-                        leftCType = getState(el, offset, DIRECTIONS.LEFT).cType;
-                    }
-                    if (leftCType & (CTGROUPS.INLINE | CTGROUPS.BR)) {
-                        if (isVisibleStr(value)) {
-                            cType = CTYPES.SPACE;
-                        } else {
-                            const rct = getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
-                            cType = (rct & CTGROUPS.BLOCK) ? rct : CTYPES.SPACE;
-                        }
-                        break;
-                    }
+                    const rct = isVisibleStr(value) ? CTYPES.CONTENT : getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
+                    cType = ((leftCType & CTYPES.CONTENT) && (rct & (CTYPES.CONTENT | CTYPES.BR))) ? CTYPES.SPACE: rct;
+                    break;
                 }
                 if (isVisibleStr(value)) {
                     cType = CTYPES.CONTENT;

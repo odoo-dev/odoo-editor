@@ -2,7 +2,10 @@
 
 import OdooEditor from "../editor.js";
 import {sanitize} from "../utils/sanitize.js";
-import {setCursor} from "../utils/utils.js";
+import {
+    setCursor,
+    insertText as insertTextSel
+} from "../utils/utils.js";
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -364,25 +367,13 @@ export async function toggleBold(editor) {
 }
 
 export async function createLink(editor, content) {
-    editor.execCommand('oCreateLink', content);
+    editor.execCommand('createLink', '#', content);
 }
 
 export async function insertText(editor, text) {
-    document.execCommand('insertText', false, text);
-    // const sel = document.defaultView.getSelection()
-    // let node = sel.anchorNode;
-    // if (node.nodeType == Node.TEXT_NODE) {
-    //     node.nodeValue = node.nodeValue.substring(0,sel.anchorOffset)+text+node.nodeValue.substring(sel.anchorOffset)
-    //     setCursor(node, sel.anchorOffset+text.length);
-    // } else {
-    //     const txt = document.createTextNode(text);
-    //     if (sel.anchorOffset>=node.childNodes.length) {
-    //         node.append(txt)
-    //     } else {
-    //         node.insertBefore(txt, node.childNodes[sel.anchorOffset])
-    //     }
-    //     setCursor(txt, text.length);
-    // }
+    const sel = document.defaultView.getSelection();
+    insertTextSel(sel, text);
+    sel.collapseToEnd();
 };
 
 export async function testVdom(Editor, spec) {
