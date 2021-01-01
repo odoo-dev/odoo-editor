@@ -33,24 +33,24 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     }
 
     // First, split around the character where the backspace occurs
-    const firstSplitOffset = splitTextNode(this, offset);
-    const middleNode = parentNode.childNodes[firstSplitOffset - 1];
-    const secondSplitOffset = splitTextNode(middleNode, middleNode.length - 1);
+    const firstSplitOffset = splitTextNode(this, offset - 1);
+    const secondSplitOffset = splitTextNode(parentNode.childNodes[firstSplitOffset], 1);
+    let middleNode = parentNode.childNodes[firstSplitOffset];
 
     // Do remove the character, then restore the state of the surrounding parts.
-    const restore = prepareUpdate(parentNode, secondSplitOffset, parentNode, firstSplitOffset);
+    const restore = prepareUpdate(parentNode, firstSplitOffset, parentNode, secondSplitOffset);
     const isSpace = !isVisibleStr(middleNode);
     middleNode.remove();
     restore();
 
     // If the removed element was not visible content, propagate the backspace.
-    if (isSpace && (getState(parentNode, secondSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT)) {
-        parentNode.oDeleteBackward(secondSplitOffset, alreadyMoved);
+    if (isSpace && (getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT)) {
+        parentNode.oDeleteBackward(firstSplitOffset, alreadyMoved);
         return;
     }
 
     fillEmpty(parentNode);
-    setCursor(parentNode, secondSplitOffset);
+    setCursor(parentNode, firstSplitOffset);
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {

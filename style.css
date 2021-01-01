@@ -44,6 +44,8 @@ html, body {
     visibility: hidden;
     background: #222222;
     color: white;
+    width: 100%;
+    overflow-y: scroll;
 }
 .toolbar div.btn {
     box-sizing: content-box;

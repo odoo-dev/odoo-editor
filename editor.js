@@ -14,20 +14,25 @@ import {
     objectToNode,
 } from "./utils/serialize.js";
 import {
+    childNodeIndex,
     closestBlock,
+    closestPath,
     commonParentGet,
     containsUnbreakable,
     getListMode,
     getOuid,
+    insertText,
     nodeSize,
     leftDeepFirstPath,
     leftDeepOnlyPath,
     prepareUpdate,
+    preserveCursor,
     rightPos,
     setCursor,
     setTagName,
     splitTextNode,
     toggleClass,
+    findNode,
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -61,6 +66,7 @@ export default class OdooEditor {
         this.dom.addEventListener('mousedown', this._onClick.bind(this));
 
         document.onselectionchange = this._onSelectionChange.bind(this);
+        document.onclick = this._onSelectionChange.bind(this);
 
         this.toolbar = document.querySelector('#toolbar');
         this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
@@ -564,7 +570,34 @@ export default class OdooEditor {
             sel = document.defaultView.getSelection();
             pos2 = [sel.anchorNode, sel.anchorOffset];
         } while (fakeEl.parentNode);
+    }
 
+    _createLink(link="#", content) {
+        const sel = document.defaultView.getSelection();
+        if (content && !sel.isCollapsed) {
+            this.deleteRange(sel);
+        }
+        if (sel.isCollapsed) {
+            insertText(sel, content || '#');
+        }
+        if (document.execCommand('createLink', false, '#')) {
+            const node = findNode(closestPath(sel.focusNode), node => node.tagName === "A");
+            let pos = [node.parentElement, childNodeIndex(node)+1]
+            setCursor(...pos, ...pos, false);
+        }
+    }
+
+    _unLink(offset, content) {
+        const sel = document.defaultView.getSelection();
+        if (sel.isCollapsed) {
+            const cr = preserveCursor();
+            const node = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+            setCursor(node, 0, node, node.childNodes.length, false);
+            document.execCommand('unlink');
+            cr();
+        } else {
+            document.execCommand('unlink');
+        }
     }
 
     _toggleList(mode) {
@@ -618,10 +651,10 @@ export default class OdooEditor {
                 return true;
             }
         }
-        if (method=='toggleList') {
-            return this._toggleList(...args);
+        if (['toggleList', 'createLink', 'unLink'].includes(method)) {
+            return this['_'+method](...args);
         }
-        return sel.anchorNode[method](sel.anchorOffset);
+        return sel.anchorNode[method](sel.anchorOffset, ...args);
     }
 
     /**
@@ -702,9 +735,10 @@ export default class OdooEditor {
         if (!sel.anchorNode) {
             show = false;
         }
+        this.toolbar.style.visibility = 'visible';
 
         if (show !== undefined) {
-            this.toolbar.style.visibility = show ? 'visible' : 'hidden';
+            // this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
         if (show === false) {
             return;
@@ -724,6 +758,9 @@ export default class OdooEditor {
         this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "UL"));
         this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "OL"));
         this.toolbar.querySelector('#checklist').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "CL"));
+        const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+        this.toolbar.querySelector('#oCreateLink').classList.toggle('active', linkNode);
+        this.toolbar.querySelector('#oUnlink').classList.toggle('active', linkNode);
     }
 
     //--------------------------------------------------------------------------
@@ -821,7 +858,13 @@ export default class OdooEditor {
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
                 document.execCommand('foreColor', false, "red");
+<<<<<<< HEAD
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
+=======
+            } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
+                this.execCommand(buttonEl.id);
+            } else if (['ordered', 'unordered'].includes(buttonEl.id)) {
+>>>>>>> master-link-edu
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else {
                 let sel = document.defaultView.getSelection();
