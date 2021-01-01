@@ -14,7 +14,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a [] c</p>',
                     stepFunction: createLink,
-                    contentAfter: '<p>a <a href="#">#</a>[]c</p>',
+                    contentAfter: '<p>a <a href="#">link</a>[]c</p>',
                 });
             });
             it('should insert a link and write a character after the link', async () => {
@@ -24,7 +24,7 @@ describe('Link', () => {
                         await createLink(editor);
                         await insertText(editor, 'b');
                     },
-                    contentAfter: '<p>a<a href="#">#</a>b[]c</p>',
+                    contentAfter: '<p>a<a href="#">link</a>b[]c</p>',
                 });
             });
             it('should write two characters after the link', async () => {
@@ -35,7 +35,7 @@ describe('Link', () => {
                         await insertText(editor, 'b');
                         await insertText(editor, 'c');
                     },
-                    contentAfter: '<p>a<a href="#">#</a>bc[]d</p>',
+                    contentAfter: '<p>a<a href="#">link</a>bc[]d</p>',
                 });
             });
             it('should insert a link and write a character after the link then create a new <p>', async () => {
@@ -46,7 +46,7 @@ describe('Link', () => {
                         await insertText(editor, 'b');
                         await insertParagraphBreak(editor);
                     },
-                    contentAfter: '<p>a<a href="#">#</a>b</p><p>[]c</p>',
+                    contentAfter: '<p>a<a href="#">link</a>b</p><p>[]c</p>',
                 });
             });
             it('should insert a link and write a character, a new <p> and another character', async () => {
@@ -58,7 +58,7 @@ describe('Link', () => {
                         await insertParagraphBreak(editor);
                         await insertText(editor, 'c');
                     },
-                    contentAfter: '<p>a<a href="#">#</a>b</p><p>c[]d</p>',
+                    contentAfter: '<p>a<a href="#">link</a>b</p><p>c[]d</p>',
                 });
             });
             it('should insert a link and write a character at the end of the link then insert a <br>', async () => {
@@ -70,7 +70,7 @@ describe('Link', () => {
                         await insertLineBreak(editor);
                     },
                     // Writing at the end of a link writes outside the link.
-                    contentAfter: '<p>a<a href="#">#</a>b<br>[]c</p>',
+                    contentAfter: '<p>a<a href="#">link</a>b<br>[]c</p>',
                 });
             });
             it('should insert a link and write a character insert a <br> and another character', async () => {
@@ -83,7 +83,7 @@ describe('Link', () => {
                         await insertText(editor, 'c');
                     },
                     // Writing at the end of a link writes outside the link.
-                    contentAfter: '<p>a<a href="#">#</a>b<br>c[]d</p>',
+                    contentAfter: '<p>a<a href="#">link</a>b<br>c[]d</p>',
                 });
             });
             it('should insert a <br> inside a link', async () => {
