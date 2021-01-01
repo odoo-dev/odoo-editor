@@ -852,6 +852,7 @@ export default class OdooEditor {
             'unordered': 'UL',
             'checklist': 'CL'
         };
+        ev.preventDefault();
         this._protectUnbreakable(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
@@ -871,7 +872,6 @@ export default class OdooEditor {
             this.historyStep();
             this._updateToolbar();
         });
-        ev.preventDefault();
     }
 }
 
