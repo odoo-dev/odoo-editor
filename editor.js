@@ -604,7 +604,7 @@ export default class OdooEditor {
         let li = new Set();
         for (let node of leftDeepFirstPath(...pos2)) {
             let cli = closestBlock(node);
-            if (cli && !li.has(cli) && !cli.querySelector('LI')) {
+            if ((cli?.tagName=='LI') && !li.has(cli) && !cli.classList.contains('nested')) {
                 li.add(cli);
             }
             if (node==end) break;

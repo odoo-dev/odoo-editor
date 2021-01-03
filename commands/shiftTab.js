@@ -42,9 +42,14 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
     const restoreCursor = preserveCursor();
     if (li.parentNode.parentNode.tagName === 'LI') {
         let toremove = !li.previousElementSibling ? li.parentNode.parentNode : null;
+        let ul = li.parentNode;
         li.parentNode.parentNode.after(li);
         if (toremove) {
-            toremove.remove();
+            if (toremove.classList.contains('nested')) {    // <li>content<ul>...</ul></li>
+                toremove.remove();
+            } else {                                        // <li class="nested"><ul>...</ul></li>
+                ul.remove();
+            }
         }
         restoreCursor();
         return li;

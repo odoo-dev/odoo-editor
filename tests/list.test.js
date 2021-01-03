@@ -6366,6 +6366,7 @@ describe('List', () => {
                         stepFunction: outdentList,
                         contentAfter: unformat(`
                             <ul>
+                                <li style="list-style: cambodian;"></li>
                                 <li>a[b]c</li>
                             </ul>`),
                     });
@@ -7198,6 +7199,7 @@ describe('List', () => {
                         <ul>
                             <li>
                                 a
+                            </li><li class="nested">
                                 <ul>
                                     <li>[b]</li>
                                 </ul>
@@ -7296,8 +7298,6 @@ describe('List', () => {
                         <ul>
                             <li>
                                 a
-                            </li>
-                            <li class="nested">
                                 <ul>
                                     <li>b</li>
                                     <li>[c</li>
@@ -7338,8 +7338,7 @@ describe('List', () => {
                     contentAfter: unformat(`
                         <ul>
                             <li>a</li>
-                            <li>b</li>
-                            <li class="nested">
+                            <li>b
                                 <ul>
                                     <li>c</li>
                                     <li>[d</li>
