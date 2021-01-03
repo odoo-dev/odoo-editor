@@ -374,6 +374,13 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
     return (anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING) ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
 }
 
+export function getCursors() {
+    let sel = document.defaultView.getSelection();
+    if (getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) == DIRECTIONS.RIGHT)
+        return [[sel.focusNode, sel.focusOffset], [sel.anchorNode, sel.anchorOffset]];
+    return [[sel.anchorNode, sel.anchorOffset], [sel.focusNode, sel.focusOffset]];
+}
+
 export function preserveCursor(sel) {
     sel = sel || document.defaultView.getSelection();
     let cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];

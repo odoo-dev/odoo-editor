@@ -6442,5 +6442,921 @@ describe('List', () => {
                 });
             });
         });
-  });
+    });
+    describe('indent', () => {
+        describe('with selection collapsed', () => {
+            it('should indent the first element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a[]</li>
+                    <li>b</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li class="nested">
+                        <ul>
+                            <li>a[]</li>
+                        </ul>
+                    </li>
+                    <li>b</li>
+                </ul>`),
+                });
+            });
+            it('should indent the last element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>[]b</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[]b</li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent multi-level', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>
+                        a
+                        <ul>
+                            <li>[]b</li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li>[]b</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent the last element of a list with proper with unordered list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ol>
+                    <li>a</li>
+                    <li>[]b</li>
+                </ol>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ol>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ol>
+                            <li>[]b</li>
+                        </ol>
+                    </li>
+                </ol>`),
+                });
+            });
+            it('should indent the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>[]b</li>
+                    <li>c</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[]b</li>
+                        </ul>
+                    </li>
+                    <li>
+                        c
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent even if the first element of a list is selected', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>[]a</li>
+                    <li>b</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li class="nested">
+                        <ul>
+                            <li>[]a</li>
+                        </ul>
+                    </li>
+                    <li>b</li>
+                </ul>`),
+                });
+            });
+            it('should indent only one element of a list with sublist', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>
+                        []b
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>c</li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[]b</li>
+                            <li>c</li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should convert mixed lists', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>
+                        []b
+                    </li>
+                    <li class="nested">
+                        <ol>
+                            <li>c</li>
+                        </ol>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ol>
+                            <li>[]b</li>
+                            <li>c</li>
+                        </ol>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should rejoin after indent', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ol>
+                    <li class="nested">
+                        <ol>
+                            <li>a</li>
+                        </ol>
+                    </li>
+                    <li>
+                        []b
+                    </li>
+                    <li class="nested">
+                        <ol>
+                            <li>c</li>
+                        </ol>
+                    </li>
+                </ol>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ol>
+                    <li class="nested">
+                        <ol>
+                            <li>a</li>
+                            <li>[]b</li>
+                            <li>c</li>
+                        </ol>
+                    </li>
+                </ol>`),
+                });
+            });
+        });
+        describe('with selection', () => {
+            it('should indent the first element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>[a]</li>
+                    <li>b</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li class="nested">
+                        <ul>
+                            <li>[a]</li>
+                        </ul>
+                    </li>
+                    <li>b</li>
+                </ul>`),
+                });
+            });
+            it('should indent the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>[b]</li>
+                    <li>c</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[b]</li>
+                        </ul>
+                    </li>
+                    <li>
+                        c
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent multi-level', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[b]</li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li>[b]</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li>[b]</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li class="nested">
+                                        <ul>
+                                            <li>[b]</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent two multi-levels', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[b</li>
+                            <li class="nested">
+                                <ul>
+                                    <li>c]</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li>[b</li>
+                                    <li class="nested">
+                                        <ul>
+                                            <li>c]</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li>[b
+                                    </li><li class="nested">
+                                        <ul>
+                                            <li>c]</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li class="nested">
+                                <ul>
+                                    <li class="nested">
+                                        <ul>
+                                            <li>[b</li>
+                                            <li class="nested">
+                                                <ul>
+                                                    <li>c]</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent multiples list item in the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>[b</li>
+                    <li>c]</li>
+                    <li>d</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>[b</li>
+                            <li>c]</li>
+                        </ul>
+                    </li>
+                    <li>
+                        d
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent multiples list item with reversed range', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>]b</li>
+                    <li>c[</li>
+                    <li>d</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>]b</li>
+                            <li>c[</li>
+                        </ul>
+                    </li>
+                    <li>
+                        d
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent multiples list item in the middle element of a list with sublist', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>
+                        [b
+                    </li><li class="nested">
+                        <ul>
+                            <li>c</li>
+                        </ul>
+                    </li>
+                    <li>d]</li>
+                    <li>e</li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ul>
+                            <li>
+                                [b
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>c</li>
+                                </ul>
+                            </li>
+                            <li>d]</li>
+                        </ul>
+                    </li>
+                    <li>e</li>
+                </ul>`),
+                });
+            });
+            it('should indent with mixed lists', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                <ul>
+                    <li>a</li>
+                    <li>
+                        [b
+                    </li><li class="nested">
+                        <ol>
+                            <li>]c</li>
+                        </ol>
+                    </li>
+                </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                <ul>
+                    <li>
+                        a
+                    </li>
+                    <li class="nested">
+                        <ol>
+                            <li>
+                                [b
+                            </li>
+                            <li class="nested">
+                                <ol>
+                                    <li>]c</li>
+                                </ol>
+                            </li>
+                        </ol>
+                    </li>
+                </ul>`),
+                });
+            });
+            it('should indent nested list and list with elements in a upper level than the rangestart', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>
+                                b
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>c</li>
+                                    <li>[d</li>
+                                </ul>
+                            </li>
+                            <li>
+                                e
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>f</li>
+                                    <li>g</li>
+                                </ul>
+                            </li>
+                            <li>h]</li>
+                            <li>i</li>
+                        </ul>`),
+                    stepFunction: indentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>
+                                b
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>
+                                        c
+                                    </li>
+                                    <li class="nested">
+                                        <ul>
+                                            <li>[d</li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                    e
+                                    </li>
+                                    <li class="nested">
+                                    <ul>
+                                        <li>f</li>
+                                        <li>g</li>
+                                    </ul>
+                                </li>
+                                <li>h]</li>
+                                </ul>
+                            </li>
+                            <li>i</li>
+                        </ul>`),
+                });
+            });
+        });
+    });
+    describe('outdent', () => {
+        describe('with selection collapsed', () => {
+            it('should outdent the last element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li><li class="nested">
+                                <ul>
+                                    <li>[]b</li>
+                                </ul>
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>[]b</li>
+                        </ul>`),
+                });
+            });
+            it('should outdent the last element of a list with proper with unordered list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ol>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ol>
+                                    <li>[]b</li>
+                                </ol>
+                            </li>
+                        </ol>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ol>
+                            <li>a</li>
+                            <li>[]b</li>
+                        </ol>`),
+                });
+            });
+            it('should outdent the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>[]b</li>
+                                </ul>
+                            </li>
+                            <li>
+                                c
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>[]b</li>
+                            <li>c</li>
+                        </ul>`),
+                });
+            });
+            it('should outdent if the first element of a list is selected', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>[]a</li>
+                            <li>b</li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <p>[]a</p>
+                        <ul>
+                            <li>b</li>
+                        </ul>`),
+                });
+            });
+            it('should outdent the last element of a list with sublist', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li class="nested">
+                                        <ul>
+                                            <li>[]c</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>[]c</li>
+                                </ul>
+                            </li>
+                        </ul>`),
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>[]c</li>
+                                </ul>
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li>[]c</li>
+                        </ul>`),
+                });
+            });
+        });
+        describe('with selection', () => {
+            it('should outdent the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                                <ul>
+                                    <li>[b]</li>
+                                </ul>
+                            </li>
+                            <li>
+                                c
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>[b]</li>
+                            <li>c</li>
+                        </ul>`),
+                });
+            });
+            it('should inoutdentdent multiples list item in the middle element of a list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                                <ul>
+                                    <li>[b</li>
+                                    <li>c]</li>
+                                </ul>
+                            </li>
+                            <li>
+                                d
+                            </li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>[b</li>
+                            <li>c]</li>
+                            <li>d</li>
+                        </ul>`),
+                });
+            });
+            it('should outdent multiples list item in the middle element of a list with sublist', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                                <ul>
+                                    <li>
+                                        [b
+                                        <ul>
+                                            <li>c</li>
+                                        </ul>
+                                    </li>
+                                    <li>d]</li>
+                                </ul>
+                            </li>
+                            <li>e</li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>
+                                [b
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>c</li>
+                                </ul>
+                            </li>
+                            <li>d]</li>
+                            <li>e</li>
+                        </ul>`),
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>
+                                a
+                                <ul>
+                                    <li>
+                                        b
+                                        <ul>
+                                            <li>[c</li>
+                                        </ul>
+                                    </li>
+                                    <li>d]</li>
+                                </ul>
+                            </li>
+                            <li>e</li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>
+                                a
+                            </li>
+                            <li class="nested">
+                                <ul>
+                                    <li>b</li>
+                                    <li>[c</li>
+                                </ul>
+                            </li>
+                            <li>d]</li>
+                            <li>e</li>
+                        </ul>`),
+                });
+            });
+            it('should outdent nested list and list with elements in a upper level than the rangestart', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>
+                                b
+                                <ul>
+                                    <li>
+                                        c
+                                        <ul>
+                                            <li>[d</li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                    e
+                                    <ul>
+                                        <li>f</li>
+                                        <li>g</li>
+                                    </ul>
+                                </li>
+                                <li>h]</li>
+                                </ul>
+                            </li>
+                            <li>i</li>
+                        </ul>`),
+                    stepFunction: outdentList,
+                    contentAfter: unformat(`
+                        <ul>
+                            <li>a</li>
+                            <li>b</li>
+                            <li class="nested">
+                                <ul>
+                                    <li>c</li>
+                                    <li>[d</li>
+                                </ul>
+                            </li>
+                            <li>e</li>
+                            <li class="nested">
+                                <ul>
+                                    <li>f</li>
+                                    <li>g</li>
+                                </ul>
+                            </li>
+                            <li>h]</li>
+                            <li>i</li>
+                        </ul>`),
+                });
+            });
+        });
+    });
 });

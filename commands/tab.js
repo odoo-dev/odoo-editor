@@ -22,10 +22,11 @@ HTMLElement.prototype.oTab = function (offset) {
 
 HTMLLIElement.prototype.oTab = function (offset) {
     let lip = document.createElement("li");
-    let ul = createList(getListMode(this.closest('ul, ol')));
+    let destul = this.previousElementSibling?.querySelector('ol, ul');
+    destul ||= this.nextElementSibling?.querySelector('ol, ul');
+    destul ||= this.closest('ul, ol');
 
-    // TODO: improve DOM structure by joining same level sibling (oShiftTab already supports it)
-
+    let ul = createList(getListMode(destul));
     lip.append(ul);
 
     const cr = preserveCursor();

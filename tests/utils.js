@@ -343,11 +343,11 @@ export async function insertLineBreak(editor) {
 }
 
 export async function indentList(editor) {
-    editor.execCommand('oTab');
+    editor.execCommand('indentList');
 }
 
 export async function outdentList(editor) {
-    editor.execCommand('oShiftTab');
+    editor.execCommand('indentList', 'outdent');
 }
 
 export async function toggleOrderedList(editor) {

@@ -9,10 +9,7 @@ import {} from "./commands/tab.js";
 import {} from "./commands/toggleList.js";
 
 import {sanitize} from "./utils/sanitize.js";
-import {
-    nodeToObject,
-    objectToNode,
-} from "./utils/serialize.js";
+import { nodeToObject, objectToNode} from "./utils/serialize.js";
 import {
     childNodeIndex,
     closestBlock,
@@ -20,6 +17,7 @@ import {
     commonParentGet,
     containsUnbreakable,
     getListMode,
+    getCursors,
     getOuid,
     insertText,
     nodeSize,
@@ -600,12 +598,34 @@ export default class OdooEditor {
         }
     }
 
+    _indentList(mode='indent') {
+        let [pos1, pos2] = getCursors();
+        let end = leftDeepFirstPath(...pos1).next().value;
+        let li = new Set();
+        for (let node of leftDeepFirstPath(...pos2)) {
+            let cli = closestBlock(node);
+            if (cli && !li.has(cli) && !cli.querySelector('LI')) {
+                li.add(cli);
+            }
+            if (node==end) break;
+        }
+        for (let node of li) {
+            if (mode=='indent') {
+                node.oTab(0);
+            } else {
+                node.oShiftTab(0);
+            }
+        }
+        return true;
+    }
+
     _toggleList(mode) {
         let sel = document.defaultView.getSelection();
+        let end = leftDeepFirstPath(sel.anchorNode, sel.anchorOffset).next().value;
+
         let li = new Set();
         let blocks = new Set();
 
-        let end = leftDeepFirstPath(sel.anchorNode, sel.anchorOffset).next().value;
 
         for (let node of leftDeepFirstPath(sel.focusNode, sel.focusOffset)) {
             let block = closestBlock(node);
@@ -651,7 +671,7 @@ export default class OdooEditor {
                 return true;
             }
         }
-        if (['toggleList', 'createLink', 'unLink'].includes(method)) {
+        if (['toggleList', 'createLink', 'unLink', 'indentList'].includes(method)) {
             return this['_'+method](...args);
         }
         if (method.startsWith('justify')) {
@@ -803,7 +823,7 @@ export default class OdooEditor {
                 this._applyCommand('oShiftEnter');
             }
         } else if (ev.keyCode === 9) { // Tab
-            if (this._applyCommand(ev.shiftKey ? 'oShiftTab' : 'oTab')) {
+            if (this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent')) {
                 ev.preventDefault();
             }
         } else if (ev.key === 'z' && ev.ctrlKey) { // Ctrl-Z
