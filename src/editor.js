@@ -28,6 +28,7 @@ import {
     setTagName,
     splitTextNode,
     toggleClass,
+    findNode,
     closestElement,
     getTraversedNodes,
 } from './utils/utils.js';
@@ -606,8 +607,12 @@ export class OdooEditor {
             } else {
                 sel = document.defaultView.getSelection();
                 const range = sel.getRangeAt(0);
-                const isSelForward = sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
-                pos2 = isSelForward ? [sel.anchorNode, sel.anchorOffset] : [sel.focusNode, sel.focusOffset];
+                const isSelForward =
+                    sel.anchorNode === range.startContainer &&
+                    sel.anchorOffset === range.startOffset;
+                pos2 = isSelForward
+                    ? [sel.anchorNode, sel.anchorOffset]
+                    : [sel.focusNode, sel.focusOffset];
             }
         } while (fakeEl.parentNode);
     }
@@ -633,8 +638,10 @@ export class OdooEditor {
         if (sel.isCollapsed) {
             insertText(sel, content || 'link');
         }
-        if (document.execCommand('createLink', false, '#')) {
-            const node = closestElement(sel.focusNode, 'a');
+        const res = document.execCommand('createLink', false, link);
+        if (res) {
+            setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
+            const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
             let pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
@@ -650,6 +657,7 @@ export class OdooEditor {
             cr();
         } else {
             document.execCommand('unlink');
+            setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
         }
     }
 
