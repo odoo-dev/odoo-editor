@@ -108,10 +108,10 @@ export default class OdooEditor {
             src.oid = Math.random() * 2 ** 31 | 0; // TODO: uuid4 or higher number
         }
         // rollback if src.ouid changed
-        src.ouid ||= getOuid(src, true);
+        src.ouid |= getOuid(src, true);
         if (testunbreak) {
             const ouid = getOuid(src);
-            this.torollback ||= ouid && (ouid != src.ouid);
+            this.torollback |= ouid && (ouid != src.ouid);
         }
 
         if (dest && !dest.oid) {
