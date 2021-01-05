@@ -541,7 +541,7 @@ export function isVisibleStr(value) {
  * @returns {boolean}
  */
 export function isContentTextNode(node) {
-    return node.nodeType === Node.TEXT_NODE && isVisibleStr(node);
+    return node.nodeType === Node.TEXT_NODE && (isVisibleStr(node) || isInPre(node));
 }
 /**
  * Returns whether removing the given node from the DOM will have a visible
