@@ -515,6 +515,19 @@ export function isVisibleEmpty(node) {
     return selfClosingElementTags.includes(node.nodeName);
 }
 /**
+ * Returns true if the given node is in a PRE context for whitespace handling.
+ *
+ * @param {Node} node
+ * @returns {boolean}
+ */
+export function isInPre(node) {
+    let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return !!element && (
+        !!element.closest('pre') ||
+        getComputedStyle(element).getPropertyValue('white-space') === 'pre'
+    );
+}
+/**
  * Returns whether the given string (or given text node value) has
  * non-whitespace characters in it.
  */
@@ -1077,7 +1090,7 @@ export function restoreState(prevStateData) {
      */
     const ruleHashCode = restoreStateRuleHashCode(direction, cType1, cType2);
     const rule = allRestoreStateRules.get(ruleHashCode);
-    if (Object.values(rule).filter(x => x !== undefined).length) {
+    if (Object.values(rule).filter(x => x !== undefined).length && !isInPre(el)) {
         const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
         enforceWhitespace(el, offset, inverseDirection, rule);
     }

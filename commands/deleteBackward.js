@@ -11,6 +11,7 @@ import {
     fillEmpty,
     getState,
     isBlock,
+    isInPre,
     isUnbreakable,
     isVisible,
     isVisibleStr,
@@ -39,7 +40,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
 
     // Do remove the character, then restore the state of the surrounding parts.
     const restore = prepareUpdate(parentNode, firstSplitOffset, parentNode, secondSplitOffset);
-    const isSpace = !isVisibleStr(middleNode);
+    const isSpace = !isVisibleStr(middleNode) && !isInPre(middleNode);
     middleNode.remove();
     restore();
 
