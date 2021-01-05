@@ -334,6 +334,76 @@ describe('Editor', () => {
                     });
                 });
             });
+            describe('Pre', () => {
+                it('should delete a character in a pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>ab[]cd</pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>ab[]d</pre>',
+                    });
+                });
+                it('should delete a character in a pre (space before)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>     ab[]cd</pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>     ab[]d</pre>',
+                    });
+                });
+                it('should delete a character in a pre (space after)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>ab[]cd     </pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>ab[]d     </pre>',
+                    });
+                });
+                it('should delete a character in a pre (space before and after)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>     ab[]cd     </pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>     ab[]d     </pre>',
+                    });
+                });
+                it('should delete a space in a pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>  []   ab</pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>  []  ab</pre>',
+                    });
+                });
+                it('should delete a newline in a pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>ab[]\ncd</pre>',
+                        stepFunction: deleteForward,
+                        contentAfter: '<pre>ab[]cd</pre>',
+                    });
+                });
+                it('should delete all leading space in a pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>[]     ab</pre>',
+                        stepFunction: async BasicEditor => {
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                        },
+                        contentAfter: '<pre>[]ab</pre>',
+                    });
+                });
+                it('should delete all trailing space in a pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>ab[]     </pre>',
+                        stepFunction: async BasicEditor => {
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                            await deleteForward(BasicEditor);
+                        },
+                        contentAfter: '<pre>ab[]</pre>',
+                    });
+                });
+            });
             describe('Formats', () => {
                 it('should delete a character after a format node', async () => {
                     await testEditor(BasicEditor, {
