@@ -97,3 +97,17 @@ HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     }
     this.oShiftTab();
 };
+/**
+ * Specific behavior for pre: insert newline (\n) in text or insert p at end.
+ */
+HTMLPreElement.prototype.oEnter = function (offset, firstSplit = true) {
+    if (offset < this.childNodes.length) {
+        const newline = document.createTextNode('\n');
+        this.insertBefore(newline, this.childNodes[offset]);
+    } else {
+        let node = document.createElement('p');
+        this.parentNode.insertBefore(node, this.nextSibling);
+        fillEmpty(node);
+        setCursorStart(node);
+    }
+};

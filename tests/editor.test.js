@@ -1586,6 +1586,22 @@ describe('Editor', () => {
                     });
                 });
             });
+            describe.only('Pre', () => {
+                it('should insert a line break within the pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>ab[]cd</pre>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<pre>ab\n[]cd</pre>',
+                    });
+                });
+                it('should insert a new paragraph after the pre', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<pre>abc[]</pre>',
+                        stepFunction: insertParagraphBreak,
+                        contentAfter: '<pre>abc</pre><p>[]<br></p>',
+                    });
+                });
+            });
             describe('Consecutive', () => {
                 it('should duplicate an empty paragraph twice', async () => {
                     await testEditor(BasicEditor, {
