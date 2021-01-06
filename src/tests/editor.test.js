@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 import {
     BasicEditor,
@@ -149,7 +149,7 @@ describe('Editor', () => {
                     it('should delete a character and a line break, emptying a paragraph', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>[]a<br><br></p><p>bcd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                             },
@@ -192,7 +192,7 @@ describe('Editor', () => {
                         // 3-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                             },
@@ -211,7 +211,7 @@ describe('Editor', () => {
                         // 4-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                             },
@@ -222,7 +222,7 @@ describe('Editor', () => {
                         // 4-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -242,7 +242,7 @@ describe('Editor', () => {
                         // 5-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                             },
@@ -253,7 +253,7 @@ describe('Editor', () => {
                         // 5-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -265,7 +265,7 @@ describe('Editor', () => {
                         // 5-4
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p>[]<br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -286,7 +286,7 @@ describe('Editor', () => {
                         // 6-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                             },
@@ -297,7 +297,7 @@ describe('Editor', () => {
                         // 6-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -309,7 +309,7 @@ describe('Editor', () => {
                         // 6-4
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -322,7 +322,7 @@ describe('Editor', () => {
                         // 6-5
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab[]</p><p><br><br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteForward(editor);
                                 await deleteForward(editor);
                                 await deleteForward(editor);
@@ -510,7 +510,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore:
                             '<p><span><b>a[]b</b></span><br><span><b><br>cde</b></span></p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await deleteForward(editor);
                             await deleteForward(editor);
                         },
@@ -650,9 +650,11 @@ describe('Editor', () => {
                     contentAfter: '<table><tbody><tr><td>a[]</td><td>f</td></tr></tbody></table>',
                 });
                 await testEditor(BasicEditor, {
-                    contentBefore: '<p class="oe_unbreakable">a[bc</p><p class="oe_unbreakable">de]f</p>',
+                    contentBefore:
+                        '<p class="oe_unbreakable">a[bc</p><p class="oe_unbreakable">de]f</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<p class="oe_unbreakable">a[]</p><p class="oe_unbreakable">f</p>', // JW without oe_breakable classes of course
+                    contentAfter:
+                        '<p class="oe_unbreakable">a[]</p><p class="oe_unbreakable">f</p>', // JW without oe_breakable classes of course
                 });
             });
             it('should delete a heading (triple click delete)', async () => {
@@ -796,7 +798,7 @@ describe('Editor', () => {
                     it('should delete a character and a line break, emptying a paragraph', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>aaa</p><p><br>a[]</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -834,7 +836,7 @@ describe('Editor', () => {
                         // 2-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br>[]<br><br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -853,7 +855,7 @@ describe('Editor', () => {
                         // 3-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -864,7 +866,7 @@ describe('Editor', () => {
                         // 3-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br>[]<br><br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -892,7 +894,7 @@ describe('Editor', () => {
                         // 4-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -902,7 +904,7 @@ describe('Editor', () => {
                         // 5-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -914,7 +916,7 @@ describe('Editor', () => {
                         // 4-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -924,7 +926,7 @@ describe('Editor', () => {
                         // 5-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -937,7 +939,7 @@ describe('Editor', () => {
                         // 4-4
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br>[]<br></p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -949,7 +951,7 @@ describe('Editor', () => {
                         // 5-4
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br>[]</p><p>cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -970,7 +972,7 @@ describe('Editor', () => {
                         // 6-2
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                             },
@@ -981,7 +983,7 @@ describe('Editor', () => {
                         // 6-3
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -993,7 +995,7 @@ describe('Editor', () => {
                         // 6-4
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -1006,7 +1008,7 @@ describe('Editor', () => {
                         // 6-5
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p><br><br><br><br></p><p>[]cd</p>',
-                            stepFunction: async (editor) => {
+                            stepFunction: async editor => {
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
                                 await deleteBackward(editor);
@@ -1247,7 +1249,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore:
                             '<p><span><b>ab<br></b></span><br><span><b>c[]de</b></span></p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await deleteBackward(editor);
                             await deleteBackward(editor);
                         },
@@ -1606,7 +1608,7 @@ describe('Editor', () => {
                 it('should duplicate an empty paragraph twice', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]<br></p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                         },
@@ -1625,7 +1627,7 @@ describe('Editor', () => {
                     // });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><br>[]</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                         },
@@ -1635,7 +1637,7 @@ describe('Editor', () => {
                 it('should insert two empty paragraphs before a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]abc</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                         },
@@ -1645,7 +1647,7 @@ describe('Editor', () => {
                 it('should split a paragraph in three', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[]cd</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                         },
@@ -1655,7 +1657,7 @@ describe('Editor', () => {
                 it('should split a paragraph in four', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[]cd</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
@@ -1666,7 +1668,7 @@ describe('Editor', () => {
                 it('should insert two empty paragraphs after a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertParagraphBreak(editor);
                             await insertParagraphBreak(editor);
                         },
@@ -1971,7 +1973,7 @@ describe('Editor', () => {
                 it('should insert two <br> at the beggining of an empty paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]<br></p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
@@ -2003,7 +2005,7 @@ describe('Editor', () => {
                 it('should insert two <br> at the beggining of a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]abc</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
@@ -2013,7 +2015,7 @@ describe('Editor', () => {
                 it('should insert two <br> within text', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[]cd</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
@@ -2023,7 +2025,7 @@ describe('Editor', () => {
                 it('should insert two line breaks (3 <br>) at the end of a paragraph', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]</p>',
-                        stepFunction: async (editor) => {
+                        stepFunction: async editor => {
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
@@ -2177,8 +2179,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><span><b>ab[]cd</b></span></p>',
                         stepFunction: insertLineBreak,
-                        contentAfter:
-                            '<p><span><b>ab<br>[]cd</b></span></p>',
+                        contentAfter: '<p><span><b>ab<br>[]cd</b></span></p>',
                     });
                 });
             });
@@ -2252,8 +2253,8 @@ describe('Editor', () => {
             contentBefore: '<p><b>a[b]c</b></p>',
             stepFunction: toggleBold,
             contentAfter: '<p><b>a</b>b<b>c</b></p>',
-        })
-    })
+        });
+    });
 });
 
 /**

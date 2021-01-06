@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 import {
     closestBlock,
@@ -10,10 +10,15 @@ import {
     isVisibleEmpty,
     moveNodes,
     preserveCursor,
-} from "./utils.js";
+} from './utils.js';
 
 export function areSimilarElements(node, node2) {
-    if (!node || !node2 || node.nodeType !== Node.ELEMENT_NODE || node2.nodeType !== Node.ELEMENT_NODE) {
+    if (
+        !node ||
+        !node2 ||
+        node.nodeType !== Node.ELEMENT_NODE ||
+        node2.nodeType !== Node.ELEMENT_NODE
+    ) {
         return false;
     }
     if (node.tagName !== node2.tagName) {
@@ -34,19 +39,28 @@ export function areSimilarElements(node, node2) {
     function isNotNoneValue(value) {
         return value && value !== 'none';
     }
-    if (isNotNoneValue(getComputedStyle(node, ':before').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node, ':after').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node2, ':before').getPropertyValue('content'))
-            || isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))) {
+    if (
+        isNotNoneValue(getComputedStyle(node, ':before').getPropertyValue('content')) ||
+        isNotNoneValue(getComputedStyle(node, ':after').getPropertyValue('content')) ||
+        isNotNoneValue(getComputedStyle(node2, ':before').getPropertyValue('content')) ||
+        isNotNoneValue(getComputedStyle(node2, ':after').getPropertyValue('content'))
+    ) {
         return false;
     }
-    if ((node.tagName=='LI') && (node.classList.contains('nested'))) {
+    if (node.tagName == 'LI' && node.classList.contains('nested')) {
         let mode = undefined;
-        return node.lastElementChild && node2.firstElementChild && getListMode(node.lastElementChild) == getListMode(node2.firstElementChild);
+        return (
+            node.lastElementChild &&
+            node2.firstElementChild &&
+            getListMode(node.lastElementChild) == getListMode(node2.firstElementChild)
+        );
     }
-    return (['UL', 'OL'].includes(node.tagName) || !isBlock(node)) && !isVisibleEmpty(node) && !isVisibleEmpty(node2);
+    return (
+        (['UL', 'OL'].includes(node.tagName) || !isBlock(node)) &&
+        !isVisibleEmpty(node) &&
+        !isVisibleEmpty(node2)
+    );
 }
-
 
 class Sanitize {
     constructor(root) {
@@ -77,7 +91,7 @@ class Sanitize {
         }
 
         // Remove empty blocks in <li>
-        if (node.nodeName=='P' && node.parentElement.tagName=='LI') {
+        if (node.nodeName == 'P' && node.parentElement.tagName == 'LI') {
             let next = node.nextSibling;
             let pnode = node.parentElement;
             if (isEmptyBlock(node)) {

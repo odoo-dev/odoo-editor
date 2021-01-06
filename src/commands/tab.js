@@ -1,13 +1,6 @@
-"use strict";
+'use strict';
 
-import {
-    createList,
-    getListMode,
-    isBlock,
-    setCursorStart,
-    preserveCursor,
-    toggleClass,
-} from "../utils/utils.js";
+import { createList, getListMode, isBlock, preserveCursor, toggleClass } from '../utils/utils.js';
 
 Text.prototype.oTab = function (offset) {
     return this.parentElement.oTab(0);
@@ -21,10 +14,10 @@ HTMLElement.prototype.oTab = function (offset) {
 };
 
 HTMLLIElement.prototype.oTab = function (offset) {
-    let lip = document.createElement("li");
+    let lip = document.createElement('li');
     let destul = this.previousElementSibling?.querySelector('ol, ul');
-    destul ||= this.nextElementSibling?.querySelector('ol, ul');
-    destul ||= this.closest('ul, ol');
+    destul = destul || this.nextElementSibling?.querySelector('ol, ul');
+    destul = destul || this.closest('ul, ol');
 
     let ul = createList(getListMode(destul));
     lip.append(ul);

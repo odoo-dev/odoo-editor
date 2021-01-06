@@ -1,4 +1,11 @@
-import { BasicEditor, insertText, insertParagraphBreak, insertLineBreak, testEditor, createLink } from './utils.js';
+import {
+    BasicEditor,
+    insertText,
+    insertParagraphBreak,
+    insertLineBreak,
+    testEditor,
+    createLink,
+} from './utils.js';
 
 const convertToLink = createLink;
 const unLink = async function (editor) {

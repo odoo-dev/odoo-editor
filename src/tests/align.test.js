@@ -1,22 +1,20 @@
-import {
-    BasicEditor, testEditor, 
-} from './utils.js';
+import { BasicEditor, testEditor } from './utils.js';
 
 const justifyLeft = async function (editor) {
-    editor.execCommand('justifyLeft')
-}
+    editor.execCommand('justifyLeft');
+};
 
 const justifyCenter = async function (editor) {
-    editor.execCommand('justifyCenter')
-}
+    editor.execCommand('justifyCenter');
+};
 
 const justifyRight = async function (editor) {
-    editor.execCommand('justifyRight')
-}
+    editor.execCommand('justifyRight');
+};
 
 const justifyFull = async function (editor) {
-    editor.execCommand('justifyFull')
-}
+    editor.execCommand('justifyFull');
+};
 
 describe('Align', () => {
     describe('left', () => {
@@ -76,7 +74,8 @@ describe('Align', () => {
                     '<div style="text-align: right;"><p>ab</p><p>c[d</p></div><p>e]f</p>',
                 stepFunction: justifyLeft,
                 // JW cAfter: '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p style="text-align: left;">e]f</p>',
-                contentAfter: '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
+                contentAfter:
+                    '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
             });
         });
         it('should left align a node within a right-aligned node and a paragraph, with a center-aligned common ancestor', async () => {

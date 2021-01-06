@@ -1,11 +1,8 @@
-"use strict";
+'use strict';
 
-import {OdooEditor} from "../editor.js";
-import {sanitize} from "../utils/sanitize.js";
-import {
-    setCursor,
-    insertText as insertTextSel
-} from "../utils/utils.js";
+import { OdooEditor } from '../editor.js';
+import { sanitize } from '../utils/sanitize.js';
+import { setCursor, insertText as insertTextSel } from '../utils/utils.js';
 
 let Direction = {
     BACKWARD: 'BACKWARD',
@@ -49,10 +46,10 @@ function _parseTextualSelection(testContainer) {
         let next;
         if (node.nodeType === Node.TEXT_NODE) {
             // Look for special characters in the text content and remove them.
-            const anchorIndex = node.textContent.indexOf("[");
-            node.textContent = node.textContent.replace("[", '');
-            const focusIndex = node.textContent.indexOf("]");
-            node.textContent = node.textContent.replace("]", '');
+            const anchorIndex = node.textContent.indexOf('[');
+            node.textContent = node.textContent.replace('[', '');
+            const focusIndex = node.textContent.indexOf(']');
+            node.textContent = node.textContent.replace(']', '');
 
             // Set the nodes and offsets if we found the selection characters.
             if (anchorIndex !== -1) {
@@ -131,8 +128,7 @@ function _insertCharAt(char, node, offset) {
         if (offset < 0 || offset > startValue.length) {
             throw new Error(`Invalid ${char} insertion in text node`);
         }
-        node.nodeValue =
-            startValue.slice(0, offset) + char + startValue.slice(offset);
+        node.nodeValue = startValue.slice(0, offset) + char + startValue.slice(offset);
     } else {
         if (offset < 0 || offset > node.childNodes.length) {
             throw new Error(`Invalid ${char} insertion in non-text node`);
@@ -263,7 +259,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
 
     if (firefoxExecCommandError) {
         // FIXME
-        throw new Error("Firefox was not able to test this case because of an execCommand error");
+        throw new Error('Firefox was not able to test this case because of an execCommand error');
     }
 }
 
@@ -281,7 +277,7 @@ export function unformat(html) {
  *
  */
 export async function nextTick() {
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
         setTimeout(resolve);
     });
 }
@@ -291,12 +287,11 @@ export async function nextTick() {
  *
  */
 export async function nextTickFrame() {
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
         window.requestAnimationFrame(resolve);
     });
     await nextTick();
 }
-
 
 /**
  * simple simulation of a click on an element
@@ -324,8 +319,6 @@ export async function click(el, options) {
     await nextTickFrame();
 }
 
-
-
 export async function deleteForward(editor) {
     editor.execCommand('oDeleteForward');
 }
@@ -352,15 +345,15 @@ export async function outdentList(editor) {
 
 export async function toggleOrderedList(editor) {
     editor.execCommand('toggleList', 'OL');
-};
+}
 
 export async function toggleUnorderedList(editor) {
     editor.execCommand('toggleList', 'UL');
-};
+}
 
 export async function toggleCheckList(editor) {
     editor.execCommand('toggleList', 'CL');
-};
+}
 
 export async function toggleBold(editor) {
     document.execCommand('bold');
@@ -374,13 +367,10 @@ export async function insertText(editor, text) {
     const sel = document.defaultView.getSelection();
     insertTextSel(sel, text);
     sel.collapseToEnd();
-};
+}
 
 export async function testVdom(Editor, spec) {
     return testEditor(Editor, spec, true);
 }
 
-
-export class BasicEditor extends OdooEditor {
-
-}
+export class BasicEditor extends OdooEditor {}

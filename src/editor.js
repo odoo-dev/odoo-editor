@@ -1,15 +1,15 @@
-"use strict";
+'use strict';
 
-import {} from "./commands/deleteBackward.js";
-import {} from "./commands/deleteForward.js";
-import {} from "./commands/enter.js";
-import {} from "./commands/shiftEnter.js";
-import {} from "./commands/shiftTab.js";
-import {} from "./commands/tab.js";
-import {} from "./commands/toggleList.js";
+import {} from './commands/deleteBackward.js';
+import {} from './commands/deleteForward.js';
+import {} from './commands/enter.js';
+import {} from './commands/shiftEnter.js';
+import {} from './commands/shiftTab.js';
+import {} from './commands/tab.js';
+import {} from './commands/toggleList.js';
 
-import {sanitize} from "./utils/sanitize.js";
-import { nodeToObject, objectToNode} from "./utils/serialize.js";
+import { sanitize } from './utils/sanitize.js';
+import { nodeToObject, objectToNode } from './utils/serialize.js';
 import {
     childNodeIndex,
     closestBlock,
@@ -31,7 +31,7 @@ import {
     splitTextNode,
     toggleClass,
     findNode,
-} from "./utils/utils.js";
+} from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
@@ -48,22 +48,27 @@ export class OdooEditor {
             this.options.toolbar = false;
         }
 
-        dom.oid = 1;                                      // convention: root node is ID 1
+        dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
-        this.history = [{
-            cursor: { // cursor at beginning of step
-                anchorNode: undefined, anchorOffset: undefined,
-                focusNode: undefined, focusOffset: undefined,
+        this.history = [
+            {
+                cursor: {
+                    // cursor at beginning of step
+                    anchorNode: undefined,
+                    anchorOffset: undefined,
+                    focusNode: undefined,
+                    focusOffset: undefined,
+                },
+                dom: [],
+                id: undefined,
             },
-            dom: [],
-            id: undefined
-        }];
+        ];
         this.undos = new Map();
 
         // set contentEditable before clone as FF updates the content at this point
-        dom.setAttribute("contentEditable", true);
+        dom.setAttribute('contentEditable', true);
         this.vdom = dom.cloneNode(true);
-        this.vdom.removeAttribute("contentEditable");
+        this.vdom.removeAttribute('contentEditable');
         this.idSet(dom, this.vdom);
 
         this.observerActive();
@@ -114,15 +119,15 @@ export class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined, testunbreak=false) {
+    idSet(src, dest = undefined, testunbreak = false) {
         if (!src.oid) {
-            src.oid = Math.random() * 2 ** 31 | 0; // TODO: uuid4 or higher number
+            src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
         // rollback if src.ouid changed
-        src.ouid ||= getOuid(src, true);
+        src.ouid = src.ouid || getOuid(src, true);
         if (testunbreak) {
             const ouid = getOuid(src);
-            this.torollback ||= ouid && (ouid != src.ouid);
+            this.torollback = this.torollback || (ouid && ouid != src.ouid);
         }
 
         if (dest && !dest.oid) {
@@ -186,53 +191,55 @@ export class OdooEditor {
     observerApply(destel, records) {
         for (let record of records) {
             switch (record.type) {
-                case "characterData": {
+                case 'characterData': {
                     this.history[this.history.length - 1].dom.push({
-                        'type': "characterData",
+                        'type': 'characterData',
                         'id': record.target.oid,
-                        "text": record.target.textContent,
-                        "oldValue": record.oldValue,
+                        'text': record.target.textContent,
+                        'oldValue': record.oldValue,
                     });
                     break;
                 }
-                case "attributes": {
+                case 'attributes': {
                     this.history[this.history.length - 1].dom.push({
-                        'type': "attributes",
+                        'type': 'attributes',
                         'id': record.target.oid,
-                        "attributeName": record.attributeName,
-                        "value": record.target.getAttribute(record.attributeName),
-                        "oldValue": record.oldValue,
+                        'attributeName': record.attributeName,
+                        'value': record.target.getAttribute(record.attributeName),
+                        'oldValue': record.oldValue,
                     });
                     break;
                 }
-                case "childList": {
+                case 'childList': {
                     record.addedNodes.forEach((added, index) => {
                         this.torollback |= containsUnbreakable(added);
                         let action = {
-                            'type': "add",
+                            'type': 'add',
                         };
                         if (!record.nextSibling && record.target.oid) {
-                            action['append'] = record.target.oid;
+                            action.append = record.target.oid;
                         } else if (record.nextSibling.oid) {
-                            action['before'] = record.nextSibling.oid;
+                            action.before = record.nextSibling.oid;
                         } else if (record.previousSibling.oid) {
-                            action['after'] = record.previousSibling.oid;
+                            action.after = record.previousSibling.oid;
                         } else {
                             return false;
                         }
                         this.idSet(added, undefined, true);
-                        action['id'] = added.oid;
-                        action['node'] = this.serialize(added);
+                        action.id = added.oid;
+                        action.node = this.serialize(added);
                         this.history[this.history.length - 1].dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
                         this.history[this.history.length - 1].dom.push({
-                            'type': "remove",
+                            'type': 'remove',
                             'id': removed.oid,
                             'parentId': record.target.oid,
                             'node': this.serialize(removed),
                             'nextId': record.nextSibling ? record.nextSibling.oid : undefined,
-                            'previousId': record.previousSibling ? record.previousSibling.oid : undefined,
+                            'previousId': record.previousSibling
+                                ? record.previousSibling.oid
+                                : undefined,
                         });
                     });
                     break;
@@ -260,7 +267,7 @@ export class OdooEditor {
             return false;
         }
 
-        latest.id = Math.random() * 2 ** 31 | 0; // TODO: replace by uuid4 generator
+        latest.id = (Math.random() * 2 ** 31) | 0; // TODO: replace by uuid4 generator
         this.historyApply(this.vdom, latest.dom);
         this.historySend(latest);
         this.history.push({
@@ -278,24 +285,24 @@ export class OdooEditor {
                 if (node) {
                     node.textContent = record.text;
                 }
-            } else if (record.type === "attributes") {
+            } else if (record.type === 'attributes') {
                 let node = this.idFind(destel, record.id);
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
-            } else if (record.type === "remove") {
+            } else if (record.type === 'remove') {
                 let toremove = this.idFind(destel, record.id, record.parentId);
                 if (toremove) {
                     toremove.remove();
                 }
-            } else if (record.type === "add") {
+            } else if (record.type === 'add') {
                 let node = this.unserialize(record.node);
                 let newnode = node.cloneNode(1);
                 // preserve oid after the clone
                 this.idSet(node, newnode);
 
                 let destnode = this.idFind(destel, record.node.oid);
-                if (destnode && (record.node.parentNode.oid === destnode.parentNode.oid)) {
+                if (destnode && record.node.parentNode.oid === destnode.parentNode.oid) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
                     continue;
                 }
@@ -312,83 +319,88 @@ export class OdooEditor {
         }
     }
 
-
     // send changes to server
     historyFetch() {
         if (!this.collaborate) {
             return;
         }
-        window.fetch(`/history-get/${this.collaborate_last || 0}`, {
-            headers: {'Content-Type': 'application/json;charset=utf-8'},
-            method: 'GET',
-        }).then(response => {
-            if (!response.ok) {
-                return Promise.reject();
-            }
-            return response.json();
-        }).then(result => {
-            if (!result.length) {
-                return false;
-            }
-            this.observerUnactive();
+        window
+            .fetch(`/history-get/${this.collaborate_last || 0}`, {
+                headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                method: 'GET',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return Promise.reject();
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.length) {
+                    return false;
+                }
+                this.observerUnactive();
 
-            let index = this.history.length;
-            let updated = false;
-            while (index && (this.history[index - 1].id !== this.collaborate_last)) {
-                index--;
-            }
+                let index = this.history.length;
+                let updated = false;
+                while (index && this.history[index - 1].id !== this.collaborate_last) {
+                    index--;
+                }
 
-            for (let residx = 0; residx < result.length; residx++) {
-                let record = result[residx];
-                this.collaborate_last = record.id;
-                if (index < this.history.length && record.id === this.history[index].id) {
+                for (let residx = 0; residx < result.length; residx++) {
+                    let record = result[residx];
+                    this.collaborate_last = record.id;
+                    if (index < this.history.length && record.id === this.history[index].id) {
+                        index++;
+                        continue;
+                    }
+                    updated = true;
+
+                    // we are not synched with the server anymore, rollback and replay
+                    while (this.history.length > index) {
+                        this.historyRollback();
+                        this.history.pop();
+                    }
+
+                    if (record.id === 1) {
+                        this.dom.innerHTML = '';
+                        this.vdom.innerHTML = '';
+                    }
+                    this.historyApply(this.dom, record.dom);
+                    this.historyApply(this.vdom, record.dom);
+
+                    record.dom = record.id === 1 ? [] : record.dom;
+                    this.history.push(record);
                     index++;
-                    continue;
                 }
-                updated = true;
-
-                // we are not synched with the server anymore, rollback and replay
-                while (this.history.length > index) {
-                    this.historyRollback();
-                    this.history.pop();
+                if (updated) {
+                    this.history.push({
+                        cursor: {},
+                        dom: [],
+                    });
                 }
-
-                if (record.id === 1) {
-                    this.dom.innerHTML = '';
-                    this.vdom.innerHTML = '';
-                }
-                this.historyApply(this.dom, record.dom);
-                this.historyApply(this.vdom, record.dom);
-
-                record.dom = record.id === 1 ? [] : record.dom;
-                this.history.push(record);
-                index++;
-            }
-            if (updated) {
-                this.history.push({
-                    cursor: {},
-                    dom: [],
-                });
-            }
-            this.observerActive();
-            this.historyFetch();
-        }).catch(err => {
-            // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
-            this.collaborate = false;
-        });
+                this.observerActive();
+                this.historyFetch();
+            })
+            .catch(err => {
+                // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
+                this.collaborate = false;
+            });
     }
 
     historySend(item) {
         if (!this.collaborate) {
             return;
         }
-        window.fetch('/history-push', {
-            body: JSON.stringify(item),
-            headers: {'Content-Type': 'application/json;charset=utf-8'},
-            method: 'POST',
-        }).then(response => {
-            console.log(response);
-        });
+        window
+            .fetch('/history-push', {
+                body: JSON.stringify(item),
+                headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                method: 'POST',
+            })
+            .then(response => {
+                console.log(response);
+            });
     }
 
     historyRollback(until = 0) {
@@ -434,15 +446,18 @@ export class OdooEditor {
                 break;
             }
             switch (action.type) {
-                case "characterData": {
+                case 'characterData': {
                     this.idFind(this.dom, action.id).textContent = action.oldValue;
                     break;
                 }
-                case "attributes": {
-                    this.idFind(this.dom, action.id).setAttribute(action.attributeName, action.oldValue);
+                case 'attributes': {
+                    this.idFind(this.dom, action.id).setAttribute(
+                        action.attributeName,
+                        action.oldValue,
+                    );
                     break;
                 }
-                case "remove": {
+                case 'remove': {
                     let node = this.unserialize(action.node);
                     if (action.nextId && this.idFind(this.dom, action.nextId)) {
                         this.idFind(this.dom, action.nextId).before(node);
@@ -453,7 +468,7 @@ export class OdooEditor {
                     }
                     break;
                 }
-                case "add": {
+                case 'add': {
                     let el = this.idFind(this.dom, action.id);
                     if (el) {
                         el.remove();
@@ -467,14 +482,18 @@ export class OdooEditor {
     historySetCursor(step) {
         if (step.cursor.anchorNode) {
             const anchorNode = this.idFind(this.dom, step.cursor.anchorNode);
-            const focusNode = step.cursor.focusNode ? this.idFind(this.dom, step.cursor.focusNode) : anchorNode;
+            const focusNode = step.cursor.focusNode
+                ? this.idFind(this.dom, step.cursor.focusNode)
+                : anchorNode;
             if (anchorNode) {
                 setCursor(
                     anchorNode,
                     step.cursor.anchorOffset,
                     focusNode,
-                    step.cursor.focusOffset !== undefined ? step.cursor.focusOffset : step.cursor.anchorOffset,
-                    false
+                    step.cursor.focusOffset !== undefined
+                        ? step.cursor.focusOffset
+                        : step.cursor.anchorOffset,
+                    false,
                 );
             }
         }
@@ -531,7 +550,8 @@ export class OdooEditor {
             // in-between.
             const splitNode = pos1[0];
             const splitOffset = pos1[1];
-            const willActuallySplitPos2 = (pos2[0] === splitNode && splitOffset > 0 && splitOffset < splitNode.length);
+            const willActuallySplitPos2 =
+                pos2[0] === splitNode && splitOffset > 0 && splitOffset < splitNode.length;
             pos1 = [splitNode.parentNode, splitTextNode(splitNode, splitOffset)];
             if (willActuallySplitPos2) {
                 if (pos2[1] < splitOffset) {
@@ -584,7 +604,7 @@ export class OdooEditor {
         } while (fakeEl.parentNode);
     }
 
-    _createLink(link="#", content) {
+    _createLink(link = '#', content) {
         const sel = document.defaultView.getSelection();
         if (content && !sel.isCollapsed) {
             this.deleteRange(sel);
@@ -593,8 +613,8 @@ export class OdooEditor {
             insertText(sel, content || 'link');
         }
         if (document.execCommand('createLink', false, '#')) {
-            const node = findNode(closestPath(sel.focusNode), node => node.tagName === "A");
-            let pos = [node.parentElement, childNodeIndex(node)+1]
+            const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
+            let pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
     }
@@ -603,7 +623,7 @@ export class OdooEditor {
         const sel = document.defaultView.getSelection();
         if (sel.isCollapsed) {
             const cr = preserveCursor();
-            const node = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+            const node = findNode(closestPath(sel.anchorNode), node => node.tagName === 'A');
             setCursor(node, 0, node, node.childNodes.length, false);
             document.execCommand('unlink');
             cr();
@@ -612,19 +632,19 @@ export class OdooEditor {
         }
     }
 
-    _indentList(mode='indent') {
+    _indentList(mode = 'indent') {
         let [pos1, pos2] = getCursors();
         let end = leftDeepFirstPath(...pos1).next().value;
         let li = new Set();
         for (let node of leftDeepFirstPath(...pos2)) {
             let cli = closestBlock(node);
-            if ((cli?.tagName=='LI') && !li.has(cli) && !cli.classList.contains('nested')) {
+            if (cli?.tagName == 'LI' && !li.has(cli) && !cli.classList.contains('nested')) {
                 li.add(cli);
             }
-            if (node==end) break;
+            if (node == end) break;
         }
         for (let node of li) {
-            if (mode=='indent') {
+            if (mode == 'indent') {
                 node.oTab(0);
             } else {
                 node.oShiftTab(0);
@@ -640,26 +660,26 @@ export class OdooEditor {
         let li = new Set();
         let blocks = new Set();
 
-
         for (let node of leftDeepFirstPath(sel.focusNode, sel.focusOffset)) {
             let block = closestBlock(node);
-            if (!['OL','UL'].includes(block.tagName)) {
+            if (!['OL', 'UL'].includes(block.tagName)) {
                 let ublock = block.closest('ol, ul');
-                (ublock && getListMode(ublock) == mode) ? li.add(block) : blocks.add(block);
+                ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
             }
-            if (node==end) break;
+            if (node == end) break;
         }
 
-        let target = [...((blocks.size) ? blocks : li)];
+        let target = [...(blocks.size ? blocks : li)];
         while (target.length) {
             let node = target.pop();
             // only apply one li per ul
-            if (! node.oToggleList(0, mode)) {
-                target = target.filter(li => (li.parentNode != node.parentNode) || (li.tagName != 'LI'));
-            };
+            if (!node.oToggleList(0, mode)) {
+                target = target.filter(
+                    li => li.parentNode != node.parentNode || li.tagName != 'LI',
+                );
+            }
         }
     }
-
 
     /**
      * Applies the given command to the current selection. This does *NOT*:
@@ -686,7 +706,7 @@ export class OdooEditor {
             }
         }
         if (['toggleList', 'createLink', 'unLink', 'indentList'].includes(method)) {
-            return this['_'+method](...args);
+            return this['_' + method](...args);
         }
         if (method.startsWith('justify')) {
             return document.execCommand(method, false, '');
@@ -780,19 +800,47 @@ export class OdooEditor {
         if (show === false) {
             return;
         }
-        for (let commandState of ["bold", "italic", "underline", "strikeThrough", "justifyLeft", "justifyRight", "justifyCenter", "justifyFull"]) {
-            this.toolbar.querySelector('#'+commandState).classList.toggle('active', document.queryCommandState(commandState));
+        for (let commandState of [
+            'bold',
+            'italic',
+            'underline',
+            'strikeThrough',
+            'justifyLeft',
+            'justifyRight',
+            'justifyCenter',
+            'justifyFull',
+        ]) {
+            this.toolbar
+                .querySelector('#' + commandState)
+                .classList.toggle('active', document.queryCommandState(commandState));
         }
         let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
         this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
         this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
         this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
-        this.toolbar.querySelector('#blockquote').classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
-        this.toolbar.querySelector('#unordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "UL"));
-        this.toolbar.querySelector('#ordered').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "OL"));
-        this.toolbar.querySelector('#checklist').classList.toggle('active', (pnode.tagName === 'LI') && (getListMode(pnode.parentElement) === "CL"));
-        const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === "A");
+        this.toolbar
+            .querySelector('#blockquote')
+            .classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
+        this.toolbar
+            .querySelector('#unordered')
+            .classList.toggle(
+                'active',
+                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'UL',
+            );
+        this.toolbar
+            .querySelector('#ordered')
+            .classList.toggle(
+                'active',
+                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'OL',
+            );
+        this.toolbar
+            .querySelector('#checklist')
+            .classList.toggle(
+                'active',
+                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'CL',
+            );
+        const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === 'A');
         this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
         this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
     }
@@ -843,19 +891,23 @@ export class OdooEditor {
                 this.deleteRange(selection);
             }
         }
-        if (ev.keyCode === 13) { // Enter
+        if (ev.keyCode === 13) {
+            // Enter
             ev.preventDefault();
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
                 this._applyCommand('oShiftEnter');
             }
-        } else if (ev.keyCode === 9) { // Tab
+        } else if (ev.keyCode === 9) {
+            // Tab
             if (this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent')) {
                 ev.preventDefault();
             }
-        } else if (ev.key === 'z' && ev.ctrlKey) { // Ctrl-Z
+        } else if (ev.key === 'z' && ev.ctrlKey) {
+            // Ctrl-Z
             ev.preventDefault();
             this.historyUndo();
-        } else if (ev.key === 'y' && ev.ctrlKey) { // Ctrl-Y
+        } else if (ev.key === 'y' && ev.ctrlKey) {
+            // Ctrl-Y
             ev.preventDefault();
             this.historyRedo();
         }
@@ -871,7 +923,7 @@ export class OdooEditor {
     _onClick(ev) {
         let node = ev.target;
         // handle checkbox lists
-        if (node.tagName == 'LI' && getListMode(node.parentElement)=='CL') {
+        if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
             if (ev.layerX < 0 && ev.layerY <= 16) {
                 node.classList.remove('unchecked');
                 toggleClass(node, 'checked');
@@ -894,7 +946,7 @@ export class OdooEditor {
             'blockquote': 'BLOCKQUOTE',
             'ordered': 'OL',
             'unordered': 'UL',
-            'checklist': 'CL'
+            'checklist': 'CL',
         };
         ev.preventDefault();
         this._protectUnbreakable(() => {
@@ -902,7 +954,7 @@ export class OdooEditor {
                 document.execCommand(buttonEl.id);
             } else if (['fontColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
-                document.execCommand('foreColor', false, "red");
+                document.execCommand('foreColor', false, 'red');
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {

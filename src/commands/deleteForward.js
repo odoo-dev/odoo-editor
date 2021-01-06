@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 import {
     childNodeIndex,
@@ -13,7 +13,7 @@ import {
     DIRECTIONS,
     CTYPES,
     leftPos,
-} from "../utils/utils.js";
+} from '../utils/utils.js';
 
 Text.prototype.oDeleteForward = function (offset) {
     if (offset < this.length) {
@@ -24,14 +24,21 @@ Text.prototype.oDeleteForward = function (offset) {
 };
 
 HTMLElement.prototype.oDeleteForward = function (offset) {
-    const filterFunc = node => (isVisibleEmpty(node) || isContentTextNode(node));
+    const filterFunc = node => isVisibleEmpty(node) || isContentTextNode(node);
 
     const firstInlineNode = findNode(rightDeepOnlyInlinePath(this, offset), filterFunc);
-    if (firstInlineNode && (firstInlineNode.nodeName !== 'BR' || getState(...rightPos(firstInlineNode), DIRECTIONS.RIGHT).cType !== CTYPES.BLOCK_INSIDE)) {
+    if (
+        firstInlineNode &&
+        (firstInlineNode.nodeName !== 'BR' ||
+            getState(...rightPos(firstInlineNode), DIRECTIONS.RIGHT).cType !== CTYPES.BLOCK_INSIDE)
+    ) {
         firstInlineNode.oDeleteBackward(Math.min(1, nodeSize(firstInlineNode)));
         return;
     }
-    const firstOutNode = findNode(rightDeepOnlyPath(...(firstInlineNode ? rightPos(firstInlineNode) : [this, offset])), filterFunc);
+    const firstOutNode = findNode(
+        rightDeepOnlyPath(...(firstInlineNode ? rightPos(firstInlineNode) : [this, offset])),
+        filterFunc,
+    );
     if (firstOutNode) {
         const [node, offset] = leftPos(firstOutNode);
         node.oDeleteBackward(offset);
