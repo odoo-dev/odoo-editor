@@ -1,5 +1,3 @@
-'use strict';
-
 import { OdooEditor } from '../editor.js';
 import { sanitize } from '../utils/sanitize.js';
 import { setCursor, insertText as insertTextSel } from '../utils/utils.js';
