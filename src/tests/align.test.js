@@ -22,8 +22,8 @@ describe('Align', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab</p><p>c[]d</p>',
                 stepFunction: justifyLeft,
-                // JW cAfter: '<p>ab</p><p style="text-align: left;">c[]d</p>',
-                contentAfter: '<p>ab</p><p>c[]d</p>',
+                contentAfter: '<p>ab</p><p style="text-align: left;">c[]d</p>',
+                // FP contentAfter: '<p>ab</p><p>c[]d</p>',
             });
         });
         it('should not align left a non-editable node', async () => {
@@ -56,8 +56,9 @@ describe('Align', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>a[b</p><p>c]d</p>',
                 stepFunction: justifyLeft,
-                // JW cAfter: '<p style="text-align: left;">a[b</p><p style="text-align: left;">c]d</p>',
-                contentAfter: '<p>a[b</p><p>c]d</p>',
+                contentAfter:
+                    '<p style="text-align: left;">a[b</p><p style="text-align: left;">c]d</p>',
+                // FP contentAfter: '<p>a[b</p><p>c]d</p>',
             });
         });
         it('should left align a node within a right-aligned node', async () => {
@@ -73,9 +74,9 @@ describe('Align', () => {
                 contentBefore:
                     '<div style="text-align: right;"><p>ab</p><p>c[d</p></div><p>e]f</p>',
                 stepFunction: justifyLeft,
-                // JW cAfter: '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p style="text-align: left;">e]f</p>',
                 contentAfter:
-                    '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
+                    '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p style="text-align: left;">e]f</p>',
+                // FP contentAfter: '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
             });
         });
         it('should left align a node within a right-aligned node and a paragraph, with a center-aligned common ancestor', async () => {
