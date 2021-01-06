@@ -911,6 +911,7 @@ submitButtonEl.addEventListener('click', () => {
     submitButtonEl.disabled = true;
     const testHTML = document.getElementById('textarea').value;
     startEditor(testHTML);
+    history.replaceState({}, 'Odoo Editor', `/?${btoa(testHTML)}`);
     document.getElementById('control-panel').remove();
 });
 const useSampleEl = document.getElementById('use-sample');
@@ -920,3 +921,14 @@ useSampleEl.addEventListener('click', () => {
     startEditor(testHTML);
     document.getElementById('control-panel').remove();
 });
+// url with custom text
+const customTextParam = location.search.slice(1);
+if (customTextParam) {
+    try {
+        const testHTML = atob(customTextParam);
+        startEditor(testHTML);
+        document.getElementById('control-panel').remove();
+    } catch (e) {
+        console.error(e);
+    }
+}
