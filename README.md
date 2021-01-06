@@ -26,6 +26,34 @@ to run in collaborative mode:
 
 WARNING: collaborative does not work yet with undo.
 
+Devlopment in Odoo
+------------------
+
+To build the lib for Odoo we need to generate a build for Odoo as it does not support javascript module
+yet.
+
+Install the build library if not already done:
+```bash
+npm install
+```
+
+Build the library:
+```bash
+npm run build
+```
+To build contuously as file changes (when developing):
+```bash
+npm run build -- --watch
+```
+
+Then, copy bundle:
+```bash
+cp <editor_path>/build/odoo-editor-bundle.js <odoo_folder>/addons/web_editor/static/src/js/editor/odoo-editor.js
+```
+Or link it (when developing):
+```bash
+ln -s <editor_path>/build/odoo-editor-bundle.js <odoo_folder>/addons/web_editor/static/src/js/editor/odoo-editor.js
+```
 
 To Improve
 ----------

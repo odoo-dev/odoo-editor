@@ -1,0 +1,25 @@
+{
+  "name": "odoo-editor",
+  "version": "0.0.1",
+  "description": "Web Editor Proof of Concept",
+  "main": "main.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/odoo-dev/odoo-editor.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/odoo-dev/odoo-editor/issues"
+  },
+  "homepage": "https://github.com/odoo-dev/odoo-editor#readme",
+  "devDependencies": {
+    "rollup": "^2.36.1"
+  }
+}
