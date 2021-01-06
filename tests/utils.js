@@ -1,6 +1,6 @@
 "use strict";
 
-import OdooEditor from "../editor.js";
+import {OdooEditor} from "../editor.js";
 import {sanitize} from "../utils/sanitize.js";
 import {
     setCursor,
