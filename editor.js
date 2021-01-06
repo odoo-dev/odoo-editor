@@ -499,6 +499,9 @@ export default class OdooEditor {
         const range = sel.getRangeAt(0);
         let pos1 = [range.startContainer, range.startOffset];
         let pos2 = [range.endContainer, range.endOffset];
+        // A selection spanning multiple nodes and ending at position 0 of a
+        // node, like the one resulting from a triple click, are corrected so
+        // that it ends at the last position of the previous node instead.
         if (!pos2[1]) {
             pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
         }
@@ -817,6 +820,16 @@ export default class OdooEditor {
         // Compute the current cursor on keydown but do not record it. Leave
         // that to the command execution or the 'input' event handler.
         this._computeHistoryCursor();
+        // If the pressed key has a printed representation, the returned value
+        // is a non-empty Unicode character string containing the printable
+        // representation of the key. In this case, call `deleteRange` before
+        // inserting the printed representation of the character.
+        if (/^.$/u.test(ev.key)) {
+            const selection = document.defaultView.getSelection();
+            if (selection && !selection.isCollapsed) {
+                this.deleteRange(selection);
+            }
+        }
         if (ev.keyCode === 13) { // Enter
             ev.preventDefault();
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
