@@ -1,5 +1,3 @@
-'use strict';
-
 const INVISIBLE_REGEX = /\u200c/g;
 
 export const DIRECTIONS = {

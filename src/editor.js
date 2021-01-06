@@ -1,5 +1,3 @@
-'use strict';
-
 import {} from './commands/deleteBackward.js';
 import {} from './commands/deleteForward.js';
 import {} from './commands/enter.js';

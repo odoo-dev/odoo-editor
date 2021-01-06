@@ -1,5 +1,3 @@
-'use strict';
-
 // TODO: avoid empty keys when not necessary to reduce request size
 export function nodeToObject(node) {
     let result = {

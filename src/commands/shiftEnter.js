@@ -1,5 +1,3 @@
-'use strict';
-
 import {
     CTYPES,
     DIRECTIONS,

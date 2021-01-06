@@ -1,5 +1,3 @@
-'use strict';
-
 import { UNBREAKABLE_ROLLBACK_CODE } from '../editor.js';
 import {
     boundariesOut,
