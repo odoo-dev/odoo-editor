@@ -1,3 +1,5 @@
+'use strict';
+
 import {} from './commands/deleteBackward.js';
 import {} from './commands/deleteForward.js';
 import {} from './commands/enter.js';
@@ -5,6 +7,7 @@ import {} from './commands/shiftEnter.js';
 import {} from './commands/shiftTab.js';
 import {} from './commands/tab.js';
 import {} from './commands/toggleList.js';
+import {} from './commands/justify.js';
 
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
@@ -31,6 +34,8 @@ import {
     findNode,
     closestElement,
     getTraversedNodes,
+    isVisible,
+    getRangeRover,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -710,6 +715,25 @@ export class OdooEditor {
         }
     }
 
+    _justify(mode) {
+        const sel = document.defaultView.getSelection();
+        const range = sel.getRangeAt(0);
+        const visitedBlocks = new Set();
+        const rangeRover = getRangeRover(range);
+        for (const node of rangeRover) {
+            if (isVisible(node)) {
+                let block = closestBlock(node);
+                if (!visitedBlocks.has(block)) {
+                    const hasModifier = getComputedStyle(block).textAlign === mode;
+                    if (!hasModifier && block.isContentEditable) {
+                        block.oJustify(sel.anchorOffset, mode);
+                    }
+                    visitedBlocks.add(block);
+                }
+            }
+        }
+    }
+
     /**
      * Applies the given command to the current selection. This does *NOT*:
      * 1) update the history cursor
@@ -738,7 +762,8 @@ export class OdooEditor {
             return this['_' + method](...args);
         }
         if (method.startsWith('justify')) {
-            return document.execCommand(method, false, '');
+            const mode = method.split('justify').join('').toLocaleLowerCase();
+            return this._justify(mode === 'full' ? 'justify' : mode);
         }
         return sel.anchorNode[method](sel.anchorOffset, ...args);
     }

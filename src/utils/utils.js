@@ -1321,3 +1321,30 @@ export function enforceWhitespace(el, offset, direction, rule) {
         spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, spaceVisibility ? '\u00A0' : '');
     }
 }
+/**
+ * Generates an iterable of every node of a range.
+ * 
+ * @param {Range} range 
+ */
+export function* getRangeRover(range) {
+    const iterator = document.createNodeIterator(
+        range.commonAncestorContainer,
+        NodeFilter.SHOW_ALL, // pre-filter
+        {
+            // custom filter
+            acceptNode: function (node) {
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    );
+    let started = false;
+    while (iterator.nextNode()) {
+        if (!started && iterator.referenceNode !== range.startContainer) { continue; }
+        started = true;
+        yield iterator.referenceNode;
+
+        if (iterator.referenceNode === range.endContainer) {
+            break;
+        }
+    }
+}
