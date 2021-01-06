@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 import {
     CTYPES,
@@ -10,7 +10,7 @@ import {
     getState,
     leftPos,
     splitTextNode,
-} from "../utils/utils.js";
+} from '../utils/utils.js';
 
 Text.prototype.oShiftEnter = function (offset) {
     this.parentElement.oShiftEnter(splitTextNode(this, offset));
@@ -26,8 +26,7 @@ HTMLElement.prototype.oShiftEnter = function (offset) {
     } else {
         this.insertBefore(brEl, this.childNodes[offset]);
     }
-    if (isFakeLineBreak(brEl) &&
-            getState(...leftPos(brEl), DIRECTIONS.LEFT).cType !== CTYPES.BR) {
+    if (isFakeLineBreak(brEl) && getState(...leftPos(brEl), DIRECTIONS.LEFT).cType !== CTYPES.BR) {
         const brEl2 = document.createElement('br');
         brEl.before(brEl2);
         brEls.unshift(brEl2);

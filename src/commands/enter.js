@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
+import { UNBREAKABLE_ROLLBACK_CODE } from '../editor.js';
 
 import {
     childNodeIndex,
@@ -12,8 +12,8 @@ import {
     setCursorStart,
     setTagName,
     splitTextNode,
-    toggleClass
-} from "../utils/utils.js";
+    toggleClass,
+} from '../utils/utils.js';
 
 Text.prototype.oEnter = function (offset) {
     this.parentElement.oEnter(splitTextNode(this, offset), true);
@@ -91,7 +91,7 @@ HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (this.nextElementSibling || this.textContent) {
         let node = HTMLElement.prototype.oEnter.call(this, ...arguments);
         if (node.classList.contains('checked')) {
-            toggleClass(node, "checked");
+            toggleClass(node, 'checked');
         }
         return node;
     }

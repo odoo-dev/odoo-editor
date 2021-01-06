@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-import {UNBREAKABLE_ROLLBACK_CODE} from "../editor.js";
+import { UNBREAKABLE_ROLLBACK_CODE } from '../editor.js';
 import {
     boundariesOut,
     childNodeIndex,
@@ -21,7 +21,7 @@ import {
     prepareUpdate,
     setCursor,
     splitTextNode,
-} from "../utils/utils.js";
+} from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     const parentNode = this.parentNode;
@@ -45,7 +45,10 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     restore();
 
     // If the removed element was not visible content, propagate the backspace.
-    if (isSpace && (getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT)) {
+    if (
+        isSpace &&
+        getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT
+    ) {
         parentNode.oDeleteBackward(firstSplitOffset, alreadyMoved);
         return;
     }
@@ -148,12 +151,15 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
 
     // Propagate if this is still a block on the left of where the nodes were
     // moved.
-    if (cursorNode.nodeType === Node.TEXT_NODE && (cursorOffset === 0 || cursorOffset === cursorNode.length)) {
+    if (
+        cursorNode.nodeType === Node.TEXT_NODE &&
+        (cursorOffset === 0 || cursorOffset === cursorNode.length)
+    ) {
         cursorOffset = childNodeIndex(cursorNode) + (cursorOffset === 0 ? 0 : 1);
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
-        const {cType} = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
+        const { cType } = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
         if (cType & CTGROUPS.BLOCK && (!alreadyMoved || cType === CTYPES.BLOCK_OUTSIDE)) {
             cursorNode.oDeleteBackward(cursorOffset, alreadyMoved);
         }
@@ -170,13 +176,12 @@ HTMLLIElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false
     this.oShiftTab(offset);
 };
 
-
 HTMLBRElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
     let parentOffset = childNodeIndex(this);
-    const rightState = getState(this.parentElement, parentOffset+1, DIRECTIONS.RIGHT).cType;
+    const rightState = getState(this.parentElement, parentOffset + 1, DIRECTIONS.RIGHT).cType;
     if (rightState & CTYPES.BLOCK_INSIDE) {
         this.parentElement.oDeleteBackward(parentOffset, alreadyMoved);
     } else {
         HTMLElement.prototype.oDeleteBackward.call(this, offset, alreadyMoved);
     }
-}
+};

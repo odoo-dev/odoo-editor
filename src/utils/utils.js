@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const INVISIBLE_REGEX = /\u200c/g;
 
@@ -6,7 +6,8 @@ export const DIRECTIONS = {
     LEFT: false,
     RIGHT: true,
 };
-export const CTYPES = { // Short for CONTENT_TYPES
+export const CTYPES = {
+    // Short for CONTENT_TYPES
     // Inline group
     CONTENT: 1,
     SPACE: 2,
@@ -18,7 +19,8 @@ export const CTYPES = { // Short for CONTENT_TYPES
     // Br group
     BR: 16,
 };
-export const CTGROUPS = { // Short for CONTENT_TYPE_GROUPS
+export const CTGROUPS = {
+    // Short for CONTENT_TYPE_GROUPS
     INLINE: CTYPES.CONTENT | CTYPES.SPACE,
     BLOCK: CTYPES.BLOCK_OUTSIDE | CTYPES.BLOCK_INSIDE,
     BR: CTYPES.BR,
@@ -113,13 +115,23 @@ export const leftDeepFirstPath = createDOMPathGenerator(DIRECTIONS.LEFT, false, 
 export const leftDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.LEFT, true, false);
 export const leftDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, false, true);
 export const leftDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.LEFT, true, true);
-export const leftDeepOnlyInlineInScopePath = createDOMPathGenerator(DIRECTIONS.LEFT, true, true, true);
+export const leftDeepOnlyInlineInScopePath = createDOMPathGenerator(
+    DIRECTIONS.LEFT,
+    true,
+    true,
+    true,
+);
 
 export const rightDeepFirstPath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, false);
 export const rightDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, false);
 export const rightDeepFirstInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, true);
 export const rightDeepOnlyInlinePath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, true);
-export const rightDeepOnlyInlineInScopePath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, true, true);
+export const rightDeepOnlyInlineInScopePath = createDOMPathGenerator(
+    DIRECTIONS.RIGHT,
+    true,
+    true,
+    true,
+);
 
 export function findNode(domPath, findCallback = node => true, stopCallback = node => false) {
     for (const node of domPath) {
@@ -191,13 +203,15 @@ const PATH_END_REASONS = {
  * @param {boolean} inline
  */
 export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
-    const nextDeepest = direction === DIRECTIONS.LEFT
-        ? node => latestChild(node.previousSibling, inline)
-        : node => firstChild(node.nextSibling, inline);
+    const nextDeepest =
+        direction === DIRECTIONS.LEFT
+            ? node => latestChild(node.previousSibling, inline)
+            : node => firstChild(node.nextSibling, inline);
 
-    const firstNode = direction === DIRECTIONS.LEFT
-        ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
-        : (node, offset) => firstChild(node.childNodes[offset], inline);
+    const firstNode =
+        direction === DIRECTIONS.LEFT
+            ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
+            : (node, offset) => firstChild(node.childNodes[offset], inline);
 
     // Note "reasons" is a way for the caller to be able to know why the
     // generator ended yielding values.
@@ -281,14 +295,18 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
             let leftVisibleEmpty = false;
             if (leftInlineNode) {
                 leftVisibleEmpty = isVisibleEmpty(leftInlineNode);
-                [node, offset] = leftVisibleEmpty ? rightPos(leftInlineNode) : endPos(leftInlineNode);
+                [node, offset] = leftVisibleEmpty
+                    ? rightPos(leftInlineNode)
+                    : endPos(leftInlineNode);
             }
             if (!leftInlineNode || leftVisibleEmpty) {
                 const rightInlineNode = rightDeepOnlyInlineInScopePath(el, elOffset).next().value;
                 if (rightInlineNode) {
                     const rightVisibleEmpty = isVisibleEmpty(rightInlineNode);
                     if (!(leftVisibleEmpty && rightVisibleEmpty)) {
-                        [node, offset] = rightVisibleEmpty ? leftPos(rightInlineNode) : startPos(rightInlineNode);
+                        [node, offset] = rightVisibleEmpty
+                            ? leftPos(rightInlineNode)
+                            : startPos(rightInlineNode);
                     }
                 }
             }
@@ -312,15 +330,29 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
  * @param {boolean} [normalize=true]
  * @returns {?Array.<Node, number}
  */
-export function setCursor(anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset, normalize = true) {
-    if (!anchorNode || !anchorNode.parentNode || !anchorNode.parentNode.closest('body')
-            || !focusNode || !focusNode.parentNode || !focusNode.parentNode.closest('body')) {
+export function setCursor(
+    anchorNode,
+    anchorOffset,
+    focusNode = anchorNode,
+    focusOffset = anchorOffset,
+    normalize = true,
+) {
+    if (
+        !anchorNode ||
+        !anchorNode.parentNode ||
+        !anchorNode.parentNode.closest('body') ||
+        !focusNode ||
+        !focusNode.parentNode ||
+        !focusNode.parentNode.closest('body')
+    ) {
         return null;
     }
 
-    const seemsCollapsed = (anchorNode === focusNode && anchorOffset === focusOffset);
+    const seemsCollapsed = anchorNode === focusNode && anchorOffset === focusOffset;
     [anchorNode, anchorOffset] = getNormalizedCursorPosition(anchorNode, anchorOffset, normalize);
-    [focusNode, focusOffset] = seemsCollapsed ? [anchorNode, anchorOffset] : getNormalizedCursorPosition(focusNode, focusOffset, normalize);
+    [focusNode, focusOffset] = seemsCollapsed
+        ? [anchorNode, anchorOffset]
+        : getNormalizedCursorPosition(focusNode, focusOffset, normalize);
 
     const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
     const sel = document.defaultView.getSelection();
@@ -366,30 +398,40 @@ export function setCursorEnd(node, normalize = true) {
  * @returns {(number|false)} the direction of false if the selection is collapsed
  */
 export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset) {
-    if (anchorNode==focusNode) {
-        if (anchorOffset == focusOffset)
-            return false;
-        return anchorOffset<focusOffset ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+    if (anchorNode == focusNode) {
+        if (anchorOffset == focusOffset) return false;
+        return anchorOffset < focusOffset ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
     }
-    return (anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING) ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+    return anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING
+        ? DIRECTIONS.LEFT
+        : DIRECTIONS.RIGHT;
 }
 
 export function getCursors() {
     let sel = document.defaultView.getSelection();
-    if (getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) == DIRECTIONS.RIGHT)
-        return [[sel.focusNode, sel.focusOffset], [sel.anchorNode, sel.anchorOffset]];
-    return [[sel.anchorNode, sel.anchorOffset], [sel.focusNode, sel.focusOffset]];
+    if (
+        getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ==
+        DIRECTIONS.RIGHT
+    )
+        return [
+            [sel.focusNode, sel.focusOffset],
+            [sel.anchorNode, sel.anchorOffset],
+        ];
+    return [
+        [sel.anchorNode, sel.anchorOffset],
+        [sel.focusNode, sel.focusOffset],
+    ];
 }
 
 export function preserveCursor(sel) {
     sel = sel || document.defaultView.getSelection();
     let cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
-    return (replace) => {
+    return replace => {
         replace = replace || new Map();
         cursorPos[0] = replace.get(cursorPos[0]) || cursorPos[0];
         cursorPos[2] = replace.get(cursorPos[2]) || cursorPos[2];
         setCursor(...cursorPos);
-    }
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -484,7 +526,12 @@ export function isUnbreakable(node) {
         return true;
     }
     const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
-    return isEditableRoot || node.hasAttribute('t') || ['TABLE', 'TR', 'TD'].includes(node.tagName) || node.classList.contains('oe_unbreakable');
+    return (
+        isEditableRoot ||
+        node.hasAttribute('t') ||
+        ['TABLE', 'TR', 'TD'].includes(node.tagName) ||
+        node.classList.contains('oe_unbreakable')
+    );
 }
 
 export function containsUnbreakable(node) {
@@ -495,10 +542,9 @@ export function containsUnbreakable(node) {
 }
 
 // optimize: use the parent Oid to speed up detection
-export function getOuid(node, optimize=false) {
+export function getOuid(node, optimize = false) {
     while (node && !isUnbreakable(node)) {
-        if (node.ouid && optimize)
-            return node.ouid
+        if (node.ouid && optimize) return node.ouid;
         node = node.parentNode;
     }
     return node && node.oid;
@@ -522,9 +568,10 @@ export function isVisibleEmpty(node) {
  */
 export function isInPre(node) {
     let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-    return !!element && (
-        !!element.closest('pre') ||
-        getComputedStyle(element).getPropertyValue('white-space') === 'pre'
+    return (
+        !!element &&
+        (!!element.closest('pre') ||
+            getComputedStyle(element).getPropertyValue('white-space') === 'pre')
     );
 }
 /**
@@ -570,7 +617,12 @@ export function isVisible(node) {
         // - <p>a</p>___b
         // - a___<p>b</p>
         // TODO see documentation comment
-        return (node.previousSibling && !isBlock(node.previousSibling) && node.nextSibling && !isBlock(node.nextSibling));
+        return (
+            node.previousSibling &&
+            !isBlock(node.previousSibling) &&
+            node.nextSibling &&
+            !isBlock(node.nextSibling)
+        );
     }
     if (isBlock(node) || isVisibleEmpty(node)) {
         return true;
@@ -604,15 +656,14 @@ export function commonParentGet(node1, node2, root = undefined) {
 }
 
 export function getListMode(pnode) {
-    if (pnode.tagName == 'OL')
-        return 'OL';
+    if (pnode.tagName == 'OL') return 'OL';
     return pnode.classList.contains('checklist') ? 'CL' : 'UL';
 }
 
 export function createList(mode) {
-    let node = document.createElement(mode=='OL' ? 'OL': 'UL');
+    let node = document.createElement(mode == 'OL' ? 'OL' : 'UL');
     if (mode == 'CL') {
-        node.classList.add("checklist");
+        node.classList.add('checklist');
     }
     return node;
 }
@@ -620,7 +671,7 @@ export function createList(mode) {
 export function toggleClass(node, className) {
     node.classList.toggle(className);
     if (!node.className) {
-        node.removeAttribute("class");
+        node.removeAttribute('class');
     }
 }
 
@@ -653,7 +704,7 @@ export function isEmptyBlock(blockEl) {
     for (const node of nodes) {
         // There is no text and no double BR, the only thing that could make
         // this visible is a "visible empty" node like an image.
-        if ((node.nodeName != 'BR') && isVisibleEmpty(node)) {
+        if (node.nodeName != 'BR' && isVisibleEmpty(node)) {
             return false;
         }
     }
@@ -706,10 +757,10 @@ export function splitTextNode(textNode, offset) {
 
 export function insertText(sel, content) {
     if (sel.anchorNode.nodeType == Node.TEXT_NODE) {
-        let pos = [sel.anchorNode.parentElement, splitTextNode(sel.anchorNode, sel.anchorOffset)]
+        let pos = [sel.anchorNode.parentElement, splitTextNode(sel.anchorNode, sel.anchorOffset)];
         setCursor(...pos, ...pos, false);
     }
-    const txt = document.createTextNode(content || '#')
+    const txt = document.createTextNode(content || '#');
     const restore = prepareUpdate(sel.anchorNode, sel.anchorOffset);
     sel.getRangeAt(0).insertNode(txt);
     restore();
@@ -778,7 +829,13 @@ export function setTagName(el, newTagName) {
  * @returns {Array.<HTMLElement, number} The position at the left of the moved
  *     nodes after the move was done (and where the cursor was returned).
  */
-export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex = 0, endIndex = sourceEl.childNodes.length) {
+export function moveNodes(
+    destinationEl,
+    destinationOffset,
+    sourceEl,
+    startIndex = 0,
+    endIndex = sourceEl.childNodes.length,
+) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
@@ -792,7 +849,10 @@ export function moveNodes(destinationEl, destinationOffset, sourceEl, startIndex
 
     if (nodes.length) {
         const restoreDestination = prepareUpdate(destinationEl, destinationOffset);
-        const restoreMoved = prepareUpdate(...leftPos(sourceEl.childNodes[startIndex]), ...rightPos(sourceEl.childNodes[endIndex - 1]));
+        const restoreMoved = prepareUpdate(
+            ...leftPos(sourceEl.childNodes[startIndex]),
+            ...rightPos(sourceEl.childNodes[endIndex - 1]),
+        );
         const fragment = document.createDocumentFragment();
         nodes.forEach(node => fragment.appendChild(node));
         const posRightNode = destinationEl.childNodes[destinationOffset];
@@ -917,7 +977,7 @@ export function getState(el, offset, direction, leftCType) {
             // visible if we have content backwards.
             if (direction === DIRECTIONS.LEFT) {
                 if (isVisibleStr(value)) {
-                    cType = (lastSpace || expr.test(value)) ? CTYPES.SPACE : CTYPES.CONTENT;
+                    cType = lastSpace || expr.test(value) ? CTYPES.SPACE : CTYPES.CONTENT;
                     break;
                 }
                 if (value.length) {
@@ -926,8 +986,13 @@ export function getState(el, offset, direction, leftCType) {
             } else {
                 leftCType = leftCType || getState(el, offset, DIRECTIONS.LEFT).cType;
                 if (expr.test(value)) {
-                    const rct = isVisibleStr(value) ? CTYPES.CONTENT : getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
-                    cType = ((leftCType & CTYPES.CONTENT) && (rct & (CTYPES.CONTENT | CTYPES.BR))) ? CTYPES.SPACE: rct;
+                    const rct = isVisibleStr(value)
+                        ? CTYPES.CONTENT
+                        : getState(...rightPos(node), DIRECTIONS.RIGHT).cType;
+                    cType =
+                        leftCType & CTYPES.CONTENT && rct & (CTYPES.CONTENT | CTYPES.BR)
+                            ? CTYPES.SPACE
+                            : rct;
                     break;
                 }
                 if (isVisibleStr(value)) {
@@ -946,7 +1011,9 @@ export function getState(el, offset, direction, leftCType) {
     }
 
     if (cType === undefined) {
-        cType = reasons.includes(PATH_END_REASONS.BLOCK_HIT) ? CTYPES.BLOCK_OUTSIDE : CTYPES.BLOCK_INSIDE;
+        cType = reasons.includes(PATH_END_REASONS.BLOCK_HIT)
+            ? CTYPES.BLOCK_OUTSIDE
+            : CTYPES.BLOCK_INSIDE;
     }
 
     return {
@@ -964,54 +1031,62 @@ const priorityRestoreStateRules = [
     [
         // Replace a space by &nbsp; when it was not collapsed before and now is
         // collapsed (one-letter word removal for example).
-        {cType1: CTYPES.CONTENT, cType2: CTYPES.SPACE | CTGROUPS.BLOCK},
-        {spaceVisibility: true},
+        { cType1: CTYPES.CONTENT, cType2: CTYPES.SPACE | CTGROUPS.BLOCK },
+        { spaceVisibility: true },
     ],
     [
         // Replace a space by &nbsp; when it was content before and now it is
         // a BR.
-        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BR},
-        {spaceVisibility: true},
+        { direction: DIRECTIONS.LEFT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BR },
+        { spaceVisibility: true },
     ],
     [
         // Replace a space by &nbsp; when it was visible thanks to a BR which
         // is now gone.
-        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BR, cType2: CTYPES.SPACE | CTGROUPS.BLOCK},
-        {spaceVisibility: true},
+        { direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BR, cType2: CTYPES.SPACE | CTGROUPS.BLOCK },
+        { spaceVisibility: true },
     ],
     [
         // Remove all collapsed spaces when a space is removed.
-        {cType1: CTYPES.SPACE},
-        {spaceVisibility: false},
+        { cType1: CTYPES.SPACE },
+        { spaceVisibility: false },
     ],
     [
         // Remove spaces once the preceeding BR is removed
-        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR},
-        {spaceVisibility: false},
+        { direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR },
+        { spaceVisibility: false },
     ],
     [
         // Remove space before block once content is put after it (otherwise it
         // would become visible).
-        {cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
-        {spaceVisibility: false},
+        { cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE | CTGROUPS.BR },
+        { spaceVisibility: false },
     ],
     [
         // Duplicate a BR once the content afterwards disappears
-        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BLOCK},
-        {brVisibility: true},
+        { direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.INLINE, cType2: CTGROUPS.BLOCK },
+        { brVisibility: true },
     ],
     [
         // Remove a BR at the end of a block once inline content is put after
         // it (otherwise it would act as a line break).
-        {direction: DIRECTIONS.RIGHT, cType1: CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE | CTGROUPS.BR},
-        {brVisibility: false},
+        {
+            direction: DIRECTIONS.RIGHT,
+            cType1: CTGROUPS.BLOCK,
+            cType2: CTGROUPS.INLINE | CTGROUPS.BR,
+        },
+        { brVisibility: false },
     ],
     [
         // Remove a BR once the BR that preceeds it is now replaced by
         // content (or if it was a BR at the start of a block which now is
         // a trailing BR).
-        {direction: DIRECTIONS.LEFT, cType1: CTGROUPS.BR | CTGROUPS.BLOCK, cType2: CTGROUPS.INLINE},
-        {brVisibility: false, extraBRRemovalCondition: brNode => isFakeLineBreak(brNode)},
+        {
+            direction: DIRECTIONS.LEFT,
+            cType1: CTGROUPS.BR | CTGROUPS.BLOCK,
+            cType2: CTGROUPS.INLINE,
+        },
+        { brVisibility: false, extraBRRemovalCondition: brNode => isFakeLineBreak(brNode) },
     ],
 ];
 function restoreStateRuleHashCode(direction, cType1, cType2) {
@@ -1024,7 +1099,7 @@ const allRestoreStateRules = (function () {
     for (const direction of Object.values(DIRECTIONS)) {
         for (const cType1 of Object.values(CTYPES)) {
             for (const cType2 of Object.values(CTYPES)) {
-                const rule = {direction: direction, cType1: cType1, cType2: cType2};
+                const rule = { direction: direction, cType1: cType1, cType2: cType2 };
 
                 // Search for the rules which match whatever their priority
                 const matchedRules = [];
@@ -1033,7 +1108,11 @@ const allRestoreStateRules = (function () {
                     for (const key of keys) {
                         const entryKeyValue = entry[0][key];
                         if (entryKeyValue !== undefined) {
-                            if (typeof entryKeyValue === 'boolean' ? (rule[key] === entryKeyValue) : (rule[key] & entryKeyValue)) {
+                            if (
+                                typeof entryKeyValue === 'boolean'
+                                    ? rule[key] === entryKeyValue
+                                    : rule[key] & entryKeyValue
+                            ) {
                                 priority++;
                             } else {
                                 priority = -1;
@@ -1074,7 +1153,7 @@ const allRestoreStateRules = (function () {
  * @param {Object} prevStateData @see getState
  */
 export function restoreState(prevStateData) {
-    const {node, direction, cType: cType1} = prevStateData;
+    const { node, direction, cType: cType1 } = prevStateData;
     if (!node || !node.parentNode) {
         // FIXME sometimes we want to restore the state starting from a node
         // which has been removed by another restoreState call... Not sure if
@@ -1082,7 +1161,7 @@ export function restoreState(prevStateData) {
         return;
     }
     const [el, offset] = direction === DIRECTIONS.LEFT ? leftPos(node) : rightPos(node);
-    const {cType: cType2} = getState(el, offset, direction);
+    const { cType: cType2 } = getState(el, offset, direction);
 
     /**
      * Knowing the old state data and the new state data, we know if we have to
@@ -1175,13 +1254,17 @@ export function enforceWhitespace(el, offset, direction, rule) {
             }
         }
     }
-    const spaceNode = (foundVisibleSpaceTextNode || invisibleSpaceTextNodes[0]);
+    const spaceNode = foundVisibleSpaceTextNode || invisibleSpaceTextNodes[0];
     if (spaceNode) {
         let spaceVisibility = rule.spaceVisibility;
         // In case we are asked to replace the space by a &nbsp;, disobey and
         // do the opposite if that space is currently not visible
         // TODO I'd like this to not be needed, it feels wrong...
-        if (spaceVisibility && !foundVisibleSpaceTextNode && getState(...rightPos(spaceNode), DIRECTIONS.RIGHT).cType & CTGROUPS.BLOCK) {
+        if (
+            spaceVisibility &&
+            !foundVisibleSpaceTextNode &&
+            getState(...rightPos(spaceNode), DIRECTIONS.RIGHT).cType & CTGROUPS.BLOCK
+        ) {
             spaceVisibility = false;
         }
         spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, spaceVisibility ? '\u00A0' : '');

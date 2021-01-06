@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 
 // TODO: avoid empty keys when not necessary to reduce request size
 export function nodeToObject(node) {
     let result = {
-       nodeType: node.nodeType,
-       oid: node.oid,
+        nodeType: node.nodeType,
+        oid: node.oid,
     };
     if (!node.oid) {
         console.warn('OID can not be falsy!');
