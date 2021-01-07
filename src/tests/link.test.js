@@ -185,8 +185,7 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">bc[</a>d]e</p>', // JW contentAfter
-                    // FP contentAfter: '<p>a<a href="exist">bc</a>[d]e</p>',
+                    contentAfter: '<p>a<a href="exist">bc[</a>d]e</p>',
                 });
             });
             it('should remove the link in the selected range in the middle of a link', async () => {
@@ -195,8 +194,7 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">b[</a>c]<a href="exist">d</a>e</p>', // JW contentAfter
-                    // FP contentAfter: '<p>a<a href="exist">b</a>[c]<a href="exist">d</a>e</p>',
+                    contentAfter: '<p>a<a href="exist">b[</a>c]<a href="exist">d</a>e</p>',
                 });
             });
             it('should remove the link in the selected range at the start of a link', async () => {
@@ -215,8 +213,7 @@ describe('Link', () => {
                     stepFunction: async editor => {
                         await unLink(editor);
                     },
-                    contentAfter: '<p>a<a href="exist">bc[</a>de]f</p>', // JW contentAfter
-                    // FP contentAfter: '<p>a<a href="exist">bc</a>[de]f</p>',
+                    contentAfter: '<p>a<a href="exist">bc[</a>de]f</p>',
                 });
             });
             it('should remove the link in the selected range overlapping the start of a link', async () => {
