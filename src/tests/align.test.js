@@ -23,7 +23,6 @@ describe('Align', () => {
                 contentBefore: '<p>ab</p><p>c[]d</p>',
                 stepFunction: justifyLeft,
                 contentAfter: '<p>ab</p><p style="text-align: left;">c[]d</p>',
-                // FP contentAfter: '<p>ab</p><p>c[]d</p>',
             });
         });
         it('should not align left a non-editable node', async () => {
@@ -58,7 +57,6 @@ describe('Align', () => {
                 stepFunction: justifyLeft,
                 contentAfter:
                     '<p style="text-align: left;">a[b</p><p style="text-align: left;">c]d</p>',
-                // FP contentAfter: '<p>a[b</p><p>c]d</p>',
             });
         });
         it('should left align a node within a right-aligned node', async () => {
@@ -76,7 +74,6 @@ describe('Align', () => {
                 stepFunction: justifyLeft,
                 contentAfter:
                     '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p style="text-align: left;">e]f</p>',
-                // FP contentAfter: '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
             });
         });
         it('should left align a node within a right-aligned node and a paragraph, with a center-aligned common ancestor', async () => {
