@@ -102,8 +102,8 @@ HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
  */
 HTMLPreElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (offset < this.childNodes.length) {
-        const newline = document.createTextNode('\n');
-        this.insertBefore(newline, this.childNodes[offset]);
+        const lineBreak = document.createElement('br');
+        this.insertBefore(lineBreak, this.childNodes[offset]);
     } else {
         let node = document.createElement('p');
         this.parentNode.insertBefore(node, this.nextSibling);

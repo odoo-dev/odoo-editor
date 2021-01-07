@@ -1591,7 +1591,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<pre>ab[]cd</pre>',
                         stepFunction: insertParagraphBreak,
-                        contentAfter: '<pre>ab\n[]cd</pre>',
+                        contentAfter: '<pre>ab<br>[]cd</pre>',
                     });
                 });
                 it('should insert a new paragraph after the pre', async () => {
