@@ -227,7 +227,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
     testNode.innerHTML = spec.contentBefore;
     let selection = _parseTextualSelection(testNode);
 
-    const editor = new Editor(testNode, false);
+    const editor = new Editor(testNode, { sanitize: false });
     if (selection) {
         setSelection(selection);
     } else {
