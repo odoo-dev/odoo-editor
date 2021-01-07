@@ -980,7 +980,7 @@ export class OdooEditor {
         let node = ev.target;
         // handle checkbox lists
         if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
-            if (ev.layerX < 0 && ev.layerY <= 16) {
+            if (ev.offsetX < 0) {
                 node.classList.remove('unchecked');
                 toggleClass(node, 'checked');
                 ev.preventDefault();
