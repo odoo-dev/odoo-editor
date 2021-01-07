@@ -1,5 +1,5 @@
 export default {
-    input: 'editor.js',
+    input: 'src/editor.js',
     output: {
         file: 'build/odoo-editor-bundle.js',
         format: 'iife',
