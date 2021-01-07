@@ -404,6 +404,23 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
         ? DIRECTIONS.LEFT
         : DIRECTIONS.RIGHT;
 }
+/**
+ * Returns an array containing all the nodes traversed when walking the
+ * selection.
+ *
+ * @returns {Node[]}
+ */
+export function getTraversedNodes() {
+    const sel = document.defaultView.getSelection();
+    const pathGenerator = rightDeepFirstPath(sel.anchorNode, sel.anchorOffset);
+    const traversedNodes = [];
+    let nextNode;
+    do {
+        nextNode = pathGenerator.next().value;
+        traversedNodes.push(nextNode);
+    } while (nextNode && nextNode !== sel.focusNode);
+    return traversedNodes;
+}
 
 export function getCursors() {
     let sel = document.defaultView.getSelection();

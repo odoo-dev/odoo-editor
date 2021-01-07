@@ -29,7 +29,8 @@ import {
     splitTextNode,
     toggleClass,
     findNode,
-} from './utils/utils.js';
+    getTraversedNodes,
+} from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
@@ -942,6 +943,7 @@ export class OdooEditor {
             'heading2': 'H2',
             'heading3': 'H3',
             'blockquote': 'BLOCKQUOTE',
+            'pre': 'PRE',
             'ordered': 'OL',
             'unordered': 'UL',
             'checklist': 'CL',
@@ -960,10 +962,22 @@ export class OdooEditor {
             } else if (buttonEl.id.startsWith('justify')) {
                 this.execCommand(buttonEl.id);
             } else {
-                let sel = document.defaultView.getSelection();
-                let pnode = closestBlock(sel.anchorNode);
-                setTagName(pnode, TAGS[buttonEl.id]);
-                setCursor(sel.anchorNode, sel.anchorOffset);
+                const restoreCursor = preserveCursor(document.defaultView.getSelection());
+                const selectedBlocks = [...new Set(getTraversedNodes().map(closestBlock))];
+                for (const selectedBlock of selectedBlocks) {
+                    const block = closestBlock(selectedBlock);
+                    if (['P', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'PRE'].includes(block.nodeName)) {
+                        setTagName(block, TAGS[buttonEl.id]);
+                    } else {
+                        // eg do not change a <div> into a h1: insert the h1
+                        // into it instead.
+                        const newBlock = document.createElement(TAGS[buttonEl.id]);
+                        const children = [...block.childNodes];
+                        block.insertBefore(newBlock, block.firstChild);
+                        children.forEach(child => newBlock.appendChild(child));
+                    }
+                }
+                restoreCursor();
             }
             this.historyStep();
             this._updateToolbar();

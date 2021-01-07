@@ -367,6 +367,19 @@ export async function insertText(editor, text) {
     sel.collapseToEnd();
 }
 
+export function simulateToolbarClick(editor, buttonId) {
+    const button = document.createElement('div');
+    button.classList.add('btn');
+    button.id = buttonId;
+    const ev = new MouseEvent('click');
+    Object.defineProperty(ev, 'target', { value: button });
+    editor._onToolbarClick(ev);
+}
+
+export function applyElementStyle(editor, style) {
+    simulateToolbarClick(editor, style);
+}
+
 export async function testVdom(Editor, spec) {
     return testEditor(Editor, spec, true);
 }

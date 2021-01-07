@@ -1,4 +1,5 @@
 import {
+    applyElementStyle,
     BasicEditor,
     deleteBackward,
     deleteForward,
@@ -2241,6 +2242,218 @@ describe('Editor', () => {
                     contentBefore: '<p>]abcd[</p>',
                     stepFunction: insertLineBreak,
                     contentAfter: '<p><br>[]<br></p>',
+                });
+            });
+        });
+    });
+
+    describe('setTagName', () => {
+        describe('to paragraph', () => {
+            it('should turn a heading 1 into a paragraph', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab[]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'paragraph'),
+                    contentAfter: '<p>ab[]cd</p>',
+                });
+            });
+            it('should turn a heading 1 into a paragraph (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b]c</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'paragraph'),
+                    contentAfter: '<p>a[b]c</p>',
+                });
+            });
+            it('should turn a heading 1, a paragraph and a heading 2 into three paragraphs', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b</h1><p>cd</p><h2>e]f</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'paragraph'),
+                    contentAfter: '<p>a[b</p><p>cd</p><p>e]f</p>',
+                });
+            });
+            it.skip('should turn a heading 1 into a paragraph after a triple click', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[ab</h1><h2>]cd</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'paragraph'),
+                    contentAfter: '<p>[ab</p><h2>]cd</h2>',
+                });
+            });
+            it('should not turn a div into a paragraph', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<div>[ab]</div>',
+                    stepFunction: editor => applyElementStyle(editor, 'paragraph'),
+                    contentAfter: '<div><p>[ab]</p></div>',
+                });
+            });
+        });
+        describe('to heading 1', () => {
+            it('should turn a paragraph into a heading 1', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[]cd</p>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading1'),
+                    contentAfter: '<h1>ab[]cd</h1>',
+                });
+            });
+            it('should turn a paragraph into a heading 1 (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a[b]c</p>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading1'),
+                    contentAfter: '<h1>a[b]c</h1>',
+                });
+            });
+            it('should turn a paragraph, a heading 1 and a heading 2 into three headings 1', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>a[b</p><h1>cd</h1><h2>e]f</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading1'),
+                    contentAfter: '<h1>a[b</h1><h1>cd</h1><h1>e]f</h1>',
+                });
+            });
+            it.skip('should turn a paragraph into a heading 1 after a triple click', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[ab</p><h2>]cd</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading1'),
+                    contentAfter: '<h1>[ab</h1><h2>]cd</h2>',
+                });
+            });
+            it('should not turn a div into a heading 1', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<div>[ab]</div>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading1'),
+                    contentAfter: '<div><h1>[ab]</h1></div>',
+                });
+            });
+        });
+        describe('to heading 2', () => {
+            it('should turn a heading 1 into a heading 2', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab[]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading2'),
+                    contentAfter: '<h2>ab[]cd</h2>',
+                });
+            });
+            it('should turn a heading 1 into a heading 2 (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b]c</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading2'),
+                    contentAfter: '<h2>a[b]c</h2>',
+                });
+            });
+            it('should turn a heading 1, a heading 2 and a paragraph into three headings 2', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b</h1><h2>cd</h2><p>e]f</p>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading2'),
+                    contentAfter: '<h2>a[b</h2><h2>cd</h2><h2>e]f</h2>',
+                });
+            });
+            it.skip('should turn a paragraph into a heading 2 after a triple click', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[ab</p><h1>]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading2'),
+                    contentAfter: '<h2>[ab</h2><h1>]cd</h1>',
+                });
+            });
+            it('should not turn a div into a heading 2', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<div>[ab]</div>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading2'),
+                    contentAfter: '<div><h2>[ab]</h2></div>',
+                });
+            });
+        });
+        describe('to heading 3', () => {
+            it('should turn a heading 1 into a heading 3', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab[]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading3'),
+                    contentAfter: '<h3>ab[]cd</h3>',
+                });
+            });
+            it('should turn a heading 1 into a heading 3 (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b]c</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading3'),
+                    contentAfter: '<h3>a[b]c</h3>',
+                });
+            });
+            it('should turn a heading 1, a paragraph and a heading 2 into three headings 3', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b</h1><p>cd</p><h2>e]f</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading3'),
+                    contentAfter: '<h3>a[b</h3><h3>cd</h3><h3>e]f</h3>',
+                });
+            });
+            it.skip('should turn a paragraph into a heading 3 after a triple click', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[ab</p><h1>]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading3'),
+                    contentAfter: '<h3>[ab</h3><h1>]cd</h1>',
+                });
+            });
+            it('should not turn a div into a heading 3', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<div>[ab]</div>',
+                    stepFunction: editor => applyElementStyle(editor, 'heading3'),
+                    contentAfter: '<div><h3>[ab]</h3></div>',
+                });
+            });
+        });
+        describe('to pre', () => {
+            it('should turn a heading 1 into a pre', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab[]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'pre'),
+                    contentAfter: '<pre>ab[]cd</pre>',
+                });
+            });
+            it('should turn a heading 1 into a pre (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b]c</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'pre'),
+                    contentAfter: '<pre>a[b]c</pre>',
+                });
+            });
+            it('should turn a heading 1 a pre and a paragraph into three pres', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b</h1><pre>cd</pre><p>e]f</p>',
+                    stepFunction: editor => applyElementStyle(editor, 'pre'),
+                    contentAfter: '<pre>a[b</pre><pre>cd</pre><pre>e]f</pre>',
+                });
+            });
+        });
+        describe('to blockquote', () => {
+            it('should turn a blockquote into a paragraph', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>ab[]cd</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'blockquote'),
+                    contentAfter: '<blockquote>ab[]cd</blockquote>',
+                });
+            });
+            it('should turn a heading 1 into a blockquote (character selected)', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b]c</h1>',
+                    stepFunction: editor => applyElementStyle(editor, 'blockquote'),
+                    contentAfter: '<blockquote>a[b]c</blockquote>',
+                });
+            });
+            it('should turn a heading 1, a paragraph and a heading 2 into three blockquote', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>a[b</h1><p>cd</p><h2>e]f</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'blockquote'),
+                    contentAfter:
+                        '<blockquote>a[b</blockquote><blockquote>cd</blockquote><blockquote>e]f</blockquote>',
+                });
+            });
+            it.skip('should turn a heading 1 into a blockquote after a triple click', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[ab</h1><h2>]cd</h2>',
+                    stepFunction: editor => applyElementStyle(editor, 'blockquote'),
+                    contentAfter: '<blockquote>[ab</blockquote><h2>]cd</h2>',
+                });
+            });
+            it('should not turn a div into a blockquote', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<div>[ab]</div>',
+                    stepFunction: editor => applyElementStyle(editor, 'blockquote'),
+                    contentAfter: '<div><blockquote>[ab]</blockquote></div>',
                 });
             });
         });
