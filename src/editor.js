@@ -7,7 +7,7 @@ import {} from './commands/shiftEnter.js';
 import {} from './commands/shiftTab.js';
 import {} from './commands/tab.js';
 import {} from './commands/toggleList.js';
-import {} from './commands/justify.js';
+import {} from './commands/align.js';
 
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
@@ -715,7 +715,7 @@ export class OdooEditor {
         }
     }
 
-    _justify(mode) {
+    _align(mode) {
         const sel = document.defaultView.getSelection();
         const range = sel.getRangeAt(0);
         const visitedBlocks = new Set();
@@ -726,7 +726,7 @@ export class OdooEditor {
                 if (!visitedBlocks.has(block)) {
                     const hasModifier = getComputedStyle(block).textAlign === mode;
                     if (!hasModifier && block.isContentEditable) {
-                        block.oJustify(sel.anchorOffset, mode);
+                        block.oAlign(sel.anchorOffset, mode);
                     }
                     visitedBlocks.add(block);
                 }
@@ -763,7 +763,7 @@ export class OdooEditor {
         }
         if (method.startsWith('justify')) {
             const mode = method.split('justify').join('').toLocaleLowerCase();
-            return this._justify(mode === 'full' ? 'justify' : mode);
+            return this._align(mode === 'full' ? 'justify' : mode);
         }
         return sel.anchorNode[method](sel.anchorOffset, ...args);
     }
