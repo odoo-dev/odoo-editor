@@ -37,19 +37,10 @@ export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
 
-export class OdooEditor {
-    constructor(dom, options = {}) {
-        this.options = options;
-
-        if (typeof this.options.toSanitize === 'undefined') {
-            this.options.toSanitize = true;
-        }
-        if (typeof this.options.toolbar === 'undefined') {
-            this.options.toolbar = false;
-        }
-
+export default class OdooEditor {
+    constructor(dom, toSanitize=true) {
         dom.oid = 1;                                      // convention: root node is ID 1
-        this.dom = this.options.toSanitize ? sanitize(dom) : dom;
+        this.dom = toSanitize ? sanitize(dom) : dom;
         this.history = [{
             cursor: { // cursor at beginning of step
                 anchorNode: undefined, anchorOffset: undefined,
@@ -75,10 +66,8 @@ export class OdooEditor {
         document.onselectionchange = this._onSelectionChange.bind(this);
         document.onclick = this._onSelectionChange.bind(this);
 
-        if (this.options.toolbar) {
-            this.toolbar = document.querySelector('#toolbar');
-            this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
-        }
+        this.toolbar = document.querySelector('#toolbar');
+        this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
 
         this.collaborate = false;
         this.collaborate_last = null;
@@ -768,8 +757,6 @@ export class OdooEditor {
      * @param {boolean} [show]
      */
     _updateToolbar(show) {
-        if (!this.options.toolbar) return;
-
         let sel = document.defaultView.getSelection();
         if (!sel.anchorNode) {
             show = false;
@@ -918,5 +905,43 @@ export class OdooEditor {
             this.historyStep();
             this._updateToolbar();
         });
+    }
+}
+
+function startEditor(testHTML) {
+    const editableContainer = document.getElementById('dom');
+    editableContainer.innerHTML = testHTML;
+    const editor = new OdooEditor(editableContainer);
+    document.getElementById('vdom').append(editor.vdom);
+    editor.historyFetch();
+}
+
+/**
+ * Quick UI to start editing
+ */
+const submitButtonEl = document.getElementById('textarea-submit');
+submitButtonEl.addEventListener('click', () => {
+    submitButtonEl.disabled = true;
+    const testHTML = document.getElementById('textarea').value;
+    startEditor(testHTML);
+    history.replaceState({}, 'Odoo Editor', `/?${btoa(testHTML)}`);
+    document.getElementById('control-panel').remove();
+});
+const useSampleEl = document.getElementById('use-sample');
+useSampleEl.addEventListener('click', () => {
+    useSampleEl.disabled = true;
+    const testHTML = document.getElementById('sample-dom').innerHTML;
+    startEditor(testHTML);
+    document.getElementById('control-panel').remove();
+});
+// url with custom text
+const customTextParam = location.search.slice(1);
+if (customTextParam) {
+    try {
+        const testHTML = atob(customTextParam);
+        startEditor(testHTML);
+        document.getElementById('control-panel').remove();
+    } catch (e) {
+        console.error(e);
     }
 }
