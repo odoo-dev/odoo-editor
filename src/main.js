@@ -16,7 +16,7 @@ submitButtonEl.addEventListener('click', () => {
     submitButtonEl.disabled = true;
     const testHTML = document.getElementById('textarea').value;
     startEditor(testHTML);
-    history.replaceState({}, 'Odoo Editor', `/?${btoa(testHTML)}`);
+    history.replaceState({}, 'Odoo Editor', `${location.pathname.slice(0, -1)}?${btoa(testHTML)}`);
     document.getElementById('control-panel').remove();
 });
 const useSampleEl = document.getElementById('use-sample');
