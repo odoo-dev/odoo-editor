@@ -1586,7 +1586,7 @@ describe('Editor', () => {
                     });
                 });
             });
-            describe.only('Pre', () => {
+            describe('Pre', () => {
                 it('should insert a line break within the pre', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<pre>ab[]cd</pre>',
