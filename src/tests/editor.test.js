@@ -1,3 +1,4 @@
+import { getTraversedNodes } from '../utils/utils.js';
 import {
     applyElementStyle,
     BasicEditor,
@@ -2456,6 +2457,39 @@ describe('Editor', () => {
                     contentAfter: '<div><blockquote>[ab]</blockquote></div>',
                 });
             });
+        });
+    });
+
+    describe('getTraversedNodes', () => {
+        it('should return the anchor node of a collapsed selection', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<div><p>a[]bc</p><div>def</div></div>',
+                stepFunction: () => {
+                    window.chai.expect(getTraversedNodes().map(node => (
+                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
+                    ))).to.eql(['abc']);
+                },
+            })
+        });
+        it('should return the nodes traversed in a cross-blocks selection', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<div><p>a[bc</p><div>d]ef</div></div>',
+                stepFunction: () => {
+                    window.chai.expect(getTraversedNodes().map(node => (
+                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
+                    ))).to.eql(['abc', 'P', 'def']);
+                },
+            })
+        });
+        it('should return the nodes traversed in a cross-blocks selection with hybrid nesting', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<div><section><p>a[bc</p></section><div>d]ef</div></section>',
+                stepFunction: () => {
+                    window.chai.expect(getTraversedNodes().map(node => (
+                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
+                    ))).to.eql(['abc', 'P', 'SECTION', 'def']);
+                },
+            })
         });
     });
 
