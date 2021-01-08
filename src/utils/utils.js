@@ -1184,7 +1184,7 @@ export function restoreState(prevStateData) {
      */
     const ruleHashCode = restoreStateRuleHashCode(direction, cType1, cType2);
     const rule = allRestoreStateRules.get(ruleHashCode);
-    if (Object.values(rule).filter(x => x !== undefined).length && !isInPre(el)) {
+    if (Object.values(rule).filter(x => x !== undefined).length) {
         const inverseDirection = direction === DIRECTIONS.LEFT ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
         enforceWhitespace(el, offset, inverseDirection, rule);
     }
@@ -1226,7 +1226,7 @@ export function enforceWhitespace(el, offset, direction, rule) {
                 }
             }
             break;
-        } else if (node.nodeType === Node.TEXT_NODE) {
+        } else if (node.nodeType === Node.TEXT_NODE && !isInPre(node)) {
             if (expr.test(node.nodeValue)) {
                 // If we hit spaces going in the direction, either they are in a
                 // visible text node and we have to change the visibility of
