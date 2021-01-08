@@ -11,6 +11,7 @@ import {
     DIRECTIONS,
     CTYPES,
     leftPos,
+    isFontAwesome,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteForward = function (offset) {
@@ -25,6 +26,10 @@ HTMLElement.prototype.oDeleteForward = function (offset) {
     const filterFunc = node => isVisibleEmpty(node) || isContentTextNode(node);
 
     const firstInlineNode = findNode(rightDeepOnlyInlinePath(this, offset), filterFunc);
+    if (isFontAwesome(firstInlineNode && firstInlineNode.parentElement)) {
+        firstInlineNode.parentElement.remove();
+        return;
+    }
     if (
         firstInlineNode &&
         (firstInlineNode.nodeName !== 'BR' ||

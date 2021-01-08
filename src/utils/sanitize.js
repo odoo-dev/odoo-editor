@@ -8,6 +8,8 @@ import {
     isVisibleEmpty,
     moveNodes,
     preserveCursor,
+    isFontAwesome,
+    closestElement,
 } from './utils.js';
 
 export function areSimilarElements(node, node2) {
@@ -99,6 +101,17 @@ class Sanitize {
                 this._parse(next);
                 restoreCursor(new Map([[node, pnode]]));
                 return;
+            }
+        }
+
+        // Sanitize font awesome elements
+        if (isFontAwesome(node)) {
+            // Ensure a zero width space is present inside the FA element.
+            if (node.innerHTML !== '​') node.innerHTML = '​';
+
+            // Ensure all Font awesome element are tagged contenteditable=false.
+            if (node.isContentEditable) {
+                node.setAttribute('contenteditable', 'false');
             }
         }
 

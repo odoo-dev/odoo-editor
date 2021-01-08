@@ -28,7 +28,7 @@ import {
     setTagName,
     splitTextNode,
     toggleClass,
-    findNode,
+    closestElement,
     getTraversedNodes,
 } from './utils/utils.js';
 
@@ -64,10 +64,10 @@ export class OdooEditor {
         ];
         this.undos = new Map();
 
-        // set contentEditable before clone as FF updates the content at this point
-        dom.setAttribute('contentEditable', true);
+        // set contenteditable before clone as FF updates the content at this point
+        dom.setAttribute('contenteditable', true);
         this.vdom = dom.cloneNode(true);
-        this.vdom.removeAttribute('contentEditable');
+        this.vdom.removeAttribute('contenteditable');
         this.idSet(dom, this.vdom);
 
         this.observerActive();
@@ -603,6 +603,19 @@ export class OdooEditor {
         } while (fakeEl.parentNode);
     }
 
+    _insertFontAwesome(faClass = 'fa fa-star') {
+        const sel = document.defaultView.getSelection();
+        if (!sel.isCollapsed) {
+            this.deleteRange(sel);
+        }
+        // We need to add a &#8203; to ensure the insertHTML command is not ignored
+        if (document.execCommand('insertHTML', false, '<i class="' + faClass + '">&#8203;</i>')) {
+            const node = closestElement(sel.focusNode, 'i');
+            let pos = [node.parentElement, childNodeIndex(node) + 1];
+            setCursor(...pos, ...pos, false);
+        }
+    }
+
     _createLink(link = '#', content) {
         const sel = document.defaultView.getSelection();
         if (content && !sel.isCollapsed) {
@@ -612,7 +625,7 @@ export class OdooEditor {
             insertText(sel, content || 'link');
         }
         if (document.execCommand('createLink', false, '#')) {
-            const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
+            const node = closestElement(sel.focusNode, 'a');
             let pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
@@ -622,7 +635,7 @@ export class OdooEditor {
         const sel = document.defaultView.getSelection();
         if (sel.isCollapsed) {
             const cr = preserveCursor();
-            const node = findNode(closestPath(sel.anchorNode), node => node.tagName === 'A');
+            const node = closestElement(sel.focusNode, 'a');
             setCursor(node, 0, node, node.childNodes.length, false);
             document.execCommand('unlink');
             cr();
@@ -839,7 +852,7 @@ export class OdooEditor {
                 'active',
                 pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'CL',
             );
-        const linkNode = findNode(closestPath(sel.anchorNode), node => node.tagName === 'A');
+        const linkNode = closestElement(sel.focusNode, 'a');
         this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
         this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
     }
@@ -961,6 +974,8 @@ export class OdooEditor {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
             } else if (buttonEl.id.startsWith('justify')) {
                 this.execCommand(buttonEl.id);
+            } else if (buttonEl.id.startsWith('fontawesome')) {
+                this._insertFontAwesome();
             } else {
                 const restoreCursor = preserveCursor(document.defaultView.getSelection());
                 const selectedBlocks = [...new Set(getTraversedNodes().map(closestBlock))];

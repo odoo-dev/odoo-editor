@@ -19,6 +19,7 @@ import {
     prepareUpdate,
     setCursor,
     splitTextNode,
+    isFontAwesome,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -61,6 +62,10 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         const leftNode = this.childNodes[offset - 1];
         if (isUnbreakable(leftNode)) {
             throw UNBREAKABLE_ROLLBACK_CODE;
+        }
+        if (isFontAwesome(leftNode)) {
+            leftNode.remove();
+            return;
         }
         if (!isBlock(leftNode)) {
             /**

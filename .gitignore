@@ -1,2 +1,14 @@
+# ignore dotfiles
+.*
+# dotfiles whitelist
+!.gitignore
+!.eslintrc.js
+!.prettierrc.js
+!.vscode
+# nodejs
 build
 node_modules
+# misc
+*.log
+ehthumbs.db
+Thumbs.db

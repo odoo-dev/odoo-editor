@@ -143,6 +143,19 @@ export function findNode(domPath, findCallback = node => true, stopCallback = no
     return null;
 }
 
+/**
+ * Returns the closest HTMLElement of the provided Node
+ * if a 'selector' is provided, Returns the closest HTMLElement that match the selector
+ *
+ * @param {Node} node
+ * @param {string} [selector=undefined]
+ * @returns {HTMLElement}
+ */
+export function closestElement(node, selector) {
+    const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    return selector ? element.closest(selector) : element;
+}
+
 export function closestBlock(node) {
     return findNode(closestPath(node), node => isBlock(node));
 }
@@ -263,7 +276,7 @@ export function createDOMPathGenerator(direction, deepOnly, inline, inScope = fa
  *     positions which are not possible, like the cursor inside an image).
  */
 export function getNormalizedCursorPosition(node, offset, full = true) {
-    if (isVisibleEmpty(node)) {
+    if (isVisibleEmpty(node) || !closestElement(node).isContentEditable) {
         // Cannot put cursor inside those elements, put it after instead.
         [node, offset] = rightPos(node);
     }
@@ -292,7 +305,9 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
             const leftInlineNode = leftDeepOnlyInlineInScopePath(el, elOffset).next().value;
             let leftVisibleEmpty = false;
             if (leftInlineNode) {
-                leftVisibleEmpty = isVisibleEmpty(leftInlineNode);
+                leftVisibleEmpty =
+                    isVisibleEmpty(leftInlineNode) ||
+                    !closestElement(leftInlineNode).isContentEditable;
                 [node, offset] = leftVisibleEmpty
                     ? rightPos(leftInlineNode)
                     : endPos(leftInlineNode);
@@ -300,7 +315,9 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
             if (!leftInlineNode || leftVisibleEmpty) {
                 const rightInlineNode = rightDeepOnlyInlineInScopePath(el, elOffset).next().value;
                 if (rightInlineNode) {
-                    const rightVisibleEmpty = isVisibleEmpty(rightInlineNode);
+                    const rightVisibleEmpty =
+                        isVisibleEmpty(rightInlineNode) ||
+                        !closestElement(rightInlineNode).isContentEditable;
                     if (!(leftVisibleEmpty && rightVisibleEmpty)) {
                         [node, offset] = rightVisibleEmpty
                             ? leftPos(rightInlineNode)
@@ -554,6 +571,13 @@ export function containsUnbreakable(node) {
         return false;
     }
     return isUnbreakable(node) || containsUnbreakable(node.firstChild);
+}
+export function isFontAwesome(node) {
+    return (
+        node &&
+        (node.nodeName === 'I' || node.nodeName === 'SPAN') &&
+        ['fa', 'fab', 'fad', 'far'].some(faClass => node.classList.contains(faClass))
+    );
 }
 
 // optimize: use the parent Oid to speed up detection
