@@ -5,9 +5,9 @@ import {
     clearEmpty,
     fillEmpty,
     isBlock,
-    isUnbreakable,
     prepareUpdate,
     setCursorStart,
+    setCursorEnd,
     setTagName,
     splitTextNode,
     toggleClass,
@@ -102,6 +102,7 @@ HTMLPreElement.prototype.oEnter = function (offset, firstSplit = true) {
     if (offset < this.childNodes.length) {
         const lineBreak = document.createElement('br');
         this.insertBefore(lineBreak, this.childNodes[offset]);
+        setCursorEnd(lineBreak);
     } else {
         let node = document.createElement('p');
         this.parentNode.insertBefore(node, this.nextSibling);
