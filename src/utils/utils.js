@@ -429,13 +429,17 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
  */
 export function getTraversedNodes() {
     const sel = document.defaultView.getSelection();
-    const pathGenerator = rightDeepFirstPath(sel.anchorNode, sel.anchorOffset);
-    const traversedNodes = [];
-    let nextNode;
+    const iterator = document.createNodeIterator(sel.getRangeAt(0).commonAncestorContainer);
+    let node;
     do {
-        nextNode = pathGenerator.next().value;
-        traversedNodes.push(nextNode);
-    } while (nextNode && nextNode !== sel.focusNode);
+        node = iterator.nextNode();
+    } while (node && node !== sel.anchorNode && node !== sel.focusNode);
+    const end = node === sel.anchorNode ? sel.focusNode : sel.anchorNode;
+    const traversedNodes = [node];
+    while (node && node !== end) {
+        node = iterator.nextNode();
+        node && traversedNodes.push(node);
+    }
     return traversedNodes;
 }
 
@@ -1319,32 +1323,5 @@ export function enforceWhitespace(el, offset, direction, rule) {
             spaceVisibility = false;
         }
         spaceNode.nodeValue = spaceNode.nodeValue.replace(expr, spaceVisibility ? '\u00A0' : '');
-    }
-}
-/**
- * Generates an iterable of every node of a range.
- * 
- * @param {Range} range 
- */
-export function* getRangeRover(range) {
-    const iterator = document.createNodeIterator(
-        range.commonAncestorContainer,
-        NodeFilter.SHOW_ALL, // pre-filter
-        {
-            // custom filter
-            acceptNode: function (node) {
-                return NodeFilter.FILTER_ACCEPT;
-            }
-        }
-    );
-    let started = false;
-    while (iterator.nextNode()) {
-        if (!started && iterator.referenceNode !== range.startContainer) { continue; }
-        started = true;
-        yield iterator.referenceNode;
-
-        if (iterator.referenceNode === range.endContainer) {
-            break;
-        }
     }
 }

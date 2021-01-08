@@ -35,7 +35,7 @@ import {
     closestElement,
     getTraversedNodes,
     isVisible,
-    getRangeRover,
+    isContentTextNode,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -717,11 +717,10 @@ export class OdooEditor {
 
     _align(mode) {
         const sel = document.defaultView.getSelection();
-        const range = sel.getRangeAt(0);
         const visitedBlocks = new Set();
-        const rangeRover = getRangeRover(range);
-        for (const node of rangeRover) {
-            if (isVisible(node)) {
+        const traversedNode = getTraversedNodes();
+        for (const node of traversedNode) {
+            if (isContentTextNode(node) && isVisible(node)) {
                 let block = closestBlock(node);
                 if (!visitedBlocks.has(block)) {
                     const hasModifier = getComputedStyle(block).textAlign === mode;
