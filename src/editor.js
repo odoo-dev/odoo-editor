@@ -30,7 +30,7 @@ import {
     toggleClass,
     findNode,
     getTraversedNodes,
-} from "./utils/utils.js";
+} from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
