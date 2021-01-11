@@ -13,7 +13,7 @@ import {
     closestBlock,
     closestPath,
     commonParentGet,
-    containsUnbreakable,
+    containsUnremovable,
     getListMode,
     getCursors,
     getOuid,
@@ -33,6 +33,7 @@ import {
 } from "./utils/utils.js";
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
+export const UNREMOVABLE_ROLLBACK_CODE = 110;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
 
@@ -118,16 +119,12 @@ export class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined, testunbreak = false) {
+    idSet(src, dest = undefined) {
         if (!src.oid) {
             src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
         // rollback if src.ouid changed
         src.ouid = src.ouid || getOuid(src, true);
-        if (testunbreak) {
-            const ouid = getOuid(src);
-            this.torollback = this.torollback || (ouid && ouid != src.ouid);
-        }
 
         if (dest && !dest.oid) {
             dest.oid = src.oid;
@@ -135,7 +132,7 @@ export class OdooEditor {
         let childsrc = src.firstChild;
         let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
-            this.idSet(childsrc, childdest, testunbreak);
+            this.idSet(childsrc, childdest);
             childsrc = childsrc.nextSibling;
             childdest = dest ? childdest.nextSibling : undefined;
         }
@@ -211,7 +208,7 @@ export class OdooEditor {
                 }
                 case 'childList': {
                     record.addedNodes.forEach((added, index) => {
-                        this.torollback |= containsUnbreakable(added);
+                        this.torollback |= containsUnremovable(added);
                         let action = {
                             'type': 'add',
                         };
@@ -224,12 +221,13 @@ export class OdooEditor {
                         } else {
                             return false;
                         }
-                        this.idSet(added, undefined, true);
+                        this.idSet(added);
                         action.id = added.oid;
                         action.node = this.serialize(added);
                         this.history[this.history.length - 1].dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
+                        this.torollback |= containsUnremovable(removed);
                         this.history[this.history.length - 1].dom.push({
                             'type': 'remove',
                             'id': removed.oid,
@@ -584,22 +582,22 @@ export class OdooEditor {
 
         // Starting from the second position, hit backspace until the fake
         // element we added is removed.
-        let result;
         let gen;
         do {
             const histPos = this.history[this.history.length - 1].dom.length;
-            const err = this._protectUnbreakable(() => {
-                result = pos2[0].oDeleteBackward(pos2[1]);
+            const err = this._protect(() => {
+                pos2[0].oDeleteBackward(pos2[1]);
                 gen = undefined;
             }, histPos);
-            if (err === UNBREAKABLE_ROLLBACK_CODE) {
+            if (err === UNREMOVABLE_ROLLBACK_CODE) {
                 gen = gen || leftDeepOnlyPath(...pos2);
                 pos2 = rightPos(gen.next().value);
-                continue;
+            } else {
+                sel = document.defaultView.getSelection();
+                const range = sel.getRangeAt(0);
+                const isSelForward = sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
+                pos2 = isSelForward ? [sel.anchorNode, sel.anchorOffset] : [sel.focusNode, sel.focusOffset];
             }
-
-            sel = document.defaultView.getSelection();
-            pos2 = [sel.anchorNode, sel.anchorOffset];
         } while (fakeEl.parentNode);
     }
 
@@ -683,7 +681,7 @@ export class OdooEditor {
     /**
      * Applies the given command to the current selection. This does *NOT*:
      * 1) update the history cursor
-     * 2) protect the unbreakables
+     * 2) protect the unbreakables or unremovables
      * 3) sanitize the result
      * 4) create new history entry
      * 5) follow the exact same operations that would be done following events
@@ -715,7 +713,7 @@ export class OdooEditor {
 
     /**
      * Same as @see _applyRawCommand but adapt history, protects unbreakables
-     * and sanitizes the result.
+     * and removables and sanitizes the result.
      *
      * @private
      * @param {string} method
@@ -723,7 +721,7 @@ export class OdooEditor {
      */
     _applyCommand(method) {
         this._recordHistoryCursor(true);
-        const result = this._protectUnbreakable(() => this._applyRawCommand(...arguments));
+        const result = this._protect(() => this._applyRawCommand(...arguments));
         this.sanitize();
         this.historyStep();
         return result;
@@ -734,7 +732,8 @@ export class OdooEditor {
      * @param {number} [rollbackCounter]
      * @returns {?}
      */
-    _protectUnbreakable(callback, rollbackCounter) {
+    _protect(callback, rollbackCounter) {
+        let error;
         try {
             let result = callback.call(this);
             this.observerFlush();
@@ -742,12 +741,13 @@ export class OdooEditor {
                 return result;
             }
         } catch (err) {
-            if (err !== UNBREAKABLE_ROLLBACK_CODE) {
+            error = err;
+            if (err !== UNBREAKABLE_ROLLBACK_CODE && err !== UNREMOVABLE_ROLLBACK_CODE) {
                 throw err;
             }
         }
         this.historyRollback(rollbackCounter);
-        return UNBREAKABLE_ROLLBACK_CODE;
+        return error;
     }
 
     // HISTORY
@@ -949,7 +949,7 @@ export class OdooEditor {
             'checklist': 'CL',
         };
         ev.preventDefault();
-        this._protectUnbreakable(() => {
+        this._protect(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
             } else if (['fontColor'].includes(buttonEl.id)) {

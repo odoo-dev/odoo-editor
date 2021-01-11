@@ -1,4 +1,4 @@
-import { UNBREAKABLE_ROLLBACK_CODE } from '../editor.js';
+import { UNREMOVABLE_ROLLBACK_CODE } from '../editor.js';
 import {
     boundariesOut,
     childNodeIndex,
@@ -10,7 +10,7 @@ import {
     getState,
     isBlock,
     isInPre,
-    isUnbreakable,
+    isUnremovable,
     isVisible,
     isVisibleStr,
     leftPos,
@@ -59,8 +59,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
     let moveDest;
     if (offset) {
         const leftNode = this.childNodes[offset - 1];
-        if (isUnbreakable(leftNode)) {
-            throw UNBREAKABLE_ROLLBACK_CODE;
+        if (isUnremovable(leftNode)) {
+            throw UNREMOVABLE_ROLLBACK_CODE;
         }
         if (!isBlock(leftNode)) {
             /**
@@ -85,8 +85,8 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         alreadyMoved = true;
         moveDest = endPos(leftNode);
     } else {
-        if (isUnbreakable(this)) {
-            throw UNBREAKABLE_ROLLBACK_CODE;
+        if (isUnremovable(this)) {
+            throw UNREMOVABLE_ROLLBACK_CODE;
         }
         const parentEl = this.parentNode;
 
