@@ -436,6 +436,19 @@ export class OdooEditor {
     }
 
     historyRevert(step, until = 0) {
+        // Save the first oldValue encountered for a particular node and
+        // attribute.
+        const nodeAttributeOldValue = {};
+        for (let i = 0; i < step.dom.length; i++) {
+            const action = step.dom[i];
+            if (action.type === 'attributes') {
+                nodeAttributeOldValue[action.id] = nodeAttributeOldValue[action.id] || [];
+                if (typeof nodeAttributeOldValue[action.id][action.attributeName] === 'undefined') {
+                    nodeAttributeOldValue[action.id][action.attributeName] = action.oldValue;
+                }
+            }
+        }
+
         // apply dom changes by reverting history steps
         for (let i = step.dom.length - 1; i >= until; i--) {
             let action = step.dom[i];
@@ -448,10 +461,8 @@ export class OdooEditor {
                     break;
                 }
                 case 'attributes': {
-                    this.idFind(this.dom, action.id).setAttribute(
-                        action.attributeName,
-                        action.oldValue,
-                    );
+                    const oldValue = nodeAttributeOldValue[action.id][action.attributeName];
+                    this.idFind(this.dom, action.id).setAttribute(action.attributeName, oldValue);
                     break;
                 }
                 case 'remove': {
