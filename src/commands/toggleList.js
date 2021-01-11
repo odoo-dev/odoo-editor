@@ -3,7 +3,6 @@ import {
     createList,
     getListMode,
     isBlock,
-    isUnbreakable,
     preserveCursor,
     setTagName,
     toggleClass,

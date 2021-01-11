@@ -1,6 +1,4 @@
 import {
-    createList,
-    getListMode,
     isUnbreakable,
     preserveCursor,
     toggleClass,
