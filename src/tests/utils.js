@@ -110,7 +110,11 @@ export function setSelection(selection) {
     const domSelection = selection.anchorNode.ownerDocument.getSelection();
     domSelection.removeAllRanges();
     domSelection.addRange(domRange);
-    domSelection.extend(selection.focusNode, selection.focusOffset);
+    try {
+        domSelection.extend(selection.focusNode, selection.focusOffset);
+    } catch (e) {
+        // Firefox yells not happy when setting selection on elem with contentEditable=false.
+    }
 }
 
 /**

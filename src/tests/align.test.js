@@ -22,14 +22,13 @@ describe('Align', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab</p><p>c[]d</p>',
                 stepFunction: justifyLeft,
-                contentAfter: '<p>ab</p><p style="text-align: left;">c[]d</p>',
+                contentAfter: '<p>ab</p><p>c[]d</p>',
             });
         });
         it('should not align left a non-editable node', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab</p><div contenteditable="false"><p>c[]d</p></div>',
                 stepFunction: justifyLeft,
-                // JW cAfter: '<p>ab</p><div contenteditable="false"><p>cd</p></div>',
                 contentAfter: '<p>ab</p><div contenteditable="false"><p>c[]d</p></div>',
             });
         });
@@ -55,8 +54,7 @@ describe('Align', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>a[b</p><p>c]d</p>',
                 stepFunction: justifyLeft,
-                contentAfter:
-                    '<p style="text-align: left;">a[b</p><p style="text-align: left;">c]d</p>',
+                contentAfter: '<p>a[b</p><p>c]d</p>',
             });
         });
         it('should left align a node within a right-aligned node', async () => {
@@ -73,7 +71,7 @@ describe('Align', () => {
                     '<div style="text-align: right;"><p>ab</p><p>c[d</p></div><p>e]f</p>',
                 stepFunction: justifyLeft,
                 contentAfter:
-                    '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p style="text-align: left;">e]f</p>',
+                    '<div style="text-align: right;"><p>ab</p><p style="text-align: left;">c[d</p></div><p>e]f</p>',
             });
         });
         it('should left align a node within a right-aligned node and a paragraph, with a center-aligned common ancestor', async () => {

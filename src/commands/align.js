@@ -12,5 +12,10 @@ HTMLElement.prototype.oAlign = function (offset, mode) {
     if (!isBlock(this)) {
         return this.parentElement.oAlign(childNodeIndex(this), mode);
     }
-    this.style.textAlign = mode;
+    const { textAlign } = getComputedStyle(this);
+    const alreadyAlignedLeft = textAlign === 'start' || textAlign === 'left';
+    const shouldApplyStyle = !(alreadyAlignedLeft && mode === 'left');
+    if (shouldApplyStyle) {
+        this.style.textAlign = mode;
+    }
 };
