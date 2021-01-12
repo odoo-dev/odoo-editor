@@ -185,6 +185,7 @@ export class OdooEditor {
             childList: true,
             subtree: true,
             attributes: true,
+            attributeOldValue: true,
             characterData: true,
             characterDataOldValue: true,
         });
