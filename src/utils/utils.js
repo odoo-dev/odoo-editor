@@ -153,7 +153,7 @@ export function findNode(domPath, findCallback = node => true, stopCallback = no
  */
 export function closestElement(node, selector) {
     const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-    return selector ? element.closest(selector) : element;
+    return selector && element ? element.closest(selector) : element;
 }
 
 export function closestBlock(node) {
