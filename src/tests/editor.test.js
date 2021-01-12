@@ -2500,7 +2500,7 @@ describe('Editor', () => {
                                 node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
                             ),
                         )
-                        .to.eql(['abc', 'P', 'def']);
+                        .to.eql(['abc', 'DIV', 'def']);
                 },
             });
         });
@@ -2514,7 +2514,7 @@ describe('Editor', () => {
                                 node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
                             ),
                         )
-                        .to.eql(['abc', 'P', 'SECTION', 'def']);
+                        .to.eql(['abc', 'DIV', 'def']);
                 },
             });
         });
