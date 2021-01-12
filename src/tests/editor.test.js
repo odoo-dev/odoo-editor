@@ -1515,8 +1515,23 @@ describe('Editor', () => {
                     contentAfter: '<h1>[]<br></h1><p>def</p>',
                 });
             });
-        });
-    });
+            it('should delete last character of paragraph, ignoring the selected paragraph break', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab[c</p><p>]def</p>',
+                    // This type of selection (typically done with a triple
+                    // click) is "corrected" before remove so triple clicking
+                    // doesn't remove a paragraph break.
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab[]</p><p>def</p>',
+                });
+            });
+            it('should delete first character of paragraph, as well as selected paragraph break', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>abc[</p><p>d]ef</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>abc[]ef</p>',
+                });
+            });
 
     describe('insertParagraphBreak', () => {
         describe('Selection collapsed', () => {
