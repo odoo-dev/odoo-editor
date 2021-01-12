@@ -36,6 +36,7 @@ import {
     getTraversedNodes,
     isVisible,
     isContentTextNode,
+    latestChild,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -546,6 +547,9 @@ export class OdooEditor {
 
     deleteRange(sel) {
         const range = sel.getRangeAt(0);
+        const isSelForward =
+            sel.anchorNode === range.startContainer &&
+            sel.anchorOffset === range.startOffset;
         let pos1 = [range.startContainer, range.startOffset];
         let pos2 = [range.endContainer, range.endOffset];
         // A selection spanning multiple nodes and ending at position 0 of a
@@ -553,6 +557,9 @@ export class OdooEditor {
         // that it ends at the last position of the previous node instead.
         if (!pos2[1]) {
             pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
+            const previousElement = leftDeepOnlyPath(...pos2).next().value;
+            pos2[0] = latestChild(previousElement);
+            pos2[1] = nodeSize(pos2[0]);
         }
 
         // Hack: we will follow the logic "do many backspace until the
@@ -616,10 +623,6 @@ export class OdooEditor {
                 pos2 = rightPos(gen.next().value);
             } else {
                 sel = document.defaultView.getSelection();
-                const range = sel.getRangeAt(0);
-                const isSelForward =
-                    sel.anchorNode === range.startContainer &&
-                    sel.anchorOffset === range.startOffset;
                 pos2 = isSelForward
                     ? [sel.anchorNode, sel.anchorOffset]
                     : [sel.focusNode, sel.focusOffset];
