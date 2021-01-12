@@ -125,12 +125,17 @@ export class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined) {
+    idSet(src, dest = undefined, testunbreak = false) {
         if (!src.oid) {
             src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
-        // rollback if src.ouid changed
+        // Rollback if src.ouid changed. This ensures that nodes never change
+        // unbreakable ancestors.
         src.ouid = src.ouid || getOuid(src, true);
+        if (testunbreak) {
+            const ouid = getOuid(src);
+            this.torollback = this.torollback || (ouid && ouid != src.ouid);
+        }
 
         if (dest && !dest.oid) {
             dest.oid = src.oid;
@@ -138,7 +143,7 @@ export class OdooEditor {
         let childsrc = src.firstChild;
         let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
-            this.idSet(childsrc, childdest);
+            this.idSet(childsrc, childdest, testunbreak);
             childsrc = childsrc.nextSibling;
             childdest = dest ? childdest.nextSibling : undefined;
         }
@@ -227,7 +232,7 @@ export class OdooEditor {
                         } else {
                             return false;
                         }
-                        this.idSet(added);
+                        this.idSet(added, undefined, true);
                         action.id = added.oid;
                         action.node = this.serialize(added);
                         this.history[this.history.length - 1].dom.push(action);
@@ -606,7 +611,7 @@ export class OdooEditor {
                 pos2[0].oDeleteBackward(pos2[1]);
                 gen = undefined;
             }, histPos);
-            if (err === UNREMOVABLE_ROLLBACK_CODE) {
+            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE) {
                 gen = gen || leftDeepOnlyPath(...pos2);
                 pos2 = rightPos(gen.next().value);
             } else {
