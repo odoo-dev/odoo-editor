@@ -2540,7 +2540,9 @@ const startTests = () => {
     document.getElementById('control-panel').remove();
 };
 if (urlParams.get('unittests') === '1') {
-    startTests();
+    // a small timeout seems necesary to let mocha be ready to start
+    // and ensure the only is take into account
+    setTimeout(startTests, 50);
 } else if (startTestsButtonEl) {
     startTestsButtonEl.addEventListener('click', startTests);
 }
