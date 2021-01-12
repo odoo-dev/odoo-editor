@@ -561,18 +561,21 @@ export function isUnbreakable(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) {
         return true;
     }
-    const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
     return (
         isUnremovable(node) || // An unremovable node is always unbreakable.
-        isEditableRoot ||
+        ['THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD'].includes(node.tagName) ||
         node.hasAttribute('t') ||
-        ['TABLE', 'TR', 'TD'].includes(node.tagName) ||
         node.classList.contains('oe_unbreakable')
     );
 }
 
 export function isUnremovable(node) {
-    return node.classList && node.classList.contains('oe_unremovable');
+    if (node.nodeType !== Node.ELEMENT_NODE && node.nodeType !== Node.TEXT_NODE) {
+        return true;
+    }
+    const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
+    return isEditableRoot ||
+        node.classList && node.classList.contains('oe_unremovable');
 }
 
 export function containsUnbreakable(node) {
@@ -893,7 +896,7 @@ export function moveNodes(
 ) {
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
-    if (['TABLE', 'TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
+    if (['TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {
         [destinationEl, destinationOffset] = rightPos(destinationEl);
     }
 
