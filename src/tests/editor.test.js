@@ -2465,31 +2465,43 @@ describe('Editor', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<div><p>a[]bc</p><div>def</div></div>',
                 stepFunction: () => {
-                    window.chai.expect(getTraversedNodes().map(node => (
-                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
-                    ))).to.eql(['abc']);
+                    window.chai
+                        .expect(
+                            getTraversedNodes().map(node =>
+                                node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
+                            ),
+                        )
+                        .to.eql(['abc']);
                 },
-            })
+            });
         });
         it('should return the nodes traversed in a cross-blocks selection', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<div><p>a[bc</p><div>d]ef</div></div>',
                 stepFunction: () => {
-                    window.chai.expect(getTraversedNodes().map(node => (
-                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
-                    ))).to.eql(['abc', 'P', 'def']);
+                    window.chai
+                        .expect(
+                            getTraversedNodes().map(node =>
+                                node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
+                            ),
+                        )
+                        .to.eql(['abc', 'P', 'def']);
                 },
-            })
+            });
         });
         it('should return the nodes traversed in a cross-blocks selection with hybrid nesting', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<div><section><p>a[bc</p></section><div>d]ef</div></section>',
                 stepFunction: () => {
-                    window.chai.expect(getTraversedNodes().map(node => (
-                        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName
-                    ))).to.eql(['abc', 'P', 'SECTION', 'def']);
+                    window.chai
+                        .expect(
+                            getTraversedNodes().map(node =>
+                                node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
+                            ),
+                        )
+                        .to.eql(['abc', 'P', 'SECTION', 'def']);
                 },
-            })
+            });
         });
     });
 
@@ -2506,8 +2518,18 @@ describe('Editor', () => {
  * Quick UI to launch tests from the test web page.
  */
 const startTestsButtonEl = document.getElementById('start-tests');
-startTestsButtonEl.addEventListener('click', () => {
-    startTestsButtonEl.disabled = true;
+const urlParams = new URLSearchParams(window.location.search);
+const startTests = () => {
+    if (startTestsButtonEl) startTestsButtonEl.disabled = true;
+    if (urlParams.get('unittests') !== '1') {
+        const newUrl = new URL(window.location.href);
+        if (urlParams.has('unittests')) {
+            newUrl.searchParams.set('unittests', '1');
+        } else {
+            newUrl.searchParams.append('unittests', '1');
+        }
+        history.replaceState({}, 'Odoo Editor', newUrl.toString());
+    }
     const mochaEl = document.createElement('div');
     mochaEl.id = 'mocha';
     document.body.appendChild(mochaEl);
@@ -2516,4 +2538,9 @@ startTestsButtonEl.addEventListener('click', () => {
         window.scrollTo(0, window.scrollY + reportEl.getBoundingClientRect().top);
     });
     document.getElementById('control-panel').remove();
-});
+};
+if (urlParams.get('unittests') === '1') {
+    startTests();
+} else if (startTestsButtonEl) {
+    startTestsButtonEl.addEventListener('click', startTests);
+}
