@@ -9,6 +9,7 @@ import {
     testEditor,
     testVdom,
     toggleBold,
+    unformat,
 } from './utils.js';
 
 describe('Editor', () => {
@@ -515,6 +516,50 @@ describe('Editor', () => {
                             await deleteForward(editor);
                         },
                         contentAfter: '<p><span><b>a[]<br>cde</b></span></p>',
+                    });
+                });
+            });
+            describe('POC extra tests', () => {
+                it('should not remove a table without selecting it', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: unformat(
+                            `<p>ab[]</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
+                        stepFunction: deleteForward,
+                        contentAfter: unformat(
+                            `<p>ab[]</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
+                    });
+                });
+                it('should not merge a table into its next sibling', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij[]</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
+                        stepFunction: deleteForward,
+                        contentAfter: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij[]</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
                     });
                 });
             });
@@ -1382,6 +1427,48 @@ describe('Editor', () => {
                         contentAfter: '<p>[]<br></p>',
                     });
                 });
+                it('should not remove a table without selecting it', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>[]kl</p>`
+                        ),
+                        stepFunction: deleteBackward,
+                        contentAfter: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>[]kl</p>`
+                        ),
+                    });
+                });
+                it('should not merge a table into its previous sibling', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>[]cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
+                        stepFunction: deleteBackward,
+                        contentAfter: unformat(
+                            `<p>ab</p>
+                            <table><tbody>
+                                <tr><td>[]cd</td><td>ef</td></tr>
+                                <tr><td>gh</td><td>ij</td></tr>
+                            </tbody></table>
+                            <p>kl</p>`
+                        ),
+                    });
+                });
             });
         });
         describe('Selection not collapsed', () => {
@@ -1532,6 +1619,43 @@ describe('Editor', () => {
                     contentAfter: '<p>abc[]ef</p>',
                 });
             });
+            it('should remove a fully selected table', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(
+                        `<p>a[b</p>
+                        <table><tbody>
+                            <tr><td>cd</td><td>ef</td></tr>
+                            <tr><td>gh</td><td>ij</td></tr>
+                        </tbody></table>
+                        <p>k]l</p>`
+                    ),
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>a[]l</p>',
+                });
+            });
+            it('should only remove the text content a partly selected table', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: unformat(
+                        `<p>a[b</p>
+                        <table><tbody>
+                            <tr><td>cd</td><td>ef</td></tr>
+                            <tr><td>g]h</td><td>ij</td></tr>
+                        </tbody></table>
+                        <p>kl</p>`
+                    ),
+                    stepFunction: deleteBackward,
+                    contentAfter: unformat(
+                        `<p>a[]</p>
+                        <table><tbody>
+                            <tr><td><br></td><td><br></td></tr>
+                            <tr><td>h</td><td>ij</td></tr>
+                        </tbody></table>
+                        <p>kl</p>`
+                    ),
+                });
+            });
+        });
+    });
 
     describe('insertParagraphBreak', () => {
         describe('Selection collapsed', () => {
