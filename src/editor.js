@@ -239,7 +239,12 @@ export class OdooEditor {
                         this.history[this.history.length - 1].dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
-                        this.torollback |= containsUnremovable(removed);
+                        // Tables can be safely removed even though their
+                        // contents are unremovable.
+                        this.torollback |= (
+                            removed.tagName !== 'TABLE' &&
+                            containsUnremovable(removed)
+                        );
                         this.history[this.history.length - 1].dom.push({
                             'type': 'remove',
                             'id': removed.oid,
@@ -607,6 +612,16 @@ export class OdooEditor {
         // it, if that is is the case, set it just after the fake element.
         if (!pos2[0].parentNode || pos2[1] > nodeSize(pos2[0])) {
             pos2 = rightPos(fakeEl);
+        }
+
+        // If there's a fully selected table, remove it.
+        let traversedNodes = getTraversedNodes();
+        for (const table of traversedNodes.filter(node => node.nodeName === 'TABLE')) {
+            const tableDescendantElements = [...table.querySelectorAll('*')];
+            if (tableDescendantElements.every(child => traversedNodes.includes(child))) {
+                table.remove();
+                traversedNodes = getTraversedNodes();
+            }
         }
 
         // Starting from the second position, hit backspace until the fake
