@@ -1,4 +1,4 @@
-import { UNREMOVABLE_ROLLBACK_CODE } from '../editor.js';
+import { UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE } from '../editor.js';
 import {
     boundariesOut,
     childNodeIndex,
@@ -20,6 +20,7 @@ import {
     setCursor,
     splitTextNode,
     isFontAwesome,
+    isUnbreakable,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -62,6 +63,9 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         const leftNode = this.childNodes[offset - 1];
         if (isUnremovable(leftNode)) {
             throw UNREMOVABLE_ROLLBACK_CODE;
+        }
+        if (isUnbreakable(leftNode)) {
+            throw UNBREAKABLE_ROLLBACK_CODE;
         }
         if (isFontAwesome(leftNode)) {
             leftNode.remove();
