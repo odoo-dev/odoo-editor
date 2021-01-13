@@ -550,8 +550,7 @@ export class OdooEditor {
     deleteRange(sel) {
         const range = sel.getRangeAt(0);
         const isSelForward =
-            sel.anchorNode === range.startContainer &&
-            sel.anchorOffset === range.startOffset;
+            sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
         let pos1 = [range.startContainer, range.startOffset];
         let pos2 = [range.endContainer, range.endOffset];
         // A selection spanning multiple nodes and ending at position 0 of a
@@ -1001,13 +1000,43 @@ _protect(callback, rollbackCounter) {
         this._recordHistoryCursor(true);
 
         if (ev.inputType === 'deleteContentBackward') {
+            const sel = document.defaultView.getSelection();
+            const { startContainer, startOffset } = sel.getRangeAt(0);
             this.historyRollback();
+            const { endContainer, endOffset } = sel.getRangeAt(0);
+            sel.setBaseAndExtent(startContainer, startOffset, endContainer, endOffset);
             ev.preventDefault();
             this._applyCommand('oDeleteBackward');
         } else if (ev.inputType === 'deleteContentForward') {
             this.historyRollback();
             ev.preventDefault();
             this._applyCommand('oDeleteForward');
+        } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
+            // insertCompositionText, courtesy of Samsung keyboard.
+            const hist = this.history[this.history.length - 1];
+            // Start rollback process.
+            this.observerFlush();
+            const { anchorNode, focusNode, anchorOffset, focusOffset } = this.history[
+                this.history.length - 1
+            ].cursor;
+            const selection = document.defaultView.getSelection();
+            // Detect that text was selected and change behavior only if it is the case,
+            // since it is the only text insertion case that may cause problems.
+            if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
+                // Do the rest of the rollback process.
+                this.historyRollback();
+                this.historyRevert(hist, 0);
+                this.observerFlush();
+                hist.dom = hist.dom.slice(0, 0);
+                this.torollback = false;
+                ev.preventDefault();
+                this._applyCommand('oDeleteBackward');
+                insertText(selection, ev.data);
+                const range = selection.getRangeAt(0);
+                setCursor(range.endContainer, range.endOffset);
+            }
+            this.sanitize();
+            this.historyStep();
         } else {
             this.sanitize();
             this.historyStep();
