@@ -649,6 +649,25 @@ export function isContentTextNode(node) {
     return node.nodeType === Node.TEXT_NODE && (isVisibleStr(node) || isInPre(node));
 }
 /**
+ * Returns whether the node is a lonely space TextNode direclty preceding a htmlElement
+ *
+ * note: it's necessary to be able to properly delete a space that has been detatched
+ * from a preceding text node in aother operation.
+ * ex : "<p>ab[]c <span>de</span></p>"
+ * first delete forward will split the text node in [ab] and[ ]
+ * the second delete forward must not ignore the white space here.
+ *
+ * @param {Node} node
+ * @returns {boolean}
+ */
+export function isContentLastSpaceBeforeTag(node) {
+    return (
+        node.nodeType === Node.TEXT_NODE &&
+        !isVisibleStr(node) &&
+        node.nextSibling.nodeType !== Node.TEXT_NODE
+    );
+}
+/**
  * Returns whether removing the given node from the DOM will have a visible
  * effect or not.
  *
