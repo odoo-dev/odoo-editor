@@ -998,9 +998,9 @@ export class OdooEditor {
         this._protect(() => {
             if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
-            } else if (['fontColor'].includes(buttonEl.id)) {
+            } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
-                document.execCommand('foreColor', false, 'red');
+                document.execCommand(buttonEl.id, false, 'red');
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
