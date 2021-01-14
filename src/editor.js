@@ -623,10 +623,11 @@ export class OdooEditor {
                 pos2[0].oDeleteBackward(pos2[1]);
                 gen = undefined;
             }, histPos);
-            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE) {
+            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE || err === 'rollback') {
                 gen = gen || leftDeepOnlyPath(...pos2);
                 pos2 = rightPos(gen.next().value);
             } else {
+                this._recordHistoryCursor();
                 sel = document.defaultView.getSelection();
                 pos2 = isSelForward
                     ? [sel.anchorNode, sel.anchorOffset]
@@ -802,7 +803,6 @@ export class OdooEditor {
      * @returns {?}
      */
     _protect(callback, rollbackCounter) {
-        let error;
         try {
             let result = callback.call(this);
             this.observerFlush();
@@ -810,13 +810,12 @@ export class OdooEditor {
                 return result;
             }
         } catch (err) {
-            error = err;
             if (err !== UNBREAKABLE_ROLLBACK_CODE && err !== UNREMOVABLE_ROLLBACK_CODE) {
                 throw err;
             }
         }
         this.historyRollback(rollbackCounter);
-        return error;
+        return 'rollback';
     }
 
     // HISTORY
