@@ -12,6 +12,11 @@ import {
     unformat,
 } from './utils.js';
 
+async function twoDeleteForward(editor) {
+    await deleteForward(editor);
+    await deleteForward(editor);
+}
+
 describe('Editor', () => {
     describe('deleteForward', () => {
         describe('Selection collapsed', () => {
@@ -87,16 +92,96 @@ describe('Editor', () => {
                             '<table><tbody><tr><td>[]<br></td><td>abc</td></tr></tbody></table>',
                     });
                 });
-                it('should merge the following inline text node', async () => {
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p>abc</p>[]def',
-                        stepFunction: deleteBackward,
-                        contentAfter: '<p>abc[]def</p>',
+            });
+            describe('white spaces', () => {
+                describe('no intefering spaces', () => {
+                    it('should delete a br line break', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]<br>def</p>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
                     });
-                    await testEditor(BasicEditor, {
-                        contentBefore: '<p>abc</p>[]def<p>ghi</p>',
-                        stepFunction: deleteBackward,
-                        contentAfter: '<p>abc[]def</p><p>ghi</p>',
+                    it('should delete a line break and merge the <p>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]</p><p>def</p>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
+                    });
+                });
+                describe('intefering spaces', () => {
+                    it('should delete a br line break', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]<br> def</p>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
+                    });
+                    it('should merge the two <p>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]</p> <p>def</p>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
+                    });
+                    it('should delete the space if the second <p> is display inline', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div>abc[] <p style="display: inline">def</p></div>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<div>abc[]<p style="display: inline">def</p></div>',
+                        });
+                    });
+                    it('should delete the space between the two <span>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div><span>abc[]</span> <span>def</span></div>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<div><span>abc[]def</span></div>',
+                        });
+                    });
+                    it('should delete the space before a <span>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div>abc[] <span>def</span></div>',
+                            stepFunction: deleteForward,
+                            contentAfter: '<div>abc[]<span>def</span></div>',
+                        });
+                    });
+                });
+                describe('intefering spaces, multiple deleteForward', () => {
+                    it('should delete a br line break', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]x<br> def</p>',
+                            stepFunction: twoDeleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
+                    });
+                    it('should merge the two <p>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<p>abc[]x</p> <p>def</p>',
+                            stepFunction: twoDeleteForward,
+                            contentAfter: '<p>abc[]def</p>',
+                        });
+                    });
+                    it('should delete the space if the second <p> is display inline', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div>abc[]x <p style="display: inline">def</p></div>',
+                            stepFunction: twoDeleteForward,
+                            contentAfter: '<div>abc[]<p style="display: inline">def</p></div>',
+                        });
+                    });
+                    it('should delete the space between the two <span>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div><span>abc[]x</span> <span>def</span></div>',
+                            stepFunction: twoDeleteForward,
+                            contentAfter: '<div><span>abc[]def</span></div>',
+                        });
+                    });
+                    it('should delete the space before a <span>', async () => {
+                        await testEditor(BasicEditor, {
+                            contentBefore: '<div>abc[]x <span>def</span></div>',
+                            stepFunction: twoDeleteForward,
+                            contentAfter: '<div>abc[]<span>def</span></div>',
+                        });
                     });
                 });
             });
@@ -528,7 +613,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                         stepFunction: deleteForward,
                         contentAfter: unformat(
@@ -537,7 +622,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                     });
                 });
@@ -549,7 +634,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij[]</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                         stepFunction: deleteForward,
                         contentAfter: unformat(
@@ -558,7 +643,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij[]</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                     });
                 });
@@ -785,6 +870,18 @@ describe('Editor', () => {
                         stepFunction: deleteBackward,
                         contentAfter:
                             '<table><tbody><tr><td>[]<br></td><td>abc</td></tr></tbody></table>',
+                    });
+                });
+                it('should merge the following inline text node', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc</p>[]def',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>abc[]def</p>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>abc</p>[]def<p>ghi</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>abc[]def</p><p>ghi</p>',
                     });
                 });
             });
@@ -1435,7 +1532,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>[]kl</p>`
+                            <p>[]kl</p>`,
                         ),
                         stepFunction: deleteBackward,
                         contentAfter: unformat(
@@ -1444,7 +1541,7 @@ describe('Editor', () => {
                                 <tr><td>cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>[]kl</p>`
+                            <p>[]kl</p>`,
                         ),
                     });
                 });
@@ -1456,7 +1553,7 @@ describe('Editor', () => {
                                 <tr><td>[]cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                         stepFunction: deleteBackward,
                         contentAfter: unformat(
@@ -1465,7 +1562,7 @@ describe('Editor', () => {
                                 <tr><td>[]cd</td><td>ef</td></tr>
                                 <tr><td>gh</td><td>ij</td></tr>
                             </tbody></table>
-                            <p>kl</p>`
+                            <p>kl</p>`,
                         ),
                     });
                 });
@@ -1627,7 +1724,7 @@ describe('Editor', () => {
                             <tr><td>cd</td><td>ef</td></tr>
                             <tr><td>gh</td><td>ij</td></tr>
                         </tbody></table>
-                        <p>k]l</p>`
+                        <p>k]l</p>`,
                     ),
                     stepFunction: deleteBackward,
                     contentAfter: '<p>a[]l</p>',
@@ -1641,7 +1738,7 @@ describe('Editor', () => {
                             <tr><td>cd</td><td>ef</td></tr>
                             <tr><td>g]h</td><td>ij</td></tr>
                         </tbody></table>
-                        <p>kl</p>`
+                        <p>kl</p>`,
                     ),
                     stepFunction: deleteBackward,
                     contentAfter: unformat(
@@ -1650,7 +1747,7 @@ describe('Editor', () => {
                             <tr><td><br></td><td><br></td></tr>
                             <tr><td>h</td><td>ij</td></tr>
                         </tbody></table>
-                        <p>kl</p>`
+                        <p>kl</p>`,
                     ),
                 });
             });
