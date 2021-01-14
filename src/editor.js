@@ -135,7 +135,9 @@ export class OdooEditor {
         src.ouid = src.ouid || getOuid(src, true);
         if (testunbreak) {
             const ouid = getOuid(src);
-            this.torollback = this.torollback || (ouid && ouid != src.ouid);
+            if (!this.torollback && ouid && ouid !== src.ouid) {
+                this.torollback = UNBREAKABLE_ROLLBACK_CODE;
+            }
         }
 
         if (dest && !dest.oid) {
@@ -221,7 +223,7 @@ export class OdooEditor {
                 }
                 case 'childList': {
                     record.addedNodes.forEach((added, index) => {
-                        this.torollback |= containsUnremovable(added);
+                        this.torollback ||= containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE;
                         let action = {
                             'type': 'add',
                         };
@@ -242,10 +244,13 @@ export class OdooEditor {
                     record.removedNodes.forEach((removed, index) => {
                         // Tables can be safely removed even though their
                         // contents are unremovable.
-                        this.torollback |= (
+                        if (
+                            !this.torollback &&
                             removed.tagName !== 'TABLE' &&
                             containsUnremovable(removed)
-                        );
+                        ) {
+                            this.torollback = UNREMOVABLE_ROLLBACK_CODE;
+                        }
                         this.history[this.history.length - 1].dom.push({
                             'type': 'remove',
                             'id': removed.oid,
@@ -623,7 +628,7 @@ export class OdooEditor {
                 pos2[0].oDeleteBackward(pos2[1]);
                 gen = undefined;
             }, histPos);
-            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE || err === 'rollback') {
+            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE) {
                 gen = gen || leftDeepOnlyPath(...pos2);
                 pos2 = rightPos(gen.next().value);
             } else {
@@ -802,21 +807,26 @@ export class OdooEditor {
      * @param {number} [rollbackCounter]
      * @returns {?}
      */
-    _protect(callback, rollbackCounter) {
-        try {
-            let result = callback.call(this);
-            this.observerFlush();
-            if (!this.torollback) {
-                return result;
-            }
-        } catch (err) {
-            if (err !== UNBREAKABLE_ROLLBACK_CODE && err !== UNREMOVABLE_ROLLBACK_CODE) {
-                throw err;
-            }
+_protect(callback, rollbackCounter) {
+    try {
+        let result = callback.call(this);
+        this.observerFlush();
+        if (this.torollback) {
+            const torollbackCode = this.torollback;
+            this.historyRollback(rollbackCounter);
+            return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
+        } else {
+            return result;
         }
-        this.historyRollback(rollbackCounter);
-        return 'rollback';
+    } catch (error) {
+        if (error === UNBREAKABLE_ROLLBACK_CODE || error === UNREMOVABLE_ROLLBACK_CODE) {
+            this.historyRollback(rollbackCounter);
+            return error;
+        } else {
+            throw error;
+        }
     }
+}
 
     // HISTORY
     // =======
