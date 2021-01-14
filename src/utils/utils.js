@@ -574,8 +574,7 @@ export function isUnremovable(node) {
         return true;
     }
     const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
-    return isEditableRoot ||
-        node.classList && node.classList.contains('oe_unremovable');
+    return isEditableRoot || (node.classList && node.classList.contains('oe_unremovable'));
 }
 
 export function containsUnbreakable(node) {
@@ -633,13 +632,19 @@ export function isInPre(node) {
     );
 }
 /**
- * Returns whether the given string (or given text node value) has
- * non-whitespace characters in it.
+ * Returns whether the given string (or given text node value)
+ * has at least one visible character or one non colapsed whitespace characters in it.
  */
 const nonWhitespacesRegex = /[\S\u00A0]/;
 export function isVisibleStr(value) {
     const str = typeof value === 'string' ? value : value.nodeValue;
-    return nonWhitespacesRegex.test(str);
+    return (
+        nonWhitespacesRegex.test(str) ||
+        (str.length > 0 &&
+            value.nextSibling &&
+            value.nextSibling.nodeType !== Node.TEXT_NODE &&
+            window.getComputedStyle(value.nextSibling).display !== 'block')
+    );
 }
 /**
  * @param {Node} node
