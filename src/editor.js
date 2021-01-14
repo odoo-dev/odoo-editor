@@ -962,7 +962,7 @@ _protect(callback, rollbackCounter) {
         // is a non-empty Unicode character string containing the printable
         // representation of the key. In this case, call `deleteRange` before
         // inserting the printed representation of the character.
-        if (/^.$/u.test(ev.key)) {
+        if (!ev.ctrlKey && /^.$/u.test(ev.key)) {
             const selection = document.defaultView.getSelection();
             if (selection && !selection.isCollapsed) {
                 this.deleteRange(selection);
