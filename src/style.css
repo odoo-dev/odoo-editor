@@ -6,6 +6,8 @@ html, body {
     height: 100%;
 }
 
+/*control panel*/
+
 #control-panel {
     display: flex;
     align-items: flex-end;
@@ -17,14 +19,31 @@ html, body {
     padding: 15px;
     text-align: center;
 }
+#control-panel > div:last-child {
+    max-width: 260px;
+}
 #control-panel textarea {
     width: 100%;
-    height: 200px;
+    height: 300px;
 }
 #control-panel button {
     width: 100%;
     font-size: 1.5rem;
 }
+
+/* local storage*/
+#saved-html {
+    padding: 2px 16px;
+}
+#save-c-html-button, #save-i-html-button{
+    display: none;
+}
+#saved-html-list a {
+    display: block;
+    padding: 2px 16px;
+}
+
+/**/
 
 #test-container {
     display: flex;
