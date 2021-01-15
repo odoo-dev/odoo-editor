@@ -56,18 +56,29 @@
                 <h1>DOM</h1>
                 <hr/>
                 <div id="toolbar" class="toolbar">
+                    <div class="button-group dropdown">
+                        <button type="button" class="btn btn-secondary btn-sm dropdown-toggle"
+                            data-toggle="dropdown" title="" tabindex="-1"
+                            data-original-title="Style" aria-expanded="false">
+                            <i class="fa fa-magic"></i> <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" id="paragraph">Normal</a></li>
+                            <li><a class="dropdown-item" href="#" id="pre"><pre>Code</pre></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading1"><h1>Header 1</h1></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading2"><h2>Header 2</h2></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading3"><h3>Header 3</h3></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading4"><h4>Header 4</h4></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading5"><h5>Header 5</h5></a></li>
+                            <li><a class="dropdown-item" href="#" id="heading6"><h6>Header 6</h6></a></li>
+                            <li><a class="dropdown-item" href="#" id="blockquote"><blockquote>Quote</blockquote></a></li>
+                        </ul>
+                    </div>
                     <div class="button-group">
                         <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
                         <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
                         <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
                         <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn"></div>
-                    </div>
-                    <div class="button-group">
-                        <div class="btn" id="paragraph">P</div>
-                        <div class="btn" id="heading1">H1</div>
-                        <div class="btn" id="heading2">H2</div>
-                        <div class="btn" id="heading3">H3</div>
-                        <div class="btn" id="pre">PRE</div>
                     </div>
 
                     <div class="button-group">

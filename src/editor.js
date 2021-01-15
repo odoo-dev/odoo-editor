@@ -1064,18 +1064,21 @@ _protect(callback, rollbackCounter) {
     }
 
     _onToolbarClick(ev) {
-        const buttonEl = ev.target.closest('div.btn');
+        const buttonEl = ev.target.closest('div.btn,a.dropdown-item');
         if (!buttonEl) {
             return;
         }
 
         const TAGS = {
             'paragraph': 'P',
+            'pre': 'PRE',
             'heading1': 'H1',
             'heading2': 'H2',
             'heading3': 'H3',
+            'heading4': 'H4',
+            'heading5': 'H5',
+            'heading6': 'H6',
             'blockquote': 'BLOCKQUOTE',
-            'pre': 'PRE',
             'ordered': 'OL',
             'unordered': 'UL',
             'checklist': 'CL',
@@ -1100,7 +1103,8 @@ _protect(callback, rollbackCounter) {
                 const selectedBlocks = [...new Set(getTraversedNodes().map(closestBlock))];
                 for (const selectedBlock of selectedBlocks) {
                     const block = closestBlock(selectedBlock);
-                    if (['P', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'PRE'].includes(block.nodeName)) {
+                    if (['P', 'PRE', 'H1', 'H2', 'H3', 'H4','H5', 'H6', 'BLOCKQUOTE']
+                        .includes(block.nodeName)) {
                         setTagName(block, TAGS[buttonEl.id]);
                     } else {
                         // eg do not change a <div> into a h1: insert the h1
