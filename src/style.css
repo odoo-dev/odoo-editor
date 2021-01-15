@@ -59,12 +59,44 @@ html, body {
     }
 }
 .toolbar {
-    height: 35px;
+    position: absolute;
     visibility: hidden;
+    height: fit-content;
+    width: fit-content;
+    padding-left: 5px;
+    padding-right: 5px;
     background: #222222;
     color: white;
-    width: 100%;
-    overflow-y: scroll;
+    border-radius: 8px;
+}
+.toolbar.toolbar-bottom::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: var(--arrow-left-pos);
+    top: var(--arrow-top-pos);
+    border: transparent 10px solid;
+    border-bottom: #222222 10px solid;
+    z-index: -1;
+}
+.toolbar:not(.toolbar-bottom)::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: var(--arrow-left-pos);
+    top: var(--arrow-top-pos);
+    border: transparent 10px solid;
+    border-top: #222222 10px solid;
+    z-index: -1;
+}
+.toolbar .button-group {
+    display: inline-block;
+    margin-right: 13px;
+}
+.toolbar .button-group:last-of-type {
+    margin-right: 0;
 }
 .toolbar div.btn {
     box-sizing: content-box;

@@ -49,32 +49,47 @@
                 <h1>DOM</h1>
                 <hr/>
                 <div id="toolbar" class="toolbar">
-                    <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
-                    <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
-                    <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
-                    <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn mr8"></div>
-                    <div class="btn" id="paragraph">P</div>
-                    <div class="btn" id="heading1">H1</div>
-                    <div class="btn" id="heading2">H2</div>
-                    <div class="btn" id="heading3">H3</div>
-                    <div class="btn mr8" id="pre">PRE</div>
+                    <div class="button-group">
+                        <div id="bold" title="Toggle bold" class="fa fa-bold fa-fw btn"></div>
+                        <div id="italic" title="Toggle italic" class="fa fa-italic fa-fw btn active"></div>
+                        <div id="underline" title="Toggle underline" class="fa fa-underline fa-fw btn"></div>
+                        <div id="strikeThrough" title="Toggle strikethrough" class="fa fa-strikethrough fa-fw btn"></div>
+                    </div>
+                    <div class="button-group">
+                        <div class="btn" id="paragraph">P</div>
+                        <div class="btn" id="heading1">H1</div>
+                        <div class="btn" id="heading2">H2</div>
+                        <div class="btn" id="heading3">H3</div>
+                        <div class="btn" id="pre">PRE</div>
+                    </div>
 
-                    <div id="foreColor" class="btn mr8">C</div>
-                    <div id="hiliteColor" class="fa fa-highlighter fa-fw btn"></div>
+                    <div class="button-group">
+                        <div id="foreColor" class="btn">C</div>
+                        <div id="hiliteColor" class="fa fa-highlighter fa-fw btn"></div>
+                    </div>
 
-                    <div id="blockquote" title="Blockquote" class="fa fa-quote-right fa-fw btn mr8"></div>
-                    <div id="fontawesome" title="Insert font Awesome icon" class="fa fa-star fa-fw btn mr8"></div>
+                    <div class="button-group">
+                        <div id="blockquote" title="Blockquote" class="fa fa-quote-right fa-fw btn"></div>
+                        <div id="fontawesome" title="Insert font Awesome icon" class="fa fa-star fa-fw btn"></div>
+                    </div>
 
-                    <div id="justifyLeft" class="fa fa-align-left fa-fw btn"></div>
-                    <div id="justifyCenter" class="fa fa-align-center fa-fw btn"></div>
-                    <div id="justifyRight" class="fa fa-align-right fa-fw btn"></div>
-                    <div id="justifyFull" class="fa fa-align-justify fa-fw btn"></div>
+                    <div class="button-group">
+                        <div id="justifyLeft" class="fa fa-align-left fa-fw btn"></div>
+                        <div id="justifyCenter" class="fa fa-align-center fa-fw btn"></div>
+                        <div id="justifyRight" class="fa fa-align-right fa-fw btn"></div>
+                        <div id="justifyFull" class="fa fa-align-justify fa-fw btn"></div>
+                    </div>
 
-                    <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
-                    <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
-                    <div id="checklist" title="Toggle checklist" class="fa fa-tasks fa-fw btn"></div>
-                    <div id="createLink" title="Link" class="fa fa-link fa-fw btn"></div>
-                    <div id="unLink" title="Link" class="fa fa-unlink fa-fw btn"></div>
+                    <div class="button-group">
+                        <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
+                        <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
+                        <div id="checklist" title="Toggle checklist" class="fa fa-tasks fa-fw btn"></div>
+                    </div>
+
+                    <div class="button-group">
+                        <div id="createLink" title="Link" class="fa fa-link fa-fw btn"></div>
+                        <div id="unLink" title="Link" class="fa fa-unlink fa-fw btn"></div>
+                    </div>
                 </div>
                 <!-- innerHTML only used in non collaborative mode -->
                 <div id="dom"></div>
