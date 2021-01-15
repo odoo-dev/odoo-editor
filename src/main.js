@@ -54,7 +54,6 @@ if (customTextParam && customTextParam.startsWith('html=')) {
     if (localHtmlStored) {
         const localHtmlSaved = JSON.parse(localHtmlStored);
         for (const [key, value] of Object.entries(localHtmlSaved)) {
-            console.log(`${key}: ${value}`);
             const link = document.createElement('a');
             const linkText = document.createTextNode('⮞ Start editing "' + key + '"');
             link.title = key + ' html snippet';
