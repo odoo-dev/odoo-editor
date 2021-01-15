@@ -17,6 +17,8 @@ import {
     closestPath,
     commonParentGet,
     containsUnremovable,
+    DIRECTIONS,
+    getCursorDirection,
     getListMode,
     getCursors,
     getOuid,
@@ -34,6 +36,7 @@ import {
     findNode,
     closestElement,
     getTraversedNodes,
+    isBlock,
     isVisible,
     isContentTextNode,
     latestChild,
@@ -789,6 +792,70 @@ export class OdooEditor {
             }
         }
     }
+    /**
+     * @param {string} size A valid css size string
+     */
+    _setFontSize(size) {
+        this._applyInlineStyle(element => {
+            element.style.fontSize = size;
+        });
+    }
+
+    /**
+     * This function abstracts the difficulty of applying a inline style to a selection.
+     * TODO: This implementations potentially adds one span per text node, in an ideal
+     * world it would wrap all concerned nodes in one span whenever possible.
+     * @param {Element => void} applyStyle Callback that receives an element to which
+     * the wanted style should be applied
+     */
+    _applyInlineStyle(applyStyle) {
+        const sel = this.document.defaultView.getSelection();
+        const { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
+        const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
+        const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
+        const selectedTextNodes = getTraversedNodes(this.document).filter(node =>
+            isContentTextNode(node),
+        );
+        for (const textNode of selectedTextNodes) {
+            const atLeastOneCharFromNodeInSelection = !(
+                (textNode === endContainer && endOffset === 0) ||
+                (textNode === startContainer && endOffset === textNode.textContent.length)
+            );
+            // If text node ends after the end of the selection, split it and keep the part that is inside.
+            if (endContainer === textNode && endOffset < textNode.textContent.length) {
+                // No reassignement needed, entirely dependent on the splitTextNode implementation.
+                splitTextNode(textNode, endOffset, true);
+            }
+            // If text node starts before the beginning of the selection, split it
+            // and keep the part that is inside as textNode.
+            if (startContainer === textNode && startOffset > 0) {
+                // No reassignement needed, entirely dependent on the splitTextNode implementation.
+                splitTextNode(textNode, startOffset, false);
+            }
+            // If the parent is not inline or is not completely in the selection, wrap text node in inline node.
+            // Also skips <a> tags to work with native `removeFormat` command
+            if (
+                atLeastOneCharFromNodeInSelection &&
+                (isBlock(textNode.parentElement) ||
+                    (textNode === endContainer && textNode.nextSibling) ||
+                    (textNode === startContainer && textNode.previousSibling) ||
+                    textNode.parentElement.tagName === 'A')
+            ) {
+                const newParent = document.createElement('span');
+                textNode.after(newParent);
+                newParent.appendChild(textNode);
+            }
+            // Make sure there's at least one char selected in the text node
+            if (atLeastOneCharFromNodeInSelection) {
+                applyStyle(textNode.parentElement);
+            }
+        }
+        if (direction === DIRECTIONS.RIGHT) {
+            setCursor(endContainer, endOffset, startContainer, 0);
+        } else {
+            setCursor(startContainer, 0, endContainer, endOffset);
+        }
+    }
 
     /**
      * Applies the given command to the current selection. This does *NOT*:
@@ -814,7 +881,7 @@ export class OdooEditor {
                 return true;
             }
         }
-        if (['toggleList', 'createLink', 'unLink', 'indentList'].includes(method)) {
+        if (['toggleList', 'createLink', 'unLink', 'indentList', 'setFontSize'].includes(method)) {
             return this['_' + method](...args);
         }
         if (method.startsWith('justify')) {

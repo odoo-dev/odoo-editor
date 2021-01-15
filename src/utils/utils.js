@@ -804,17 +804,24 @@ export function isShrunkBlock(blockEl) {
  * @returns {number} The parentOffset if the cursor was between the two text
  *          node parts after the split.
  */
-export function splitTextNode(textNode, offset) {
+export function splitTextNode(textNode, offset, keepOriginalOnTheLeft = false) {
     let parentOffset = childNodeIndex(textNode);
 
     if (offset > 0) {
         parentOffset++;
 
         if (offset < textNode.length) {
-            const newval = textNode.nodeValue.substring(0, offset);
-            const nextTextNode = document.createTextNode(newval);
-            textNode.before(nextTextNode);
-            textNode.nodeValue = textNode.nodeValue.substring(offset);
+            const left = textNode.nodeValue.substring(0, offset);
+            const right = textNode.nodeValue.substring(offset);
+            if (keepOriginalOnTheLeft) {
+                const newTextNode = document.createTextNode(right);
+                textNode.after(newTextNode);
+                textNode.nodeValue = left;
+            } else {
+                const newTextNode = document.createTextNode(left);
+                textNode.before(newTextNode);
+                textNode.nodeValue = right;
+            }
         }
     }
     return parentOffset;
