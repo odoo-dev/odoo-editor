@@ -2791,6 +2791,7 @@ const startTests = () => {
         window.scrollTo(0, window.scrollY + reportEl.getBoundingClientRect().top);
     });
     document.getElementById('control-panel').remove();
+    document.getElementById('saved-html').remove();
 };
 if (urlParams.get('unittests') === '1') {
     // a small timeout seems necesary to let mocha be ready to start
