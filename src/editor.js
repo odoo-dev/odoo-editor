@@ -923,6 +923,60 @@ _protect(callback, rollbackCounter) {
         const linkNode = closestElement(sel.focusNode, 'a');
         this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
         this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
+        this._positionToolbar();
+    }
+    _positionToolbar() {
+        const OFFSET = 10;
+        let isBottom = false;
+        this.toolbar.classList.toggle('toolbar-bottom', false);
+        this.toolbar.style.maxWidth = this.dom.offsetWidth - (OFFSET * 2) + 'px';
+        const sel = document.defaultView.getSelection();
+        const range = sel.getRangeAt(0);
+        const isSelForward =
+            sel.anchorNode === range.startContainer &&
+            sel.anchorOffset === range.startOffset;
+        const selRect = range.getBoundingClientRect();
+        const toolbarWidth = this.toolbar.offsetWidth;
+        const toolbarHeight = this.toolbar.offsetHeight;
+        const editorRect = this.dom.getBoundingClientRect();
+        const editorLeftPos = Math.max(0, editorRect.left);
+        const editorTopPos = Math.max(0, editorRect.top);
+        const scrollX = document.defaultView.window.scrollX;
+        const scrollY = document.defaultView.window.scrollY;
+
+        // Get left position.
+        let left = selRect.left + OFFSET;
+        // Ensure the toolbar doesn't overflow the editor on the left.
+        left = Math.max(editorLeftPos + OFFSET, left);
+        // Ensure the toolbar doesn't overflow the editor on the right.
+        left = Math.min(editorLeftPos + this.dom.offsetWidth - OFFSET - toolbarWidth, left);
+        this.toolbar.style.left = scrollX + left + 'px';
+
+        // Get top position.
+        let top = selRect.top - toolbarHeight - OFFSET;
+        // Ensure the toolbar doesn't overflow the editor on the top.
+        if (top < editorTopPos) {
+            // Position the toolbar below the selection.
+            top = selRect.bottom + OFFSET;
+            isBottom = true;
+        }
+        // Ensure the toolbar doesn't overflow the editor on the bottom.
+        top = Math.min(editorTopPos + this.dom.offsetHeight - OFFSET - toolbarHeight, top);
+        this.toolbar.style.top = scrollY + top + 'px';
+
+        // Position the arrow.
+        let arrowLeftPos = (isSelForward ? selRect.right : selRect.left) - left - OFFSET;
+        // Ensure the arrow doesn't overflow the toolbar on the left.
+        arrowLeftPos = Math.max(OFFSET, arrowLeftPos);
+        // Ensure the arrow doesn't overflow the toolbar on the right.
+        arrowLeftPos = Math.min(toolbarWidth - OFFSET - 20, arrowLeftPos);
+        this.toolbar.style.setProperty('--arrow-left-pos', arrowLeftPos + 'px');
+        if (isBottom) {
+            this.toolbar.classList.toggle('toolbar-bottom', true);
+            this.toolbar.style.setProperty('--arrow-top-pos', -17 + 'px');
+        } else {
+            this.toolbar.style.setProperty('--arrow-top-pos', toolbarHeight - 3 + 'px');
+        }
     }
 
     //--------------------------------------------------------------------------
