@@ -6,9 +6,11 @@ import {
     deleteForward,
     insertLineBreak,
     insertParagraphBreak,
+    redo,
     testEditor,
     testVdom,
     toggleBold,
+    undo,
     unformat,
 } from './utils.js';
 
@@ -2763,6 +2765,69 @@ describe('Editor', () => {
             contentBefore: '<p><b>a[b]c</b></p>',
             stepFunction: toggleBold,
             contentAfter: '<p><b>a</b>b<b>c</b></p>',
+        });
+    });
+
+    describe('history', () => {
+        describe('undo', () => {
+            it('should undo a backspace', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                    },
+                    contentAfter: '<p>ab []cd</p>',
+                });
+            });
+            it('should undo a backspace, then do nothing on undo', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                        undo(editor); // <p>ab []cd</p> (nothing to undo)
+                    },
+                    contentAfter: '<p>ab []cd</p>',
+                });
+            });
+        });
+        describe('redo', () => {
+            it('should undo, then redo a backspace', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                        redo(editor); // <p>ab[]cd</p>
+                    },
+                    contentAfter: '<p>ab[]cd</p>',
+                });
+            });
+            it('should undo, then redo a backspace, then undo again to get back to the starting point', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                        redo(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                    },
+                    contentAfter: '<p>ab []cd</p>',
+                });
+            });
+            it('should undo, then redo a backspace, then do nothing on redo', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                        redo(editor); // <p>ab[]cd</p>
+                        redo(editor); // <p>ab[]cd</p> (nothing to redo)
+                    },
+                    contentAfter: '<p>ab[]cd</p>',
+                });
+            });
         });
     });
 });

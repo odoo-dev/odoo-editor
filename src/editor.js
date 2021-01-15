@@ -447,14 +447,17 @@ export class OdooEditor {
     }
 
     historyRedo() {
-        this.historyStep();
         let pos = this.history.length - 2;
         if (this.undos.has(pos)) {
             this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
             let step = this.history[this.undos.get(pos) + 1];
             this.historySetCursor(step);
-            this.undos.set(pos + 1, this.undos.get(pos) + 1);
+            // Remove the history step that was reverted and its matching undo.
+            // Unlike undo, redo consumes history steps.
+            this.history.splice(pos, 1);
+            this.history.splice(this.undos.get(pos), 1);
             this.undos.delete(pos);
+            this.historyStep();
         }
     }
 

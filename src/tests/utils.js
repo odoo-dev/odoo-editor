@@ -371,6 +371,14 @@ export async function insertText(editor, text) {
     sel.collapseToEnd();
 }
 
+export function undo(editor) {
+    editor.historyUndo();
+}
+
+export function redo(editor) {
+    editor.historyRedo();
+}
+
 export function simulateToolbarClick(editor, buttonId) {
     const button = document.createElement('div');
     button.classList.add('btn');
