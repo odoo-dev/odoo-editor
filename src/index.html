@@ -92,16 +92,25 @@
                     </div>
 
                     <div class="button-group">
-                        <div id="justifyLeft" class="fa fa-align-left fa-fw btn"></div>
-                        <div id="justifyCenter" class="fa fa-align-center fa-fw btn"></div>
-                        <div id="justifyRight" class="fa fa-align-right fa-fw btn"></div>
-                        <div id="justifyFull" class="fa fa-align-justify fa-fw btn"></div>
-                    </div>
-
-                    <div class="button-group">
                         <div id="unordered" title="Toggle unordered list" class="fa fa-list-ul fa-fw btn"></div>
                         <div id="ordered" title="Toggle ordered list" class="fa fa-list-ol fa-fw btn"></div>
                         <div id="checklist" title="Toggle checklist" class="fa fa-tasks fa-fw btn"></div>
+                    </div>
+
+                    <div class="button-group dropdown">
+                        <button type="button" class="btn btn-secondary btn-sm dropdown-toggle"
+                            data-toggle="dropdown" title="" tabindex="-1"
+                            data-original-title="Paragraph" aria-expanded="false">
+                            <i id="paragraphDropdownButton" class="fa fa-align-left fa-fw"></i> <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="btn-group">
+                                <div class="btn" href="#" id="justifyLeft"><i class="fa fa-align-left fa-fw btn"></i></div>
+                                <div class="btn" href="#" id="justifyCenter"><i class="fa fa-align-center fa-fw btn"></i></div>
+                                <div class="btn" href="#" id="justifyRight"><i class="fa fa-align-right fa-fw btn"></i></div>
+                                <div class="btn" href="#" id="justifyFull"><i class="fa fa-align-justify fa-fw btn"></i></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="button-group">

@@ -880,6 +880,7 @@ _protect(callback, rollbackCounter) {
         if (show === false) {
             return;
         }
+        const paragraphDropdownButton = this.toolbar.querySelector('#paragraphDropdownButton');
         for (let commandState of [
             'bold',
             'italic',
@@ -890,9 +891,15 @@ _protect(callback, rollbackCounter) {
             'justifyCenter',
             'justifyFull',
         ]) {
+            const isStateTrue = document.queryCommandState(commandState);
             this.toolbar
                 .querySelector('#' + commandState)
-                .classList.toggle('active', document.queryCommandState(commandState));
+                .classList.toggle('active', isStateTrue);
+            if (commandState.startsWith('justify')) {
+                const direction = commandState.replace('justify', '').toLowerCase();
+                const newClass = `fa-align-${direction === 'full' ? 'justify' : direction}`;
+                paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
+            }
         }
         let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
