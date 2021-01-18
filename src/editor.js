@@ -37,12 +37,17 @@ import {
     isVisible,
     isContentTextNode,
     latestChild,
+    setCursorStart,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const UNREMOVABLE_ROLLBACK_CODE = 110;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
+
+
+const TABLEPICKER_ROW_COUNT = 3;
+const TABLEPICKER_COL_COUNT = 3;
 
 export class OdooEditor {
     constructor(dom, options = {}) {
@@ -91,6 +96,10 @@ export class OdooEditor {
         if (this.options.toolbar) {
             this.toolbar = document.querySelector('#toolbar');
             this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
+            this.tablePicker = this.toolbar.querySelector('.tablepicker');
+            this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
+            this.toolbar.querySelector('#tableDropdownButton')
+                .addEventListener('click', this._initTablePicker.bind(this));
         }
 
         this.collaborate = false;
@@ -1094,7 +1103,29 @@ _protect(callback, rollbackCounter) {
         };
         ev.preventDefault();
         this._protect(() => {
-            if (['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
+            if (buttonEl.classList.contains('tablepicker-cell')) {
+                const table = document.createElement('table');
+                const tbody = document.createElement('tbody');
+                table.appendChild(tbody);
+                const rowId = +buttonEl.dataset.rowId;
+                const colId = +buttonEl.dataset.colId;
+                for (let rowIndex = 0; rowIndex < rowId; rowIndex++) {
+                    const tr = document.createElement('tr');
+                    tbody.appendChild(tr);
+                    for (let colIndex = 0; colIndex < colId; colIndex++) {
+                        const td = document.createElement('td');
+                        const br = document.createElement('br');
+                        td.appendChild(br);
+                        tr.appendChild(td);
+                    }
+                }
+                const sel = document.defaultView.getSelection();
+                if (!sel.isCollapsed) {
+                    this.deleteRange(sel);
+                }
+                sel.focusNode.parentNode.insertBefore(table, sel.focusNode);
+                setCursorStart(table.querySelector('td'));
+            } else if (['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
             } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
@@ -1129,5 +1160,82 @@ _protect(callback, rollbackCounter) {
             this.historyStep();
             this._updateToolbar();
         });
+    }
+    _initTablePicker() {
+        for (const child of [...this.tablePicker.childNodes]) {
+            child.remove();
+        }
+        this.tablePicker.dataset.rowCount = 0;
+        this.tablePicker.dataset.colCount = 0;
+        for (let rowIndex = 0; rowIndex < TABLEPICKER_ROW_COUNT; rowIndex++) {
+            this._addTablePickerRow();
+        }
+        for (let colIndex = 0; colIndex < TABLEPICKER_COL_COUNT; colIndex++) {
+            this._addTablePickerColumn();
+        }
+        this.tablePicker.querySelector('.tablepicker-cell').classList.toggle('active', true);
+        this.tablePickerSizeView.textContent = '1x1';
+    }
+    _addTablePickerRow() {
+        const row = document.createElement('div');
+        row.classList.add('tablepicker-row');
+        row.dataset.rowId = this.tablePicker.querySelectorAll('.tablepicker-row').length + 1;
+        this.tablePicker.appendChild(row);
+        this.tablePicker.dataset.rowCount = +this.tablePicker.dataset.rowCount + 1;
+        for (let i = 0; i < +this.tablePicker.dataset.colCount; i++) {
+            this._addTablePickerCell(row);
+        }
+        return row;
+    }
+    _addTablePickerColumn() {
+        for (const row of this.tablePicker.querySelectorAll('.tablepicker-row')) {
+            this._addTablePickerCell(row);
+        }
+        this.tablePicker.dataset.colCount = +this.tablePicker.dataset.colCount + 1;
+    }
+    _addTablePickerCell(row) {
+        const rowId = +row.dataset.rowId;
+        const colId = row.querySelectorAll('.tablepicker-cell').length + 1;
+        const cell = document.createElement('div');
+        cell.classList.add('tablepicker-cell', 'btn');
+        cell.dataset.rowId = rowId;
+        cell.dataset.colId = colId;
+        row.appendChild(cell);
+        cell.addEventListener('mouseover', () => this._onHoverTablePickerCell(rowId, colId));
+    }
+    _onHoverTablePickerCell(targetRowId, targetColId) {
+        // Hightlight the active cells, remove highlight of the others.
+        for (const cell of this.tablePicker.querySelectorAll('.tablepicker-cell')) {
+            const [rowId, colId] = [+cell.dataset.rowId, +cell.dataset.colId];
+            const isActive = rowId <= targetRowId && colId <= targetColId;
+            cell.classList.toggle('active', isActive);
+        }
+        this.tablePickerSizeView.textContent = `${targetColId}x${targetRowId}`;
+
+        // Add/remove rows to expand/shrink the tablepicker.
+        if (targetRowId >= this.tablePicker.dataset.rowCount) {
+            this._addTablePickerRow();
+        } else if (this.tablePicker.dataset.rowCount > TABLEPICKER_ROW_COUNT) {
+            for (const row of this.tablePicker.querySelectorAll('.tablepicker-row')) {
+                const rowId = +row.dataset.rowId;
+                if (rowId >= TABLEPICKER_ROW_COUNT && rowId > targetRowId + 1) {
+                    row.remove();
+                    this.tablePicker.dataset.rowCount = +this.tablePicker.dataset.rowCount - 1;
+                }
+            }
+        }
+        // Add/remove cols to expand/shrink the tablepicker.
+        const colCount = +this.tablePicker.dataset.colCount;
+        if (targetColId >= colCount) {
+            this._addTablePickerColumn();
+        } else if (colCount > TABLEPICKER_COL_COUNT) {
+            for (const cell of this.tablePicker.querySelectorAll('.tablepicker-cell')) {
+                const colId = +cell.dataset.colId;
+                if (colId >= TABLEPICKER_COL_COUNT && colId > targetColId + 1) {
+                    cell.remove();
+                }
+            }
+            this.tablePicker.dataset.colCount = Math.max(targetColId + 1, TABLEPICKER_COL_COUNT);
+        }
     }
 }

@@ -110,6 +110,25 @@ html, body {
 .toolbar div.active {
     background: #555555;
 }
+.tablepicker {
+    margin: -3px 2px -6px 2px;
+}
+.tablepicker .tablepicker-row .tablepicker-cell {
+    background: white;
+    width: 5px;
+    height: 5px;
+    margin-right: 3px;
+}
+.tablepicker .tablepicker-row .tablepicker-cell:last-of-type {
+    margin-right: 0;
+}
+.tablepicker .tablepicker-row .tablepicker-cell.active {
+    background: #ddeafb;
+    border-color: #c3d9ff;
+}
+.tablepicker-size {
+    margin-top: 7px;
+}
 .dropdown-toggle {
     background: transparent;
     border: none;
