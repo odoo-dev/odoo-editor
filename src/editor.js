@@ -1095,7 +1095,7 @@ _protect(callback, rollbackCounter) {
         };
         ev.preventDefault();
         this._protect(() => {
-            if (['bold', 'italic', 'underline', 'strikeThrough'].includes(buttonEl.id)) {
+            if (['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
                 document.execCommand(buttonEl.id);
             } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
