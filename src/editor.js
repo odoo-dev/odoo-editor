@@ -71,6 +71,7 @@ export class OdooEditor {
             },
         ];
         this.undos = new Map();
+        this.redo_count = 0;
 
         // set contenteditable before clone as FF updates the content at this point
         dom.setAttribute('contenteditable', true);
@@ -434,6 +435,7 @@ export class OdooEditor {
 
     historyUndo() {
         let pos = this.history.length - 2;
+        this.redo_count = this.undos.has(pos) ? this.redo_count : 0;
         while (this.undos.has(pos)) {
             pos = this.undos.get(pos) - 1;
         }
@@ -448,14 +450,11 @@ export class OdooEditor {
 
     historyRedo() {
         let pos = this.history.length - 2;
-        if (this.undos.has(pos)) {
+        if (this.undos.has(pos) && (this.redo_count++ < (pos-this.undos.get(pos))/2 )) {
             this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
             let step = this.history[this.undos.get(pos) + 1];
             this.historySetCursor(step);
-            // Remove the history step that was reverted and its matching undo.
-            // Unlike undo, redo consumes history steps.
-            this.history.splice(pos, 1);
-            this.history.splice(this.undos.get(pos), 1);
+            this.undos.set(pos + 1, this.undos.get(pos) + 1);
             this.undos.delete(pos);
             this.historyStep();
         }

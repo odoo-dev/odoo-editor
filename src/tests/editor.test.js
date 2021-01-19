@@ -2828,6 +2828,21 @@ describe('Editor', () => {
                     contentAfter: '<p>ab[]cd</p>',
                 });
             });
+            it('should undo, then undo, then redo, then redo a backspace, then do nothing on redo', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab []cd</p>',
+                    stepFunction: async editor => {
+                        await deleteBackward(editor); // <p>ab[]cd</p>
+                        await deleteBackward(editor); // <p>a[]cd</p>
+                        undo(editor); // <p>ab[]cd</p>
+                        undo(editor); // <p>ab []cd</p>
+                        redo(editor); // <p>ab[]cd</p>
+                        redo(editor); // <p>a[]cd</p>
+                        redo(editor); // <p>a[]cd</p> (nothing to redo)
+                    },
+                    contentAfter: '<p>a[]cd</p>',
+                });
+            });
         });
     });
 });
