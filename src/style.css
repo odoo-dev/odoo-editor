@@ -162,7 +162,6 @@ td {
 ul.checklist > li {
     list-style: none;
     position: relative;
-    z-index: -1;
 }
 ul.checklist > li:not(.nested):before {
     content: '';
