@@ -666,7 +666,7 @@ export class OdooEditor {
         }
     }
 
-    _createLink(link = '#', content) {
+    _createLink(link, content) {
         const sel = document.defaultView.getSelection();
         if (content && !sel.isCollapsed) {
             this.deleteRange(sel);
@@ -674,6 +674,8 @@ export class OdooEditor {
         if (sel.isCollapsed) {
             insertText(sel, content || 'link');
         }
+        const currentLink = closestElement(sel.focusNode, 'a');
+        link = link || prompt('URL or Email', currentLink && currentLink.href || 'http://');
         const res = document.execCommand('createLink', false, link);
         if (res) {
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
