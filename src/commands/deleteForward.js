@@ -12,7 +12,6 @@ import {
     CTYPES,
     leftPos,
     isFontAwesome,
-    isContentLastSpaceBeforeTag,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteForward = function (offset) {
@@ -24,8 +23,7 @@ Text.prototype.oDeleteForward = function (offset) {
 };
 
 HTMLElement.prototype.oDeleteForward = function (offset) {
-    const filterFunc = node =>
-        isVisibleEmpty(node) || isContentTextNode(node) || isContentLastSpaceBeforeTag(node);
+    const filterFunc = node => isVisibleEmpty(node) || isContentTextNode(node);
 
     const firstInlineNode = findNode(rightDeepOnlyInlinePath(this, offset), filterFunc);
     if (isFontAwesome(firstInlineNode && firstInlineNode.parentElement)) {
