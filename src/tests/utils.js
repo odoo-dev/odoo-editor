@@ -367,6 +367,9 @@ export async function createLink(editor, content) {
 
 export async function insertText(editor, text) {
     const sel = document.defaultView.getSelection();
+    if (!sel.isCollapsed) {
+        editor.deleteRange(sel);
+    }
     insertTextSel(sel, text);
     sel.collapseToEnd();
 }

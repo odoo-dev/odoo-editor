@@ -375,7 +375,7 @@ describe('FontAwesome', () => {
                     '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i>s[]cd</p>',
             });
         });
-        it.skip('should insert a character and replace the icon', async () => {
+        it('should insert a character and replace the icon', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[<i class="fa fa-pastafarianism"></i>]cd</p>',
                 stepFunction: async editor => {
