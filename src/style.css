@@ -210,4 +210,29 @@ li.nested {
     display: block;
 }
 
+/* hide color input because it's ugly */
 
+.toolbar label {
+    display: inline-block;
+}
+
+.toolbar label span {
+    display: inline-block;
+}
+
+.toolbar input[type="color"] {
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+    position: absolute;
+    opacity: 0;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    background-color: transparent;
+}
