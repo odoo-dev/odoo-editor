@@ -38,6 +38,7 @@ import {
     isContentTextNode,
     latestChild,
     setCursorStart,
+    rgbToHex,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -100,6 +101,21 @@ export class OdooEditor {
             this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
             this.toolbar.querySelector('#tableDropdownButton')
                 .addEventListener('click', this._initTablePicker.bind(this));
+            for (const colorLabel of this.toolbar.querySelectorAll('label')) {
+                colorLabel.addEventListener('mousedown', ev => {
+                    // Hack to prevent loss of focus (done by preventDefault) while still opening
+                    // color picker dialog (which is also prevented by preventDefault on chrome,
+                    // except when click detail is 2, which happens on a double-click but isn't
+                    // triggered by a dblclick event)
+                    if (ev.detail < 2) {
+                        ev.preventDefault();
+                        ev.currentTarget.dispatchEvent(new MouseEvent('click', { detail: 2 }));
+                    }
+                });
+                colorLabel.addEventListener('change', ev => {
+                    document.execCommand(ev.target.name, false, ev.target.value);
+                });
+            }
         }
 
         this.collaborate = false;
@@ -912,6 +928,18 @@ _protect(callback, rollbackCounter) {
                 paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
             }
         }
+        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
+        this.toolbar.querySelector(`#foreColor .color-indicator`).style.backgroundColor = foreColor;
+        this.toolbar.querySelector('#foreColor input').value = foreColor;
+        const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
+        const backColor = rgbToHex(getComputedStyle(closestsStartContainer).backgroundColor).slice(
+            0,
+            7,
+        );
+        this.toolbar.querySelector(
+            `#hiliteColor .color-indicator`,
+        ).style.backgroundColor = backColor;
+        this.toolbar.querySelector('#hiliteColor input').value = backColor;
         let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
         this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
