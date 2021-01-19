@@ -1340,9 +1340,9 @@ _protect(callback, rollbackCounter) {
         this.tablePickerSizeView.textContent = `${targetColId}x${targetRowId}`;
 
         // Add/remove rows to expand/shrink the tablepicker.
-        if (targetRowId >= this.tablePicker.dataset.rowCount) {
+        if (targetRowId >= +this.tablePicker.dataset.rowCount) {
             this._addTablePickerRow();
-        } else if (this.tablePicker.dataset.rowCount > TABLEPICKER_ROW_COUNT) {
+        } else if (+this.tablePicker.dataset.rowCount > TABLEPICKER_ROW_COUNT) {
             for (const row of this.tablePicker.querySelectorAll('.tablepicker-row')) {
                 const rowId = +row.dataset.rowId;
                 if (rowId >= TABLEPICKER_ROW_COUNT && rowId > targetRowId + 1) {
@@ -1356,13 +1356,15 @@ _protect(callback, rollbackCounter) {
         if (targetColId >= colCount) {
             this._addTablePickerColumn();
         } else if (colCount > TABLEPICKER_COL_COUNT) {
+            const removedColIds = new Set();
             for (const cell of this.tablePicker.querySelectorAll('.tablepicker-cell')) {
                 const colId = +cell.dataset.colId;
                 if (colId >= TABLEPICKER_COL_COUNT && colId > targetColId + 1) {
                     cell.remove();
+                    removedColIds.add(colId);
                 }
             }
-            this.tablePicker.dataset.colCount = Math.max(targetColId + 1, TABLEPICKER_COL_COUNT);
+            this.tablePicker.dataset.colCount = colCount - removedColIds.size;
         }
     }
 }
