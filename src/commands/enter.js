@@ -5,6 +5,7 @@ import {
     clearEmpty,
     fillEmpty,
     isBlock,
+    isUnbreakable,
     prepareUpdate,
     setCursorStart,
     setCursorEnd,
@@ -29,6 +30,9 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
+    if (isUnbreakable(this)) {
+        throw UNBREAKABLE_ROLLBACK_CODE;
+    }
     let restore;
     if (firstSplit) {
         restore = prepareUpdate(this, offset);
