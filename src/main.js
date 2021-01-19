@@ -5,7 +5,10 @@ const localStorageKey = 'odoo-editor-localHtmlSaved';
 function startEditor(testHTML) {
     const editableContainer = document.getElementById('dom');
     editableContainer.innerHTML = testHTML;
-    const editor = new OdooEditor(editableContainer, { toolbar: true });
+    const editor = new OdooEditor(editableContainer, {
+        toolbar: document.querySelector('#toolbar'),
+        autohideToolbar: true,
+    });
     document.getElementById('vdom').append(editor.vdom);
     editor.historyFetch();
 

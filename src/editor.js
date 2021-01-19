@@ -57,9 +57,6 @@ export class OdooEditor {
         if (typeof this.options.toSanitize === 'undefined') {
             this.options.toSanitize = true;
         }
-        if (typeof this.options.toolbar === 'undefined') {
-            this.options.toolbar = false;
-        }
 
         dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
@@ -97,7 +94,7 @@ export class OdooEditor {
         document.onclick = this._onSelectionChange.bind(this);
 
         if (this.options.toolbar) {
-            this.toolbar = document.querySelector('#toolbar');
+            this.toolbar = this.options.toolbar;
             this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
             this.tablePicker = this.toolbar.querySelector('.tablepicker');
             this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
@@ -903,7 +900,7 @@ _protect(callback, rollbackCounter) {
         if (!sel.anchorNode) {
             show = false;
         }
-        if (show !== undefined) {
+        if (show !== undefined && this.options.autohideToolbar) {
             this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
         if (show === false) {
