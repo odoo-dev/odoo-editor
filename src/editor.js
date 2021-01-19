@@ -1166,6 +1166,9 @@ _protect(callback, rollbackCounter) {
         document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
     }
 
+    /**
+     * Prevent the dropping of HTML and paste text only instead.
+     */
     _onDrop(ev) {
         ev.preventDefault();
         const sel = document.defaultView.getSelection();
@@ -1177,28 +1180,32 @@ _protect(callback, rollbackCounter) {
             }
             ancestor = ancestor.parentNode;
         }
-        if (isInEditor && !sel.isCollapsed) {
-            this.deleteRange(sel);
+        const transferItem = [...(ev.originalEvent || ev).dataTransfer.items]
+            .find(item => item.type === "text/plain");
+        if (transferItem) {
+            transferItem.getAsString(pastedText => {
+                if (isInEditor && !sel.isCollapsed) {
+                    this.deleteRange(sel);
+                }
+                if (document.caretPositionFromPoint) {
+                    const range = document.caretPositionFromPoint(ev.clientX, ev.clientY);
+                    setCursor(range.offsetNode, range.offset);
+                } else if (document.caretRangeFromPoint) {
+                    const range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+                    setCursor(range.startContainer, range.startOffset);
+                }
+                if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
+                    // Prevent text directly in div contenteditable and other weird
+                    // manipulations by execCommand.
+                    const p = document.createElement('p');
+                    p.appendChild(document.createElement('br'));
+                    const block = closestBlock(sel.anchorNode);
+                    block.parentElement.insertBefore(p, block);
+                    setCursorStart(p);
+                }
+                document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
+            });
         }
-        (ev.originalEvent || ev).dataTransfer.items[0].getAsString(pastedText => {
-            if (document.caretPositionFromPoint) {
-                const range = document.caretPositionFromPoint(ev.clientX, ev.clientY);
-                setCursor(range.offsetNode, range.offset);
-            } else if (document.caretRangeFromPoint) {
-                const range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
-                setCursor(range.startContainer, range.startOffset);
-            }
-            if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
-                // Prevent text directly in div contenteditable and other weird
-                // manipulations by execCommand.
-                const p = document.createElement('p');
-                p.appendChild(document.createElement('br'));
-                const block = closestBlock(sel.anchorNode);
-                block.parentElement.insertBefore(p, block);
-                setCursorStart(p);
-            }
-            document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
-        });
     }
 
     _onToolbarClick(ev) {
