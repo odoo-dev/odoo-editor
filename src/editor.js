@@ -71,7 +71,7 @@ export class OdooEditor {
             },
         ];
         this.undos = new Map();
-        this.redo_count = 0;
+        this.redoCount = 0;
 
         // set contenteditable before clone as FF updates the content at this point
         dom.setAttribute('contenteditable', true);
@@ -435,7 +435,7 @@ export class OdooEditor {
 
     historyUndo() {
         let pos = this.history.length - 2;
-        this.redo_count = this.undos.has(pos) ? this.redo_count : 0;
+        this.redoCount = this.undos.has(pos) ? this.redoCount : 0;
         while (this.undos.has(pos)) {
             pos = this.undos.get(pos) - 1;
         }
@@ -449,10 +449,12 @@ export class OdooEditor {
     }
 
     historyRedo() {
-        let pos = this.history.length - 2;
-        if (this.undos.has(pos) && (this.redo_count++ < (pos-this.undos.get(pos))/2 )) {
+        const pos = this.history.length - 2;
+        const undoRedoPairs = (pos - this.undos.get(pos)) / 2;
+        if (this.undos.has(pos) && this.redoCount < undoRedoPairs) {
+            this.redoCount++;
             this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
-            let step = this.history[this.undos.get(pos) + 1];
+            const step = this.history[this.undos.get(pos) + 1];
             this.historySetCursor(step);
             this.undos.set(pos + 1, this.undos.get(pos) + 1);
             this.undos.delete(pos);
