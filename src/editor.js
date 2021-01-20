@@ -46,7 +46,6 @@ export const UNREMOVABLE_ROLLBACK_CODE = 110;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
 
-
 const TABLEPICKER_ROW_COUNT = 3;
 const TABLEPICKER_COL_COUNT = 3;
 
@@ -56,9 +55,6 @@ export class OdooEditor {
 
         if (typeof this.options.toSanitize === 'undefined') {
             this.options.toSanitize = true;
-        }
-        if (typeof this.options.toolbar === 'undefined') {
-            this.options.toolbar = false;
         }
 
         dom.oid = 1; // convention: root node is ID 1
@@ -97,11 +93,12 @@ export class OdooEditor {
         document.onclick = this._onSelectionChange.bind(this);
 
         if (this.options.toolbar) {
-            this.toolbar = document.querySelector('#toolbar');
+            this.toolbar = this.options.toolbar;
             this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
             this.tablePicker = this.toolbar.querySelector('.tablepicker');
             this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
-            this.toolbar.querySelector('#tableDropdownButton')
+            this.toolbar
+                .querySelector('#tableDropdownButton')
                 .addEventListener('click', this._initTablePicker.bind(this));
             for (const colorLabel of this.toolbar.querySelectorAll('label')) {
                 colorLabel.addEventListener('mousedown', ev => {
@@ -251,7 +248,9 @@ export class OdooEditor {
                 }
                 case 'childList': {
                     record.addedNodes.forEach((added, index) => {
-                        this.torollback ||= containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE;
+                        this.torollback =
+                            this.torollback ||
+                            (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
                         let action = {
                             'type': 'add',
                         };
@@ -693,7 +692,7 @@ export class OdooEditor {
             insertText(sel, content || 'link');
         }
         const currentLink = closestElement(sel.focusNode, 'a');
-        link = link || prompt('URL or Email', currentLink && currentLink.href || 'http://');
+        link = link || prompt('URL or Email', (currentLink && currentLink.href) || 'http://');
         const res = document.execCommand('createLink', false, link);
         if (res) {
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
@@ -839,26 +838,26 @@ export class OdooEditor {
      * @param {number} [rollbackCounter]
      * @returns {?}
      */
-_protect(callback, rollbackCounter) {
-    try {
-        let result = callback.call(this);
-        this.observerFlush();
-        if (this.torollback) {
-            const torollbackCode = this.torollback;
-            this.historyRollback(rollbackCounter);
-            return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
-        } else {
-            return result;
-        }
-    } catch (error) {
-        if (error === UNBREAKABLE_ROLLBACK_CODE || error === UNREMOVABLE_ROLLBACK_CODE) {
-            this.historyRollback(rollbackCounter);
-            return error;
-        } else {
-            throw error;
+    _protect(callback, rollbackCounter) {
+        try {
+            let result = callback.call(this);
+            this.observerFlush();
+            if (this.torollback) {
+                const torollbackCode = this.torollback;
+                this.historyRollback(rollbackCounter);
+                return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
+            } else {
+                return result;
+            }
+        } catch (error) {
+            if (error === UNBREAKABLE_ROLLBACK_CODE || error === UNREMOVABLE_ROLLBACK_CODE) {
+                this.historyRollback(rollbackCounter);
+                return error;
+            } else {
+                throw error;
+            }
         }
     }
-}
 
     // HISTORY
     // =======
@@ -903,7 +902,7 @@ _protect(callback, rollbackCounter) {
         if (!sel.anchorNode) {
             show = false;
         }
-        if (show !== undefined) {
+        if (show !== undefined && this.options.autohideToolbar) {
             this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
         if (show === false) {
@@ -921,9 +920,7 @@ _protect(callback, rollbackCounter) {
             'justifyFull',
         ]) {
             const isStateTrue = document.queryCommandState(commandState);
-            this.toolbar
-                .querySelector('#' + commandState)
-                .classList.toggle('active', isStateTrue);
+            this.toolbar.querySelector('#' + commandState).classList.toggle('active', isStateTrue);
             if (commandState.startsWith('justify')) {
                 const direction = commandState.replace('justify', '').toLowerCase();
                 const newClass = `fa-align-${direction === 'full' ? 'justify' : direction}`;
@@ -977,12 +974,11 @@ _protect(callback, rollbackCounter) {
         const OFFSET = 10;
         let isBottom = false;
         this.toolbar.classList.toggle('toolbar-bottom', false);
-        this.toolbar.style.maxWidth = this.dom.offsetWidth - (OFFSET * 2) + 'px';
+        this.toolbar.style.maxWidth = this.dom.offsetWidth - OFFSET * 2 + 'px';
         const sel = document.defaultView.getSelection();
         const range = sel.getRangeAt(0);
         const isSelForward =
-            sel.anchorNode === range.startContainer &&
-            sel.anchorOffset === range.startOffset;
+            sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
         const selRect = range.getBoundingClientRect();
         const toolbarWidth = this.toolbar.offsetWidth;
         const toolbarHeight = this.toolbar.offsetHeight;
@@ -1180,8 +1176,9 @@ _protect(callback, rollbackCounter) {
             }
             ancestor = ancestor.parentNode;
         }
-        const transferItem = [...(ev.originalEvent || ev).dataTransfer.items]
-            .find(item => item.type === "text/plain");
+        const transferItem = [...(ev.originalEvent || ev).dataTransfer.items].find(
+            item => item.type === 'text/plain',
+        );
         if (transferItem) {
             transferItem.getAsString(pastedText => {
                 if (isInEditor && !sel.isCollapsed) {
@@ -1252,7 +1249,11 @@ _protect(callback, rollbackCounter) {
                 }
                 sel.focusNode.parentNode.insertBefore(table, sel.focusNode);
                 setCursorStart(table.querySelector('td'));
-            } else if (['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
+            } else if (
+                ['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(
+                    buttonEl.id,
+                )
+            ) {
                 document.execCommand(buttonEl.id);
             } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
                 document.execCommand('styleWithCSS', false, true);
@@ -1270,8 +1271,11 @@ _protect(callback, rollbackCounter) {
                 const selectedBlocks = [...new Set(getTraversedNodes().map(closestBlock))];
                 for (const selectedBlock of selectedBlocks) {
                     const block = closestBlock(selectedBlock);
-                    if (['P', 'PRE', 'H1', 'H2', 'H3', 'H4','H5', 'H6', 'BLOCKQUOTE']
-                        .includes(block.nodeName)) {
+                    if (
+                        ['P', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(
+                            block.nodeName,
+                        )
+                    ) {
                         setTagName(block, TAGS[buttonEl.id]);
                     } else {
                         // eg do not change a <div> into a h1: insert the h1
