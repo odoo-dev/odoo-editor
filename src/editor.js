@@ -213,9 +213,11 @@ export class OdooEditor {
         this.observerApply(this.vdom, records);
     }
     observerActive() {
-        this.observer = new MutationObserver(records => {
-            this.observerApply(this.vdom, records);
-        });
+        if (!this.observer) {
+            this.observer = new MutationObserver(records => {
+                this.observerApply(this.vdom, records);
+            });
+        }
         this.observer.observe(this.dom, {
             childList: true,
             subtree: true,
