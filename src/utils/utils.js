@@ -565,7 +565,7 @@ export function isUnbreakable(node) {
     }
     return (
         isUnremovable(node) || // An unremovable node is always unbreakable.
-        ['THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD'].includes(node.tagName) ||
+        ['THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD', 'SECTION'].includes(node.tagName) ||
         node.hasAttribute('t') ||
         node.classList.contains('oe_unbreakable')
     );
