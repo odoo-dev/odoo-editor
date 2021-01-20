@@ -797,11 +797,12 @@ export class OdooEditor {
     }
 
     /**
-     * This function abstracts the difficulty of applying a inline style to a selection.
-     * TODO: This implementations potentially adds one span per text node, in an ideal
-     * world it would wrap all concerned nodes in one span whenever possible.
-     * @param {Element => void} applyStyle Callback that receives an element to which
-     * the wanted style should be applied
+     * This function abstracts the difficulty of applying a inline style to a
+     * selection. TODO: This implementations potentially adds one span per text
+     * node, in an ideal world it would wrap all concerned nodes in one span
+     * whenever possible.
+     * @param {Element => void} applyStyle Callback that receives an element to
+     * which the wanted style should be applied
      */
     _applyInlineStyle(applyStyle) {
         const sel = this.document.defaultView.getSelection();
@@ -816,19 +817,23 @@ export class OdooEditor {
                 (textNode === endContainer && endOffset === 0) ||
                 (textNode === startContainer && endOffset === textNode.textContent.length)
             );
-            // If text node ends after the end of the selection, split it and keep the part that is inside.
+            // If text node ends after the end of the selection, split it and
+            // keep the part that is inside.
             if (endContainer === textNode && endOffset < textNode.textContent.length) {
-                // No reassignement needed, entirely dependent on the splitTextNode implementation.
-                splitTextNode(textNode, endOffset, true);
+                // No reassignement needed, entirely dependent on the
+                // splitTextNode implementation.
+                splitTextNode(textNode, endOffset, DIRECTIONS.LEFT);
             }
             // If text node starts before the beginning of the selection, split it
             // and keep the part that is inside as textNode.
             if (startContainer === textNode && startOffset > 0) {
-                // No reassignement needed, entirely dependent on the splitTextNode implementation.
-                splitTextNode(textNode, startOffset, false);
+                // No reassignement needed, entirely dependent on the
+                // splitTextNode implementation.
+                splitTextNode(textNode, startOffset, DIRECTIONS.RIGHT);
             }
-            // If the parent is not inline or is not completely in the selection, wrap text node in inline node.
-            // Also skips <a> tags to work with native `removeFormat` command
+            // If the parent is not inline or is not completely in the
+            // selection, wrap text node in inline node. Also skips <a> tags to
+            // work with native `removeFormat` command
             if (
                 atLeastOneCharFromNodeInSelection &&
                 (isBlock(textNode.parentElement) ||
