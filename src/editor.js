@@ -61,19 +61,7 @@ export class OdooEditor {
 
         dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
-        this.history = [
-            {
-                cursor: {
-                    // cursor at beginning of step
-                    anchorNode: undefined,
-                    anchorOffset: undefined,
-                    focusNode: undefined,
-                    focusOffset: undefined,
-                },
-                dom: [],
-                id: undefined,
-            },
-        ];
+        this.resetHistory();
         this.undos = new Map();
         this.redoCount = 0;
 
@@ -299,6 +287,21 @@ export class OdooEditor {
         }
     }
 
+    resetHistory() {
+        this.history = [
+            {
+                cursor: {
+                    // cursor at beginning of step
+                    anchorNode: undefined,
+                    anchorOffset: undefined,
+                    focusNode: undefined,
+                    focusOffset: undefined,
+                },
+                dom: [],
+                id: undefined,
+            },
+        ];
+    }
     //
     // History
     //
