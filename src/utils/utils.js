@@ -411,16 +411,16 @@ export function setCursorEnd(node, normalize = true) {
  * @param {number} anchorOffset
  * @param {Node} focusNode
  * @param {number} focusOffset
- * @returns {(number|false)} the direction of false if the selection is collapsed
+ * @returns {boolean} the direction of the current range if the selection not is collapsed | false
  */
 export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset) {
-    if (anchorNode == focusNode) {
-        if (anchorOffset == focusOffset) return false;
-        return anchorOffset < focusOffset ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+    if (anchorNode === focusNode) {
+        if (anchorOffset === focusOffset) return false;
+        return anchorOffset < focusOffset ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
     }
     return anchorNode.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING
-        ? DIRECTIONS.LEFT
-        : DIRECTIONS.RIGHT;
+        ? DIRECTIONS.RIGHT
+        : DIRECTIONS.LEFT;
 }
 /**
  * Returns an array containing all the nodes traversed when walking the
@@ -448,8 +448,8 @@ export function getTraversedNodes(document) {
 export function getCursors(document) {
     let sel = document.defaultView.getSelection();
     if (
-        getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ==
-        DIRECTIONS.RIGHT
+        getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ===
+        DIRECTIONS.LEFT
     )
         return [
             [sel.focusNode, sel.focusOffset],

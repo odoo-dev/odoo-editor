@@ -856,9 +856,9 @@ export class OdooEditor {
             }
         }
         if (direction === DIRECTIONS.RIGHT) {
-            setCursor(endContainer, endOffset, startContainer, 0);
-        } else {
             setCursor(startContainer, 0, endContainer, endOffset);
+        } else {
+            setCursor(endContainer, endOffset, startContainer, 0);
         }
     }
 
