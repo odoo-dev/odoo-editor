@@ -42,6 +42,7 @@ import {
     latestChild,
     setCursorStart,
     rgbToHex,
+    isFontAwesome,
 } from './utils/utils.js';
 
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
@@ -83,7 +84,11 @@ export class OdooEditor {
         this.dom.addEventListener('drop', this._onDrop.bind(this));
 
         this.document.onselectionchange = this._onSelectionChange.bind(this);
-        this.document.onclick = this._onSelectionChange.bind(this);
+
+        this._currentMouseState = 'mouseup';
+        this.selectionChanged = true;
+        this.dom.addEventListener('mousedown', this._updateMouseState.bind(this));
+        this.dom.addEventListener('mouseup', this._updateMouseState.bind(this));
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -1206,6 +1211,19 @@ export class OdooEditor {
     _onSelectionChange() {
         const sel = this.document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
+        if (this._currentMouseState === 'mousedown') {
+            // _fixFontAwesomeSelection will be called when the mouseUp event is triggered
+            this.selectionChanged = true;
+        } else {
+            this._fixFontAwesomeSelection();
+        }
+    }
+
+    _updateMouseState(ev) {
+        this._currentMouseState = ev.type;
+        if (ev.type === 'mouseup' && this.selectionChanged) {
+            this._fixFontAwesomeSelection();
+        }
     }
 
     _onClick(ev) {
@@ -1453,6 +1471,58 @@ export class OdooEditor {
                 }
             }
             this.tablePicker.dataset.colCount = colCount - removedColIds.size;
+        }
+    }
+
+    /**
+     * Fix the current selection range in case the range start or end inside a fontAwesome node
+     */
+    _fixFontAwesomeSelection() {
+        const selection = this.document.defaultView.getSelection();
+        if (selection.isCollapsed) return;
+        let shouldUpdateSelection = false;
+        const fixedSelection = {
+            anchorNode: selection.anchorNode,
+            anchorOffset: selection.anchorOffset,
+            focusNode: selection.focusNode,
+            focusOffset: selection.focusOffset,
+        };
+        const selectionDirection = getCursorDirection(
+            selection.anchorNode,
+            selection.anchorOffset,
+            selection.focusNode,
+            selection.focusOffset,
+        );
+        // check and fix anchor node
+        const closestAnchorNodeEl = closestElement(selection.anchorNode);
+        if (isFontAwesome(closestAnchorNodeEl)) {
+            shouldUpdateSelection = true;
+            fixedSelection.anchorNode =
+                selectionDirection === DIRECTIONS.RIGHT
+                    ? closestAnchorNodeEl.previousSibling
+                    : closestAnchorNodeEl.nextSibling;
+            fixedSelection.anchorOffset =
+                selectionDirection === DIRECTIONS.RIGHT ? fixedSelection.anchorNode.length : 0;
+        }
+        // check and fix focus node
+        const closestFocusNodeEl = closestElement(selection.focusNode);
+        if (isFontAwesome(closestFocusNodeEl)) {
+            shouldUpdateSelection = true;
+            fixedSelection.focusNode =
+                selectionDirection === DIRECTIONS.RIGHT
+                    ? closestFocusNodeEl.nextSibling
+                    : closestFocusNodeEl.previousSibling;
+            fixedSelection.focusOffset =
+                selectionDirection === DIRECTIONS.RIGHT ? 0 : fixedSelection.focusNode.length;
+        }
+        if (shouldUpdateSelection) {
+            setCursor(
+                fixedSelection.anchorNode,
+                fixedSelection.anchorOffset,
+                fixedSelection.focusNode,
+                fixedSelection.focusOffset,
+                false,
+            );
         }
     }
 }
