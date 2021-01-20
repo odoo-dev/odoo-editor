@@ -24,7 +24,7 @@ HTMLElement.prototype.oToggleList = function (offset, mode = 'UL') {
     let main = createList(mode);
     let li = document.createElement('LI');
     main.append(li);
-    const restoreCursor = preserveCursor();
+    const restoreCursor = preserveCursor(this.ownerDocument);
 
     this.after(main);
     li.append(this);
@@ -36,7 +36,7 @@ HTMLParagraphElement.prototype.oToggleList = function (offset, mode = 'UL') {
     let li = document.createElement('LI');
     main.append(li);
 
-    const restoreCursor = preserveCursor();
+    const restoreCursor = preserveCursor(this.ownerDocument);
     while (this.firstChild) {
         li.append(this.firstChild);
     }
@@ -50,7 +50,7 @@ HTMLParagraphElement.prototype.oToggleList = function (offset, mode = 'UL') {
 HTMLLIElement.prototype.oToggleList = function (offset, mode) {
     let pnode = this.closest('ul, ol');
     if (!pnode) return;
-    const restoreCursor = preserveCursor();
+    const restoreCursor = preserveCursor(this.ownerDocument);
     switch (getListMode(pnode) + mode) {
         case 'OLCL':
         case 'ULCL':

@@ -1,10 +1,4 @@
-import {
-    isUnbreakable,
-    preserveCursor,
-    toggleClass,
-    isBlock,
-    isVisible,
-} from '../utils/utils.js';
+import { isUnbreakable, preserveCursor, toggleClass, isBlock, isVisible } from '../utils/utils.js';
 
 Text.prototype.oShiftTab = function (offset) {
     return this.parentElement.oShiftTab(0);
@@ -35,7 +29,7 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         }
     }
 
-    const restoreCursor = preserveCursor();
+    const restoreCursor = preserveCursor(this.ownerDocument);
     if (li.parentNode.parentNode.tagName === 'LI') {
         let toremove = !li.previousElementSibling ? li.parentNode.parentNode : null;
         let ul = li.parentNode;
