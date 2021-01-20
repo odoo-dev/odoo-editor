@@ -20,7 +20,7 @@ HTMLLIElement.prototype.oTab = function (offset) {
     let ul = createList(getListMode(destul));
     lip.append(ul);
 
-    const cr = preserveCursor();
+    const cr = preserveCursor(this.ownerDocument);
     toggleClass(lip, 'nested');
     this.before(lip);
     ul.append(this);

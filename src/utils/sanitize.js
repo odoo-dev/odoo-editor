@@ -83,7 +83,7 @@ class Sanitize {
 
         // Merge identical elements together
         while (areSimilarElements(node, node.previousSibling)) {
-            let restoreCursor = preserveCursor();
+            let restoreCursor = preserveCursor(this.root.ownerDocument);
             let nodeP = node.previousSibling;
             moveNodes(...endPos(node.previousSibling), node);
             restoreCursor();
@@ -95,7 +95,7 @@ class Sanitize {
             let next = node.nextSibling;
             let pnode = node.parentElement;
             if (isEmptyBlock(node)) {
-                let restoreCursor = preserveCursor();
+                let restoreCursor = preserveCursor(this.root.ownerDocument);
                 node.remove();
                 fillEmpty(pnode);
                 this._parse(next);

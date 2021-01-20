@@ -362,6 +362,7 @@ export function setCursor(
     ) {
         return null;
     }
+    const document = anchorNode.ownerDocument;
 
     const seemsCollapsed = anchorNode === focusNode && anchorOffset === focusOffset;
     [anchorNode, anchorOffset] = getNormalizedCursorPosition(anchorNode, anchorOffset, normalize);
@@ -425,9 +426,10 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
  * Returns an array containing all the nodes traversed when walking the
  * selection.
  *
+ * @param {Document} document
  * @returns {Node[]}
  */
-export function getTraversedNodes() {
+export function getTraversedNodes(document) {
     const sel = document.defaultView.getSelection();
     const iterator = document.createNodeIterator(sel.getRangeAt(0).commonAncestorContainer);
     let node;
@@ -443,7 +445,7 @@ export function getTraversedNodes() {
     return traversedNodes;
 }
 
-export function getCursors() {
+export function getCursors(document) {
     let sel = document.defaultView.getSelection();
     if (
         getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ==
@@ -459,8 +461,8 @@ export function getCursors() {
     ];
 }
 
-export function preserveCursor(sel) {
-    sel = sel || document.defaultView.getSelection();
+export function preserveCursor(document) {
+    const sel = document.defaultView.getSelection();
     let cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
     return replace => {
         replace = replace || new Map();

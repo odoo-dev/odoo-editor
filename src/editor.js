@@ -57,6 +57,8 @@ export class OdooEditor {
             this.options.toSanitize = true;
         }
 
+        this.document = options.document || document;
+
         dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
         this.history = [
@@ -89,8 +91,8 @@ export class OdooEditor {
         this.dom.addEventListener('paste', this._onPaste.bind(this));
         this.dom.addEventListener('drop', this._onDrop.bind(this));
 
-        document.onselectionchange = this._onSelectionChange.bind(this);
-        document.onclick = this._onSelectionChange.bind(this);
+        this.document.onselectionchange = this._onSelectionChange.bind(this);
+        this.document.onclick = this._onSelectionChange.bind(this);
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -112,7 +114,7 @@ export class OdooEditor {
                     }
                 });
                 colorLabel.addEventListener('change', ev => {
-                    document.execCommand(ev.target.name, false, ev.target.value);
+                    this.document.execCommand(ev.target.name, false, ev.target.value);
                 });
             }
         }
@@ -620,7 +622,7 @@ export class OdooEditor {
         // risking breaking the DOM states, we still have to prepareUpdate
         // and restore here.
         const restore = prepareUpdate(...pos1);
-        const fakeEl = document.createElement('img');
+        const fakeEl = this.document.createElement('img');
         if (pos1[1] >= pos1[0].childNodes.length) {
             pos1[0].appendChild(fakeEl);
         } else {
@@ -639,12 +641,12 @@ export class OdooEditor {
         }
 
         // If there's a fully selected table, remove it.
-        let traversedNodes = getTraversedNodes();
+        let traversedNodes = getTraversedNodes(this.document);
         for (const table of traversedNodes.filter(node => node.nodeName === 'TABLE')) {
             const tableDescendantElements = [...table.querySelectorAll('*')];
             if (tableDescendantElements.every(child => traversedNodes.includes(child))) {
                 table.remove();
-                traversedNodes = getTraversedNodes();
+                traversedNodes = getTraversedNodes(this.document);
             }
         }
 
@@ -662,7 +664,7 @@ export class OdooEditor {
                 pos2 = rightPos(gen.next().value);
             } else {
                 this._recordHistoryCursor();
-                sel = document.defaultView.getSelection();
+                sel = this.document.defaultView.getSelection();
                 pos2 = isSelForward
                     ? [sel.anchorNode, sel.anchorOffset]
                     : [sel.focusNode, sel.focusOffset];
@@ -671,7 +673,7 @@ export class OdooEditor {
     }
 
     _insertFontAwesome(faClass = 'fa fa-star') {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (!sel.isCollapsed) {
             this.deleteRange(sel);
         }
@@ -684,7 +686,7 @@ export class OdooEditor {
     }
 
     _createLink(link, content) {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (content && !sel.isCollapsed) {
             this.deleteRange(sel);
         }
@@ -693,7 +695,7 @@ export class OdooEditor {
         }
         const currentLink = closestElement(sel.focusNode, 'a');
         link = link || prompt('URL or Email', (currentLink && currentLink.href) || 'http://');
-        const res = document.execCommand('createLink', false, link);
+        const res = this.document.execCommand('createLink', false, link);
         if (res) {
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
             const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
@@ -703,21 +705,21 @@ export class OdooEditor {
     }
 
     _unLink(offset, content) {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (sel.isCollapsed) {
-            const cr = preserveCursor();
+            const cr = preserveCursor(this.document);
             const node = closestElement(sel.focusNode, 'a');
             setCursor(node, 0, node, node.childNodes.length, false);
-            document.execCommand('unlink');
+            this.document.execCommand('unlink');
             cr();
         } else {
-            document.execCommand('unlink');
+            this.document.execCommand('unlink');
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
         }
     }
 
     _indentList(mode = 'indent') {
-        let [pos1, pos2] = getCursors();
+        let [pos1, pos2] = getCursors(this.document);
         let end = leftDeepFirstPath(...pos1).next().value;
         let li = new Set();
         for (let node of leftDeepFirstPath(...pos2)) {
@@ -738,7 +740,7 @@ export class OdooEditor {
     }
 
     _toggleList(mode) {
-        let sel = document.defaultView.getSelection();
+        let sel = this.document.defaultView.getSelection();
         let end = leftDeepFirstPath(sel.anchorNode, sel.anchorOffset).next().value;
 
         let li = new Set();
@@ -766,9 +768,9 @@ export class OdooEditor {
     }
 
     _align(mode) {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         const visitedBlocks = new Set();
-        const traversedNode = getTraversedNodes();
+        const traversedNode = getTraversedNodes(this.document);
         for (const node of traversedNode) {
             if (isContentTextNode(node) && isVisible(node)) {
                 let block = closestBlock(node);
@@ -800,7 +802,7 @@ export class OdooEditor {
      * @returns {?}
      */
     _applyRawCommand(method, ...args) {
-        let sel = document.defaultView.getSelection();
+        let sel = this.document.defaultView.getSelection();
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
             this.deleteRange(sel);
             if (BACKSPACE_ONLY_COMMANDS.includes(method)) {
@@ -867,7 +869,7 @@ export class OdooEditor {
      * @returns {Object}
      */
     _computeHistoryCursor() {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (!sel.anchorNode) {
             return this._latestComputedCursor;
         }
@@ -898,7 +900,7 @@ export class OdooEditor {
     _updateToolbar(show) {
         if (!this.options.toolbar) return;
 
-        let sel = document.defaultView.getSelection();
+        let sel = this.document.defaultView.getSelection();
         if (!sel.anchorNode) {
             show = false;
         }
@@ -919,7 +921,7 @@ export class OdooEditor {
             'justifyCenter',
             'justifyFull',
         ]) {
-            const isStateTrue = document.queryCommandState(commandState);
+            const isStateTrue = this.document.queryCommandState(commandState);
             this.toolbar.querySelector('#' + commandState).classList.toggle('active', isStateTrue);
             if (commandState.startsWith('justify')) {
                 const direction = commandState.replace('justify', '').toLowerCase();
@@ -927,7 +929,7 @@ export class OdooEditor {
                 paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
             }
         }
-        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
+        const foreColor = rgbToHex(this.document.queryCommandValue('foreColor'));
         this.toolbar.querySelector(`#foreColor .color-indicator`).style.backgroundColor = foreColor;
         this.toolbar.querySelector('#foreColor input').value = foreColor;
         const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
@@ -975,7 +977,7 @@ export class OdooEditor {
         let isBottom = false;
         this.toolbar.classList.toggle('toolbar-bottom', false);
         this.toolbar.style.maxWidth = this.dom.offsetWidth - OFFSET * 2 + 'px';
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         const range = sel.getRangeAt(0);
         const isSelForward =
             sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
@@ -985,8 +987,8 @@ export class OdooEditor {
         const editorRect = this.dom.getBoundingClientRect();
         const editorLeftPos = Math.max(0, editorRect.left);
         const editorTopPos = Math.max(0, editorRect.top);
-        const scrollX = document.defaultView.window.scrollX;
-        const scrollY = document.defaultView.window.scrollY;
+        const scrollX = this.document.defaultView.window.scrollX;
+        const scrollY = this.document.defaultView.window.scrollY;
 
         // Get left position.
         let left = selRect.left + OFFSET;
@@ -1039,7 +1041,7 @@ export class OdooEditor {
         this._recordHistoryCursor(true);
 
         if (ev.inputType === 'deleteContentBackward') {
-            const sel = document.defaultView.getSelection();
+            const sel = this.document.defaultView.getSelection();
             const { startContainer, startOffset } = sel.getRangeAt(0);
             this.historyRollback();
             const { endContainer, endOffset } = sel.getRangeAt(0);
@@ -1058,7 +1060,7 @@ export class OdooEditor {
             const { anchorNode, focusNode, anchorOffset, focusOffset } = this.history[
                 this.history.length - 1
             ].cursor;
-            const selection = document.defaultView.getSelection();
+            const selection = this.document.defaultView.getSelection();
             // Detect that text was selected and change behavior only if it is the case,
             // since it is the only text insertion case that may cause problems.
             if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
@@ -1094,7 +1096,7 @@ export class OdooEditor {
         // representation of the key. In this case, call `deleteRange` before
         // inserting the printed representation of the character.
         if (!ev.ctrlKey && /^.$/u.test(ev.key)) {
-            const selection = document.defaultView.getSelection();
+            const selection = this.document.defaultView.getSelection();
             if (selection && !selection.isCollapsed) {
                 this.deleteRange(selection);
             }
@@ -1124,7 +1126,7 @@ export class OdooEditor {
      * @private
      */
     _onSelectionChange() {
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
     }
 
@@ -1146,20 +1148,20 @@ export class OdooEditor {
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (!sel.isCollapsed) {
             this.deleteRange(sel);
         }
         if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
             // Prevent text directly in div contenteditable and other weird
             // manipulations by execCommand.
-            const p = document.createElement('p');
+            const p = this.document.createElement('p');
             p.appendChild(document.createElement('br'));
             const block = closestBlock(sel.anchorNode);
             block.parentElement.insertBefore(p, block);
             setCursorStart(p);
         }
-        document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
+        this.document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
     }
 
     /**
@@ -1167,7 +1169,7 @@ export class OdooEditor {
      */
     _onDrop(ev) {
         ev.preventDefault();
-        const sel = document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         let isInEditor = false;
         let ancestor = sel.anchorNode;
         while (ancestor && !isInEditor) {
@@ -1185,22 +1187,22 @@ export class OdooEditor {
                     this.deleteRange(sel);
                 }
                 if (document.caretPositionFromPoint) {
-                    const range = document.caretPositionFromPoint(ev.clientX, ev.clientY);
+                    const range = this.document.caretPositionFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.offsetNode, range.offset);
                 } else if (document.caretRangeFromPoint) {
-                    const range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+                    const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
                 if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
                     // Prevent text directly in div contenteditable and other weird
                     // manipulations by execCommand.
-                    const p = document.createElement('p');
+                    const p = this.document.createElement('p');
                     p.appendChild(document.createElement('br'));
                     const block = closestBlock(sel.anchorNode);
                     block.parentElement.insertBefore(p, block);
                     setCursorStart(p);
                 }
-                document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
+                this.document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
             });
         }
     }
@@ -1228,22 +1230,22 @@ export class OdooEditor {
         ev.preventDefault();
         this._protect(() => {
             if (buttonEl.classList.contains('tablepicker-cell')) {
-                const table = document.createElement('table');
-                const tbody = document.createElement('tbody');
+                const table = this.document.createElement('table');
+                const tbody = this.document.createElement('tbody');
                 table.appendChild(tbody);
                 const rowId = +buttonEl.dataset.rowId;
                 const colId = +buttonEl.dataset.colId;
                 for (let rowIndex = 0; rowIndex < rowId; rowIndex++) {
-                    const tr = document.createElement('tr');
+                    const tr = this.document.createElement('tr');
                     tbody.appendChild(tr);
                     for (let colIndex = 0; colIndex < colId; colIndex++) {
-                        const td = document.createElement('td');
-                        const br = document.createElement('br');
+                        const td = this.document.createElement('td');
+                        const br = this.document.createElement('br');
                         td.appendChild(br);
                         tr.appendChild(td);
                     }
                 }
-                const sel = document.defaultView.getSelection();
+                const sel = this.document.defaultView.getSelection();
                 if (!sel.isCollapsed) {
                     this.deleteRange(sel);
                 }
@@ -1254,10 +1256,10 @@ export class OdooEditor {
                     buttonEl.id,
                 )
             ) {
-                document.execCommand(buttonEl.id);
+                this.document.execCommand(buttonEl.id);
             } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
-                document.execCommand('styleWithCSS', false, true);
-                document.execCommand(buttonEl.id, false, 'red');
+                this.document.execCommand('styleWithCSS', false, true);
+                this.document.execCommand(buttonEl.id, false, 'red');
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
@@ -1267,8 +1269,10 @@ export class OdooEditor {
             } else if (buttonEl.id.startsWith('fontawesome')) {
                 this._insertFontAwesome();
             } else {
-                const restoreCursor = preserveCursor(document.defaultView.getSelection());
-                const selectedBlocks = [...new Set(getTraversedNodes().map(closestBlock))];
+                const restoreCursor = preserveCursor(this.document);
+                const selectedBlocks = [
+                    ...new Set(getTraversedNodes(this.document).map(closestBlock)),
+                ];
                 for (const selectedBlock of selectedBlocks) {
                     const block = closestBlock(selectedBlock);
                     if (
@@ -1280,7 +1284,7 @@ export class OdooEditor {
                     } else {
                         // eg do not change a <div> into a h1: insert the h1
                         // into it instead.
-                        const newBlock = document.createElement(TAGS[buttonEl.id]);
+                        const newBlock = this.document.createElement(TAGS[buttonEl.id]);
                         const children = [...block.childNodes];
                         block.insertBefore(newBlock, block.firstChild);
                         children.forEach(child => newBlock.appendChild(child));
@@ -1308,7 +1312,7 @@ export class OdooEditor {
         this.tablePickerSizeView.textContent = '1x1';
     }
     _addTablePickerRow() {
-        const row = document.createElement('div');
+        const row = this.document.createElement('div');
         row.classList.add('tablepicker-row');
         row.dataset.rowId = this.tablePicker.querySelectorAll('.tablepicker-row').length + 1;
         this.tablePicker.appendChild(row);
@@ -1327,7 +1331,7 @@ export class OdooEditor {
     _addTablePickerCell(row) {
         const rowId = +row.dataset.rowId;
         const colId = row.querySelectorAll('.tablepicker-cell').length + 1;
-        const cell = document.createElement('div');
+        const cell = this.document.createElement('div');
         cell.classList.add('tablepicker-cell', 'btn');
         cell.dataset.rowId = rowId;
         cell.dataset.colId = colId;
