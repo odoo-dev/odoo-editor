@@ -1001,14 +1001,15 @@ export class OdooEditor {
                 paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
             }
         }
-        const foreColor = rgbToHex(this.document.queryCommandValue('foreColor'));
+        const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
+        const selectionStartStyle = getComputedStyle(closestsStartContainer);
+        this.toolbar.querySelector('#fontSizeCurrentValue').innerHTML = /\d+/
+            .exec(selectionStartStyle.fontSize)
+            .pop();
+        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
         this.toolbar.querySelector(`#foreColor .color-indicator`).style.backgroundColor = foreColor;
         this.toolbar.querySelector('#foreColor input').value = foreColor;
-        const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
-        const backColor = rgbToHex(getComputedStyle(closestsStartContainer).backgroundColor).slice(
-            0,
-            7,
-        );
+        const backColor = rgbToHex(selectionStartStyle.backgroundColor).slice(0, 7);
         this.toolbar.querySelector(
             `#hiliteColor .color-indicator`,
         ).style.backgroundColor = backColor;
@@ -1330,8 +1331,10 @@ export class OdooEditor {
             ) {
                 this.document.execCommand(buttonEl.id);
             } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
-                this.document.execCommand('styleWithCSS', false, true);
-                this.document.execCommand(buttonEl.id, false, 'red');
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand(buttonEl.id, false, 'red');
+            } else if (buttonEl.dataset.fontSize) {
+                this.execCommand('setFontSize', buttonEl.dataset.fontSize);
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
