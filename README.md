@@ -17,7 +17,8 @@ Usage
 
 to run in standalone mode (from this directory):
 
-    python -m SimpleHTTPServer 8000
+    npm i
+    npm run dev
 
 
 to run in collaborative mode:
