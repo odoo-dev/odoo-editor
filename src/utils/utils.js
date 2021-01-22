@@ -1345,17 +1345,11 @@ export function enforceWhitespace(el, offset, direction, rule) {
     }
 }
 
-export function rgbToHex(rgb) {
-    return (
-        '#' +
-        rgb
-            .split('(')[1]
-            .split(')')[0]
-            .split(',')
-            .map(x => {
-                x = parseInt(x).toString(16);
-                return x.length === 1 ? '0' + x : x;
-            })
-            .join('')
-    );
+export function rgbToHex(rgb = '') {
+    return '#' + (rgb.match(/\d{1,3}/g) || [])
+        .map(x => {
+            x = parseInt(x).toString(16);
+            return x.length === 1 ? '0' + x : x;
+        })
+        .join('');
 }
