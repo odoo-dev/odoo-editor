@@ -227,11 +227,20 @@ li.nested {
     box-sizing: border-box;
     position: absolute;
     opacity: 0;
+    top: 100%;
+    margin: 2px 0 0;
 }
 
+#colorInputButtonGroup label {
+    padding: 0 1px 0 3px;
+}
 .color-indicator {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
     background-color: transparent;
+    padding-bottom: 4px;
+}
+.color-indicator.fore-color {
+    border-bottom: 2px solid var(--fore-color);
+}
+.color-indicator.hilite-color {
+    border-bottom: 2px solid var(--hilite-color);
 }
