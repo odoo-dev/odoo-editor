@@ -112,6 +112,8 @@ html, body {
 }
 .tablepicker {
     margin: -3px 2px -6px 2px;
+    width: max-content;
+    width: -webkit-max-content;
 }
 .tablepicker .tablepicker-row .tablepicker-cell {
     background: white;
@@ -140,6 +142,7 @@ html, body {
 .dropdown-menu {
     background: #222222;
     min-width: max-content;
+    min-width: -webkit-max-content;
     text-align: center;
 }
 .dropdown-item pre,
