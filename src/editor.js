@@ -825,7 +825,7 @@ export class OdooEditor {
         for (const textNode of selectedTextNodes) {
             const atLeastOneCharFromNodeInSelection = !(
                 (textNode === endContainer && endOffset === 0) ||
-                (textNode === startContainer && endOffset === textNode.textContent.length)
+                (textNode === startContainer && startOffset === textNode.textContent.length)
             );
             // If text node ends after the end of the selection, split it and
             // keep the part that is inside.
