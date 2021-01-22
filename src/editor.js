@@ -109,8 +109,9 @@ export class OdooEditor {
                         ev.currentTarget.dispatchEvent(new MouseEvent('click', { detail: 2 }));
                     }
                 });
-                colorLabel.addEventListener('change', ev => {
+                colorLabel.addEventListener('input', ev => {
                     this.document.execCommand(ev.target.name, false, ev.target.value);
+                    this._updateColorpickerLabels();
                 });
             }
         }
@@ -1016,14 +1017,7 @@ export class OdooEditor {
         this.toolbar.querySelector('#fontSizeCurrentValue').innerHTML = /\d+/
             .exec(selectionStartStyle.fontSize)
             .pop();
-        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
-        this.toolbar.querySelector(`#foreColor .color-indicator`).style.backgroundColor = foreColor;
-        this.toolbar.querySelector('#foreColor input').value = foreColor;
-        const backColor = rgbToHex(selectionStartStyle.backgroundColor).slice(0, 7);
-        this.toolbar.querySelector(
-            `#hiliteColor .color-indicator`,
-        ).style.backgroundColor = backColor;
-        this.toolbar.querySelector('#hiliteColor input').value = backColor;
+        this._updateColorpickerLabels();
         let pnode = closestBlock(sel.anchorNode);
         this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
         this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
@@ -1054,6 +1048,20 @@ export class OdooEditor {
         this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
         this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
         this._positionToolbar();
+    }
+    _updateColorpickerLabels() {
+        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
+        this.toolbar.style.setProperty('--fore-color', foreColor);
+        this.toolbar.querySelector('#foreColor input').value = foreColor;
+
+        const sel = this.document.defaultView.getSelection();
+        const startContainer = sel.getRangeAt(0).startContainer;
+        const closestBgColor =
+            closestElement(startContainer, '[style*="background-color"]') ||
+            closestElement(startContainer);
+        const hiliteColor = rgbToHex(getComputedStyle(closestBgColor).backgroundColor).slice(0, 7);
+        this.toolbar.style.setProperty('--hilite-color', hiliteColor);
+        this.toolbar.querySelector('#hiliteColor input').value = hiliteColor;
     }
     _positionToolbar() {
         const OFFSET = 10;
