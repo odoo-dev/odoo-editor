@@ -184,6 +184,7 @@ td {
 ul.checklist > li {
     list-style: none;
     position: relative;
+    margin-left: 20px;
 }
 ul.checklist > li:not(.nested):before {
     content: '';
@@ -196,17 +197,12 @@ ul.checklist > li:not(.nested):before {
     border: 1px solid;
     cursor: pointer;
 }
-ul.checklist > li:not(.nested):after {
-    content: '';
-    position: absolute;
-    left: -18px;
-    font-size: 16px;
-    opacity: 0;
-    cursor: pointer;
-}
-ul.checklist > li.checked:before {
+ul.checklist > li.checked:after {
     content: "✓";
     transition: opacity .5s;
+    position: absolute;
+    left: -18px;
+    top: -1px;
     opacity: 1;
 }
 li.nested {
