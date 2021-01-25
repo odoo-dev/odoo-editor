@@ -7,7 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "dev": "serve -C -l 8000 src",
+    "dev": "live-server --cors --port=8000 --ignore='.' src",
+    "live": "live-server --cors --port=8000 src",
     "build": "rollup -c"
   },
   "repository": {
@@ -24,8 +25,8 @@
     "eslint": "^7.17.0",
     "eslint-config-prettier": "^7.1.0",
     "eslint-plugin-prettier": "^3.3.1",
+    "live-server": "^1.2.1",
     "prettier": "^2.2.1",
-    "rollup": "^2.36.1",
-    "serve": "^11.3.2"
+    "rollup": "^2.36.1"
   }
 }
