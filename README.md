@@ -49,11 +49,11 @@ npm run build -- --watch
 
 Then, copy bundle:
 ```bash
-cp <editor_path>/build/odoo-editor-bundle.js <odoo_folder>/addons/web_editor/static/src/js/editor/odoo-editor.js
+cp <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
 ```
 Or link it (when developing):
 ```bash
-ln -s <editor_path>/build/odoo-editor-bundle.js <odoo_folder>/addons/web_editor/static/src/js/editor/odoo-editor.js
+ln -s <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
 ```
 
 To Improve
