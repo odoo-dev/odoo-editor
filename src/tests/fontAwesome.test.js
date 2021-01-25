@@ -261,6 +261,23 @@ describe('FontAwesome', () => {
                         contentAfter: '<p>ab[]cd</p>',
                     });
                 });
+                it('should delete a fontawesome before a span', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<p>ab<i class="fa fa-pastafarianism"></i><span>[]cd</span></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab<span>[]cd</span></p>',
+                    });
+                });
+                it('should not delete a fontawesome before a span', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<p>ab<i class="fa fa-pastafarianism"></i><span>c[]d</span></p>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i><span>[]d</span></p>',
+                    });
+                });
                 it('should not delete a fontawesome', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[]<i class="fa fa-pastafarianism"></i>cd</p>',

@@ -110,7 +110,9 @@ class Sanitize {
             if (node.innerHTML !== '​') node.innerHTML = '​';
 
             // Ensure all Font awesome element are tagged contenteditable=false.
-            if (node.isContentEditable) {
+            // we cannot use the node.isContentEditable because it can wrongly return false
+            // when the editor is starting up ( first sanitize )
+            if (node.getAttribute('contenteditable') !== 'false') {
                 node.setAttribute('contenteditable', 'false');
             }
         }
