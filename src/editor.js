@@ -71,8 +71,6 @@ export class OdooEditor {
 
         // set contenteditable before clone as FF updates the content at this point
         dom.setAttribute('contenteditable', true);
-        this.vdom = dom.cloneNode(true);
-        this.vdom.removeAttribute('contenteditable');
         this.idSet(dom, this.vdom);
 
         this.observerActive();
@@ -135,7 +133,7 @@ export class OdooEditor {
         this.observerFlush();
 
         // find common ancestror in this.history[-1]
-        let step = this.history[this.history.length - 1];
+        let step = this.historyStagingStep;
         let ca, record;
         for (record of step.dom) {
             let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
@@ -150,7 +148,7 @@ export class OdooEditor {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined, testunbreak = false) {
+    idSet(src, testunbreak = false) {
         if (!src.oid) {
             src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
@@ -163,16 +161,10 @@ export class OdooEditor {
                 this.torollback = UNBREAKABLE_ROLLBACK_CODE;
             }
         }
-
-        if (dest && !dest.oid) {
-            dest.oid = src.oid;
-        }
         let childsrc = src.firstChild;
-        let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
-            this.idSet(childsrc, childdest, testunbreak);
+            this.idSet(childsrc, testunbreak);
             childsrc = childsrc.nextSibling;
-            childdest = dest ? childdest.nextSibling : undefined;
         }
     }
 
@@ -207,12 +199,12 @@ export class OdooEditor {
     }
     observerFlush() {
         let records = this.observer.takeRecords();
-        this.observerApply(this.vdom, records);
+        this.observerApply(records);
     }
     observerActive() {
         if (!this.observer) {
             this.observer = new MutationObserver(records => {
-                this.observerApply(this.vdom, records);
+                this.observerApply(records);
             });
         }
         this.observer.observe(this.dom, {
@@ -225,11 +217,11 @@ export class OdooEditor {
         });
     }
 
-    observerApply(destel, records) {
+    observerApply(records) {
         for (let record of records) {
             switch (record.type) {
                 case 'characterData': {
-                    this.history[this.history.length - 1].dom.push({
+                    this.historyStagingStep.dom.push({
                         'type': 'characterData',
                         'id': record.target.oid,
                         'text': record.target.textContent,
@@ -238,7 +230,7 @@ export class OdooEditor {
                     break;
                 }
                 case 'attributes': {
-                    this.history[this.history.length - 1].dom.push({
+                    this.historyStagingStep.dom.push({
                         'type': 'attributes',
                         'id': record.target.oid,
                         'attributeName': record.attributeName,
@@ -267,7 +259,7 @@ export class OdooEditor {
                         this.idSet(added, undefined, true);
                         action.id = added.oid;
                         action.node = this.serialize(added);
-                        this.history[this.history.length - 1].dom.push(action);
+                        this.historyStagingStep.dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
                         // Tables can be safely removed even though their
@@ -279,7 +271,7 @@ export class OdooEditor {
                         ) {
                             this.torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
-                        this.history[this.history.length - 1].dom.push({
+                        this.historyStagingStep.dom.push({
                             'type': 'remove',
                             'id': removed.oid,
                             'parentId': record.target.oid,
@@ -310,13 +302,41 @@ export class OdooEditor {
                 id: undefined,
             },
         ];
+
+        this.historyHeadId = 0;
+        this.historyLastId = 0;
+        this.historyResetStagingStep();
+        this.historyTree = {
+            0: {
+                id: 0,
+                cursor: {
+                    // cursor at beginning of step
+                    anchorNode: undefined,
+                    anchorOffset: undefined,
+                    focusNode: undefined,
+                    focusOffset: undefined,
+                },
+                dom: [],
+                parentId: undefined,
+                childrenIds: [],
+            },
+        };
+    }
+
+    historyResetStagingStep() {
+        const stagingStep = {
+            childrenIds: [],
+            cursor: {},
+            dom: [],
+        };
+        this.historyStagingStep = stagingStep;
     }
     //
     // History
     //
 
     // One step completed: apply to vDOM, setup next history step
-    historyStep() {
+    historyCommit() {
         this.observerFlush();
         // check that not two unBreakables modified
         if (this.torollback) {
@@ -324,19 +344,23 @@ export class OdooEditor {
             this.torollback = false;
         }
 
-        // push history
-        let latest = this.history[this.history.length - 1];
-        if (!latest.dom.length) {
+        if (!this.historyStagingStep.dom.length) {
             return false;
         }
 
-        latest.id = (Math.random() * 2 ** 31) | 0; // TODO: replace by uuid4 generator
-        this.historyApply(this.vdom, latest.dom);
-        this.historySend(latest);
-        this.history.push({
-            cursor: {},
-            dom: [],
-        });
+        this._computeHistoryCursor();
+        this._recordHistoryCursor();
+        // commit the staging step
+        this.historyLastId++;
+        this.historyStagingStep.id = this.historyLastId;
+        this.historyStagingStep.parentId = this.historyHeadId;
+        this.historyTree[this.historyStagingStep.id] = this.historyStagingStep;
+        this.historyHeadId = this.historyStagingStep.id;
+        const parentStep = this.historyTree[this.historyStagingStep.parentId];
+        parentStep && parentStep.childrenIds.push(this.historyStagingStep.id);
+
+        this.historyResetStagingStep();
+
         this._recordHistoryCursor();
     }
 
@@ -427,10 +451,8 @@ export class OdooEditor {
 
                     if (record.id === 1) {
                         this.dom.innerHTML = '';
-                        this.vdom.innerHTML = '';
                     }
                     this.historyApply(this.dom, record.dom);
-                    this.historyApply(this.vdom, record.dom);
 
                     record.dom = record.id === 1 ? [] : record.dom;
                     this.history.push(record);
@@ -467,77 +489,84 @@ export class OdooEditor {
     }
 
     historyRollback(until = 0) {
-        const hist = this.history[this.history.length - 1];
+        const latestStep = this.historyStagingStep;
         this.observerFlush();
-        this.historyRevert(hist, until);
+        this.historyRevert(latestStep, until);
         this.observerFlush();
-        hist.dom = hist.dom.slice(0, until);
+        latestStep.dom = latestStep.dom.slice(0, until);
         this.torollback = false;
     }
 
     historyUndo() {
-        let pos = this.history.length - 2;
-        this.redoCount = this.undos.has(pos) ? this.redoCount : 0;
-        while (this.undos.has(pos)) {
-            pos = this.undos.get(pos) - 1;
+        this.observerUnactive();
+
+        this.historyRevert(this.historyStagingStep);
+        const latestStep = this.historyTree[this.historyHeadId];
+        if (latestStep.parentId !== undefined) {
+            this.historyRevert(latestStep);
+            this.historyHeadId = latestStep.parentId;
+            this.observerFlush();
         }
-        if (pos < 0) {
-            return true;
-        }
-        this.undos.delete(this.history.length - 2);
-        this.historyRevert(this.history[pos]);
-        this.undos.set(this.history.length - 1, pos);
-        this.historyStep();
+        // this.historyResetStagingStep();
+
+        this.observerActive();
     }
 
     historyRedo() {
-        const pos = this.history.length - 2;
-        const undoRedoPairs = (pos - this.undos.get(pos)) / 2;
-        if (this.undos.has(pos) && this.redoCount < undoRedoPairs) {
-            this.redoCount++;
-            this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
-            const step = this.history[this.undos.get(pos) + 1];
-            this.historySetCursor(step);
-            this.undos.set(pos + 1, this.undos.get(pos) + 1);
-            this.undos.delete(pos);
-            this.historyStep();
+        this.observerUnactive();
+
+        const headStep = this.historyTree[this.historyHeadId];
+        const headStepChildren = this.historyTree[headStep.id].childrenIds;
+        const lastChildrenId = headStepChildren[headStepChildren.length - 1];
+        if (lastChildrenId) {
+            const nextStep = this.historyTree[lastChildrenId];
+            this.historyApply(this.dom, nextStep.dom);
+            this.historySetCursor(nextStep);
+            this.historyHeadId = nextStep.id;
         }
+
+        this.observerActive();
     }
 
     historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
-        for (let i = step.dom.length - 1; i >= until; i--) {
-            let action = step.dom[i];
-            if (!action) {
-                break;
-            }
-            switch (action.type) {
-                case 'characterData': {
-                    this.idFind(this.dom, action.id).textContent = action.oldValue;
+        for (const rootElement of [this.dom]) {
+            for (let i = step.dom.length - 1; i >= until; i--) {
+                let action = step.dom[i];
+                if (!action) {
                     break;
                 }
-                case 'attributes': {
-                    this.idFind(this.dom, action.id).setAttribute(
-                        action.attributeName,
-                        action.oldValue,
-                    );
-                    break;
-                }
-                case 'remove': {
-                    let node = this.unserialize(action.node);
-                    if (action.nextId && this.idFind(this.dom, action.nextId)) {
-                        this.idFind(this.dom, action.nextId).before(node);
-                    } else if (action.previousId && this.idFind(this.dom, action.previousId)) {
-                        this.idFind(this.dom, action.previousId).after(node);
-                    } else {
-                        this.idFind(this.dom, action.parentId).append(node);
+                switch (action.type) {
+                    case 'characterData': {
+                        this.idFind(rootElement, action.id).textContent = action.oldValue;
+                        break;
                     }
-                    break;
-                }
-                case 'add': {
-                    let el = this.idFind(this.dom, action.id);
-                    if (el) {
-                        el.remove();
+                    case 'attributes': {
+                        this.idFind(rootElement, action.id).setAttribute(
+                            action.attributeName,
+                            action.oldValue,
+                        );
+                        break;
+                    }
+                    case 'remove': {
+                        let node = this.unserialize(action.node);
+                        if (action.nextId && this.idFind(rootElement, action.nextId)) {
+                            this.idFind(rootElement, action.nextId).before(node);
+                        } else if (
+                            action.previousId &&
+                            this.idFind(rootElement, action.previousId)
+                        ) {
+                            this.idFind(rootElement, action.previousId).after(node);
+                        } else {
+                            this.idFind(rootElement, action.parentId).append(node);
+                        }
+                        break;
+                    }
+                    case 'add': {
+                        let el = this.idFind(rootElement, action.id);
+                        if (el) {
+                            el.remove();
+                        }
                     }
                 }
             }
@@ -668,7 +697,7 @@ export class OdooEditor {
         // element we added is removed.
         let gen;
         do {
-            const histPos = this.history[this.history.length - 1].dom.length;
+            const histPos = this.historyStagingStep.dom.length;
             const err = this._protect(() => {
                 pos2[0].oDeleteBackward(pos2[1]);
                 gen = undefined;
@@ -914,7 +943,7 @@ export class OdooEditor {
         this._recordHistoryCursor(true);
         const result = this._protect(() => this._applyRawCommand(...arguments));
         this.sanitize();
-        this.historyStep();
+        this.historyCommit();
         return result;
     }
     /**
@@ -969,8 +998,9 @@ export class OdooEditor {
      * @param {boolean} [useCache=false]
      */
     _recordHistoryCursor(useCache = false) {
-        const latest = this.history[this.history.length - 1];
-        latest.cursor = useCache ? this._latestComputedCursor : this._computeHistoryCursor();
+        this.historyStagingStep.cursor = useCache
+            ? this._latestComputedCursor
+            : this._computeHistoryCursor();
     }
 
     // TOOLBAR
@@ -1145,12 +1175,15 @@ export class OdooEditor {
             this._applyCommand('oDeleteForward');
         } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
             // insertCompositionText, courtesy of Samsung keyboard.
-            const hist = this.history[this.history.length - 1];
+            const hist = this.historyStagingStep;
             // Start rollback process.
             this.observerFlush();
-            const { anchorNode, focusNode, anchorOffset, focusOffset } = this.history[
-                this.history.length - 1
-            ].cursor;
+            const {
+                anchorNode,
+                focusNode,
+                anchorOffset,
+                focusOffset,
+            } = this.historyStagingStep.cursor;
             const selection = this.document.defaultView.getSelection();
             // Detect that text was selected and change behavior only if it is the case,
             // since it is the only text insertion case that may cause problems.
@@ -1168,10 +1201,10 @@ export class OdooEditor {
                 setCursor(range.endContainer, range.endOffset);
             }
             this.sanitize();
-            this.historyStep();
+            this.historyCommit();
         } else {
             this.sanitize();
-            this.historyStep();
+            this.historyCommit();
         }
     }
 
@@ -1398,7 +1431,7 @@ export class OdooEditor {
                 }
                 restoreCursor();
             }
-            this.historyStep();
+            this.historyCommit();
             this._updateToolbar();
         });
     }
