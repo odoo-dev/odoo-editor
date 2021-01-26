@@ -67,7 +67,6 @@ export class OdooEditor {
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
         this.resetHistory();
         this.undos = new Map();
-        this.redoCount = 0;
 
         // set contenteditable before clone as FF updates the content at this point
         dom.setAttribute('contenteditable', true);
@@ -475,31 +474,36 @@ export class OdooEditor {
         this.torollback = false;
     }
 
+    // 
+    // this.undos = {historyPosition: value} with value:
+    //     0 : the position of the result of a redo
+    //     1 : the position of the result of an undo
+    //     2 : the position undoed or redoed: we can't do anything with it anymore
+    // 
     historyUndo() {
         let pos = this.history.length - 2;
-        this.redoCount = this.undos.has(pos) ? this.redoCount : 0;
-        while (this.undos.has(pos)) {
-            pos = this.undos.get(pos) - 1;
+        // go back to first step that can be undoed (0 or undefined)
+        while (this.undos.get(pos)) {
+            pos--;
         }
-        if (pos < 0) {
-            return true;
+        if (pos >= 0) {
+            this.undos.set(pos, 2);
+            this.historyRevert(this.history[pos]);
+            this.undos.set(this.history.length - 1, 1);
+            this.historyStep();
         }
-        this.undos.delete(this.history.length - 2);
-        this.historyRevert(this.history[pos]);
-        this.undos.set(this.history.length - 1, pos);
-        this.historyStep();
     }
 
     historyRedo() {
-        const pos = this.history.length - 2;
-        const undoRedoPairs = (pos - this.undos.get(pos)) / 2;
-        if (this.undos.has(pos) && this.redoCount < undoRedoPairs) {
-            this.redoCount++;
-            this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
-            const step = this.history[this.undos.get(pos) + 1];
-            this.historySetCursor(step);
-            this.undos.set(pos + 1, this.undos.get(pos) + 1);
-            this.undos.delete(pos);
+        let pos = this.history.length - 2;
+        while (this.undos.has(pos) && this.undos.get(pos) != 1) {
+            pos --;
+        }
+        if (this.undos.get(pos) == 1) {
+            this.historyRevert(this.history[pos]);
+            this.undos.set(pos, 2);
+            this.undos.set(this.history.length - 1, 0);
+            this.historySetCursor(this.history[pos]);
             this.historyStep();
         }
     }
