@@ -645,7 +645,15 @@ export function isVisibleStr(value) {
         (str.length > 0 &&
             value.nextSibling &&
             value.nextSibling.nodeType !== Node.TEXT_NODE &&
-            window.getComputedStyle(value.nextSibling).display !== 'block')
+            window.getComputedStyle(value.nextSibling).display !== 'block') ||
+        (str.length > 0 &&
+            value.nextSibling === null &&
+            value.parentElement &&
+            value.parentElement.lastChild === value &&
+            value.parentElement.nextSibling &&
+            value.parentElement.nextSibling.nodeType === Node.ELEMENT_NODE &&
+            window.getComputedStyle(value.parentElement).display !== 'block' &&
+            window.getComputedStyle(value.parentElement.nextSibling).display !== 'block')
     );
 }
 /**
@@ -1346,10 +1354,13 @@ export function enforceWhitespace(el, offset, direction, rule) {
 }
 
 export function rgbToHex(rgb = '') {
-    return '#' + (rgb.match(/\d{1,3}/g) || [])
-        .map(x => {
-            x = parseInt(x).toString(16);
-            return x.length === 1 ? '0' + x : x;
-        })
-        .join('');
+    return (
+        '#' +
+        (rgb.match(/\d{1,3}/g) || [])
+            .map(x => {
+                x = parseInt(x).toString(16);
+                return x.length === 1 ? '0' + x : x;
+            })
+            .join('')
+    );
 }

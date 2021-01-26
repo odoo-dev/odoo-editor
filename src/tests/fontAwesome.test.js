@@ -230,6 +230,18 @@ describe('FontAwesome', () => {
                             '<p>a[]<i class="fa fa-pastafarianism" contenteditable="false">​</i> cd</p>',
                     });
                 });
+                it('should not delete a fontawesome after multiple deleteForward with spaces inside a <span>', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<div><span>ab[]c </span><i class="fa fa-star"></i> def</div>',
+                        stepFunction: async editor => {
+                            await deleteForward(editor);
+                            await deleteForward(editor);
+                        },
+                        contentAfter:
+                            '<div><span>ab[]</span><i class="fa fa-star" contenteditable="false">​</i> def</div>',
+                    });
+                });
             });
         });
         describe('Selection not collapsed', () => {
