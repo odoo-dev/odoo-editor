@@ -369,6 +369,7 @@ export async function insertText(editor, text) {
     const sel = document.defaultView.getSelection();
     insertTextSel(sel, text);
     sel.collapseToEnd();
+    editor.historyStep();
 }
 
 export function undo(editor) {

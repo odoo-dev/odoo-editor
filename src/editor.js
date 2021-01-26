@@ -67,7 +67,6 @@ export class OdooEditor {
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
         this.resetHistory();
         this.undos = new Map();
-        this.redoCount = 0;
 
         // set contenteditable before clone as FF updates the content at this point
         dom.setAttribute('contenteditable', true);
@@ -475,31 +474,52 @@ export class OdooEditor {
         this.torollback = false;
     }
 
+    /**
+     * Undo a step of the history.
+     *
+     * this.undos is a map from it's location (index) in this.history to a state.
+     * The state can be on of:
+     * undefined: the position has never been undo or redo.
+     * 0: The position is considered as a redo of another.
+     * 1: The position is considered as a undo of another.
+     * 2: The position was an undo that has been consumed..
+     */
     historyUndo() {
         let pos = this.history.length - 2;
-        this.redoCount = this.undos.has(pos) ? this.redoCount : 0;
-        while (this.undos.has(pos)) {
-            pos = this.undos.get(pos) - 1;
+        // go back to first step that can be undoed (0 or undefined)
+        while (this.undos.get(pos)) {
+            pos--;
         }
-        if (pos < 0) {
-            return true;
+        if (pos >= 0) {
+            // Consider the position consumed.
+            this.undos.set(pos, 2);
+            this.historyRevert(this.history[pos]);
+            // Consider the last position of the history as an undo.
+            this.undos.set(this.history.length - 1, 1);
+            this.historyStep();
         }
-        this.undos.delete(this.history.length - 2);
-        this.historyRevert(this.history[pos]);
-        this.undos.set(this.history.length - 1, pos);
-        this.historyStep();
     }
 
+    /**
+     * Redo a step of the history.
+     *
+     * @see historyUndo
+     */
     historyRedo() {
-        const pos = this.history.length - 2;
-        const undoRedoPairs = (pos - this.undos.get(pos)) / 2;
-        if (this.undos.has(pos) && this.redoCount < undoRedoPairs) {
-            this.redoCount++;
-            this.historyApply(this.dom, this.history[this.undos.get(pos)].dom);
-            const step = this.history[this.undos.get(pos) + 1];
-            this.historySetCursor(step);
-            this.undos.set(pos + 1, this.undos.get(pos) + 1);
-            this.undos.delete(pos);
+        let pos = this.history.length - 2;
+        // We cannot undo more than what is consumed.
+        // Check if we have no more 2 than 0 until we get to a 1
+        let totalConsumed = 0;
+        while (this.undos.has(pos) && this.undos.get(pos) !== 1) {
+            // here this.undos.get(pos) can only be 2 (consumed) or 0 (undoed).
+            totalConsumed += this.undos.get(pos) === 2 ? 1 : -1;
+            pos--;
+        }
+        if (this.undos.get(pos) === 1 && totalConsumed <= 0) {
+            this.undos.set(pos, 2);
+            this.historyRevert(this.history[pos]);
+            this.undos.set(this.history.length - 1, 0);
+            this.historySetCursor(this.history[pos]);
             this.historyStep();
         }
     }
