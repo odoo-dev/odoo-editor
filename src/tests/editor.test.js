@@ -888,6 +888,13 @@ describe('Editor', () => {
                         contentAfter: '<p>abc[]def</p><p>ghi</p>',
                     });
                 });
+                it('should delete starting white space and merge paragraphs', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: `<p>mollis.</p><p>\n <i>[]Pe</i><i>lentesque</i></p>`,
+                        stepFunction: deleteBackward,
+                        contentAfter: `<p>mollis.[]<i>Pe</i><i>lentesque</i></p>`,
+                    });
+                });
             });
             describe('Line breaks', () => {
                 describe('Single', () => {
