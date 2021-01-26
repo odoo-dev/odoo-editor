@@ -496,12 +496,14 @@ export class OdooEditor {
 
     historyRedo() {
         let pos = this.history.length - 2;
+        let total = 0;      // check if we have not more 2 than 0 until we get to the 1
         while (this.undos.has(pos) && this.undos.get(pos) != 1) {
+            total += this.undos.get(pos)-1;
             pos --;
         }
-        if (this.undos.get(pos) == 1) {
-            this.historyRevert(this.history[pos]);
+        if ((this.undos.get(pos) == 1) && (total<=0)) {
             this.undos.set(pos, 2);
+            this.historyRevert(this.history[pos]);
             this.undos.set(this.history.length - 1, 0);
             this.historySetCursor(this.history[pos]);
             this.historyStep();
