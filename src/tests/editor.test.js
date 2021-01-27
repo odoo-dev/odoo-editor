@@ -1,3 +1,4 @@
+import { OdooEditor } from '../editor.js';
 import { getTraversedNodes } from '../utils/utils.js';
 import {
     applyElementStyle,
@@ -6,6 +7,7 @@ import {
     deleteForward,
     insertLineBreak,
     insertParagraphBreak,
+    insertText,
     redo,
     testEditor,
     testVdom,
@@ -2858,6 +2860,41 @@ describe('Editor', () => {
                         redo(editor); // <p>ab[]cd</p> (nothing to redo)
                     },
                     contentAfter: '<p>ab[]cd</p>',
+                });
+            });
+            it('should type a, b, c, undo x2, d, undo x2, redo x2', async () => {
+                await testEditor(OdooEditor, {
+                    contentBefore: '<p>[]</p>',
+                    stepFunction: async editor => {
+                        insertText(editor, 'a');
+                        insertText(editor, 'b');
+                        insertText(editor, 'c');
+                        undo(editor);
+                        undo(editor);
+                        insertText(editor, 'd');
+                        undo(editor);
+                        undo(editor);
+                        redo(editor);
+                        redo(editor);
+                    },
+                    contentAfter: '<p>ad[]</p>',
+                });
+            });
+            it('should type a, b, c, undo x2, d, undo, redo x2', async () => {
+                await testEditor(OdooEditor, {
+                    contentBefore: '<p>[]</p>',
+                    stepFunction: async editor => {
+                        insertText(editor, 'a');
+                        insertText(editor, 'b');
+                        insertText(editor, 'c');
+                        undo(editor);
+                        undo(editor);
+                        insertText(editor, 'd');
+                        undo(editor);
+                        redo(editor);
+                        redo(editor);
+                    },
+                    contentAfter: '<p>ad[]</p>',
                 });
             });
         });
