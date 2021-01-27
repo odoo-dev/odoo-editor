@@ -380,6 +380,7 @@ export class OdooEditor extends EventTarget {
                 }
             }
         }
+        this.dispatchEvent(new Event('historyApply'));
     }
 
     // send changes to server
@@ -486,11 +487,7 @@ export class OdooEditor extends EventTarget {
      * 2: The position was an undo that has been consumed..
      */
     historyUndo() {
-        let pos = this.history.length - 2;
-        // go back to first step that can be undoed (0 or undefined)
-        while (this.undos.get(pos)) {
-            pos--;
-        }
+        const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
             this.undos.set(pos, 2);
@@ -508,16 +505,8 @@ export class OdooEditor extends EventTarget {
      * @see historyUndo
      */
     historyRedo() {
-        let pos = this.history.length - 2;
-        // We cannot undo more than what is consumed.
-        // Check if we have no more 2 than 0 until we get to a 1
-        let totalConsumed = 0;
-        while (this.undos.has(pos) && this.undos.get(pos) !== 1) {
-            // here this.undos.get(pos) can only be 2 (consumed) or 0 (undoed).
-            totalConsumed += this.undos.get(pos) === 2 ? 1 : -1;
-            pos--;
-        }
-        if (this.undos.get(pos) === 1 && totalConsumed <= 0) {
+        const pos = this._getNextRedoIndex();
+        if (pos >= 0) {
             this.undos.set(pos, 2);
             this.historyRevert(this.history[pos]);
             this.undos.set(this.history.length - 1, 0);
@@ -525,6 +514,18 @@ export class OdooEditor extends EventTarget {
             this.historyStep();
             this.dispatchEvent(new Event('historyRedo'));
         }
+    }
+    /**
+     * Check wether undoing is possible.
+     */
+    historyCanUndo() {
+        return this._getNextUndoIndex() >= 0;
+    }
+    /**
+     * Check wether redoing is possible.
+     */
+    historyCanRedo() {
+        return this._getNextRedoIndex() >= 0;
     }
 
     historyRevert(step, until = 0) {
@@ -994,6 +995,35 @@ export class OdooEditor extends EventTarget {
     _recordHistoryCursor(useCache = false) {
         const latest = this.history[this.history.length - 1];
         latest.cursor = useCache ? this._latestComputedCursor : this._computeHistoryCursor();
+    }
+    /**
+     * Get the step index in the history to undo.
+     * Return -1 if no undo index can be found.
+     */
+    _getNextUndoIndex() {
+        let index = this.history.length - 2;
+        // go back to first step that can be undoed (0 or undefined)
+        while (this.undos.get(index)) {
+            index--;
+        }
+        return index;
+    }
+    /**
+     * Get the step index in the history to redo.
+     * Return -1 if no redo index can be found.
+     */
+    _getNextRedoIndex() {
+        let pos = this.history.length - 2;
+        // We cannot redo more than what is consumed.
+        // Check if we have no more 2 than 0 until we get to a 1
+        let totalConsumed = 0;
+        while (this.undos.has(pos) && this.undos.get(pos) !== 1) {
+            // here this.undos.get(pos) can only be 2 (consumed) or 0 (undoed).
+            totalConsumed += this.undos.get(pos) === 2 ? 1 : -1;
+            pos--;
+        }
+        const canRedo = this.undos.get(pos) === 1 && totalConsumed <= 0;
+        return canRedo ? pos : -1;
     }
 
     // TOOLBAR
