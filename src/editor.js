@@ -482,7 +482,7 @@ export class OdooEditor {
      * undefined: the position has never been undo or redo.
      * 0: The position is considered as a redo of another.
      * 1: The position is considered as a undo of another.
-     * 2: The position was an undo that has been consumed..
+     * 2: The position has been undone and is considered consumed.
      */
     historyUndo() {
         let pos = this.history.length - 2;
