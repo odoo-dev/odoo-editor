@@ -13,8 +13,8 @@ HTMLElement.prototype.oTab = function (offset) {
 
 HTMLLIElement.prototype.oTab = function (offset) {
     let lip = document.createElement('li');
-    let destul = this.previousElementSibling?.querySelector('ol, ul');
-    destul = destul || this.nextElementSibling?.querySelector('ol, ul');
+    let destul = this.previousElementSibling && this.previousElementSibling.querySelector('ol, ul');
+    destul = destul || (this.nextElementSibling && this.nextElementSibling.querySelector('ol, ul'));
     destul = destul || this.closest('ul, ol');
 
     let ul = createList(getListMode(destul));
