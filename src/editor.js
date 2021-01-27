@@ -53,8 +53,9 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 const TABLEPICKER_ROW_COUNT = 3;
 const TABLEPICKER_COL_COUNT = 3;
 
-export class OdooEditor {
+export class OdooEditor extends EventTarget {
     constructor(dom, options = {}) {
+        super();
         this.options = options;
 
         if (typeof this.options.toSanitize === 'undefined') {
@@ -497,6 +498,7 @@ export class OdooEditor {
             // Consider the last position of the history as an undo.
             this.undos.set(this.history.length - 1, 1);
             this.historyStep();
+            this.dispatchEvent(new Event('historyUndo'));
         }
     }
 
@@ -521,6 +523,7 @@ export class OdooEditor {
             this.undos.set(this.history.length - 1, 0);
             this.historySetCursor(this.history[pos]);
             this.historyStep();
+            this.dispatchEvent(new Event('historyRedo'));
         }
     }
 
