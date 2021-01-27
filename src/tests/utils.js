@@ -226,6 +226,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
     let selection = _parseTextualSelection(testNode);
 
     const editor = new Editor(testNode, { toSanitize: false });
+    editor.keyboardType = 'PHYSICAL_KEYBOARD';
     if (selection) {
         setSelection(selection);
     } else {
@@ -359,6 +360,8 @@ export async function toggleCheckList(editor) {
 
 export async function toggleBold(editor) {
     document.execCommand('bold');
+    // Wait for the timeout in the MutationObserver to happen.
+    return new Promise(resolve => setTimeout(() => resolve(), 200));
 }
 
 export async function createLink(editor, content) {

@@ -53,6 +53,7 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 const TABLEPICKER_ROW_COUNT = 3;
 const TABLEPICKER_COL_COUNT = 3;
 
+const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
 export class OdooEditor extends EventTarget {
     constructor(dom, options = {}) {
         super();
@@ -66,6 +67,9 @@ export class OdooEditor extends EventTarget {
         }
 
         this.document = options.document || document;
+
+        // keyboard type detection, happens only at the first keydown event
+        this.keyboardType = KEYBOARD_TYPES.UNKNOWN;
 
         dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
@@ -209,6 +213,7 @@ export class OdooEditor extends EventTarget {
     }
 
     observerUnactive() {
+        clearTimeout(this.observerTimeout);
         this.observer.disconnect();
         this.observerFlush();
     }
@@ -219,6 +224,10 @@ export class OdooEditor extends EventTarget {
     observerActive() {
         if (!this.observer) {
             this.observer = new MutationObserver(records => {
+                clearTimeout(this.observerTimeout);
+                this.observerTimeout = setTimeout(() => {
+                    this.historyStep();
+                }, 100);
                 this.observerApply(this.vdom, records);
             });
         }
@@ -1233,48 +1242,36 @@ export class OdooEditor extends EventTarget {
         // Record the cursor position that was computed on keydown or before
         // contentEditable execCommand (whatever preceded the 'input' event)
         this._recordHistoryCursor(true);
-
-        if (ev.inputType === 'deleteContentBackward') {
-            const sel = this.document.defaultView.getSelection();
-            const { startContainer, startOffset } = sel.getRangeAt(0);
-            this.historyRollback();
-            const { endContainer, endOffset } = sel.getRangeAt(0);
-            sel.setBaseAndExtent(startContainer, startOffset, endContainer, endOffset);
-            ev.preventDefault();
-            this._applyCommand('oDeleteBackward');
-        } else if (ev.inputType === 'deleteContentForward') {
-            this.historyRollback();
-            ev.preventDefault();
-            this._applyCommand('oDeleteForward');
-        } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
-            // insertCompositionText, courtesy of Samsung keyboard.
-            const hist = this.history[this.history.length - 1];
-            // Start rollback process.
-            this.observerFlush();
-            const { anchorNode, focusNode, anchorOffset, focusOffset } = this.history[
-                this.history.length - 1
-            ].cursor;
-            const selection = this.document.defaultView.getSelection();
-            // Detect that text was selected and change behavior only if it is the case,
-            // since it is the only text insertion case that may cause problems.
-            if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
-                // Do the rest of the rollback process.
+        const cursor = this.history[this.history.length - 1].cursor;
+        const { focusOffset, focusNode, anchorNode, anchorOffset } = cursor || {};
+        const wasCollapsed = !cursor && focusNode === anchorNode && focusOffset === anchorOffset;
+        if (this.keyboardType === KEYBOARD_TYPES.PHYSICAL || !wasCollapsed) {
+            if (ev.inputType === 'deleteContentBackward') {
                 this.historyRollback();
-                this.historyRevert(hist, 0);
-                this.observerFlush();
-                hist.dom = hist.dom.slice(0, 0);
-                this.torollback = false;
                 ev.preventDefault();
                 this._applyCommand('oDeleteBackward');
-                insertText(selection, ev.data);
-                const range = selection.getRangeAt(0);
-                setCursor(range.endContainer, range.endOffset);
+            } else if (ev.inputType === 'deleteContentForward') {
+                this.historyRollback();
+                ev.preventDefault();
+                this._applyCommand('oDeleteForward');
+            } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
+                // insertCompositionText, courtesy of Samsung keyboard.
+                const selection = this.document.defaultView.getSelection();
+                // Detect that text was selected and change behavior only if it is the case,
+                // since it is the only text insertion case that may cause problems.
+                if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
+                    ev.preventDefault();
+                    this._applyCommand('oDeleteBackward');
+                    insertText(selection, ev.data);
+                    const range = selection.getRangeAt(0);
+                    setCursor(range.endContainer, range.endOffset);
+                }
+                this.sanitize();
+                this.historyStep();
+            } else {
+                this.sanitize();
+                this.historyStep();
             }
-            this.sanitize();
-            this.historyStep();
-        } else {
-            this.sanitize();
-            this.historyStep();
         }
     }
 
@@ -1282,9 +1279,8 @@ export class OdooEditor extends EventTarget {
      * @private
      */
     _onKeyDown(ev) {
-        // Compute the current cursor on keydown but do not record it. Leave
-        // that to the command execution or the 'input' event handler.
-        this._computeHistoryCursor();
+        this.keyboardType =
+            ev.key === 'Unidentified' ? KEYBOARD_TYPES.VIRTUAL : KEYBOARD_TYPES.PHYSICAL;
         // If the pressed key has a printed representation, the returned value
         // is a non-empty Unicode character string containing the printable
         // representation of the key. In this case, call `deleteRange` before
@@ -1320,6 +1316,9 @@ export class OdooEditor extends EventTarget {
      * @private
      */
     _onSelectionChange() {
+        // Compute the current cursor on selectionchange but do not record it. Leave
+        // that to the command execution or the 'input' event handler.
+        this._computeHistoryCursor();
         const sel = this.document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
         if (this._currentMouseState === 'mousedown') {
