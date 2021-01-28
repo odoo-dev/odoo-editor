@@ -14,66 +14,6 @@
 
         <!-- custom style -->
         <link rel="stylesheet" href="style.css"/>
-        <style>
-            html, body {
-                width: 100%;
-                height: 100%;
-                line-height: unset;
-            }
-
-            /*control panel*/
-
-            #control-panel {
-                display: flex;
-                align-items: flex-end;
-                font-size: 1.2rem;
-            }
-            #control-panel > div {
-                flex: 1 1 0;
-                width: 100%;
-                padding: 15px;
-                text-align: center;
-            }
-            #control-panel > div:last-child {
-                max-width: 260px;
-            }
-            #control-panel textarea {
-                width: 100%;
-                height: 300px;
-            }
-            #control-panel button {
-                width: 100%;
-                font-size: 1.5rem;
-            }
-
-            /* local storage*/
-            #saved-html {
-                padding: 2px 16px;
-            }
-            #save-c-html-button, #save-i-html-button{
-                display: none;
-            }
-            #saved-html-list a {
-                display: block;
-                padding: 2px 16px;
-            }
-
-            /**/
-
-            #test-container {
-                display: flex;
-            }
-            #test-container > * {
-                width: 50%;
-                flex: 1 1 auto;
-                margin: 0 10px;
-            }
-            @media (max-width: 767px) {
-                #vdom-col {
-                    display: none;
-                }
-            }
-        </style>
 
         <!-- <script src="https://use.fontawesome.com/80d52a392c.js"></script> -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous"/>
@@ -112,7 +52,7 @@
             <button type="button" id="save-c-html-button">Save current html for later tests</button>
             <div id="saved-html-list"><p>Html snippet storred localy : </p></div>
         </div>
-        <div id="test-container" class="o_wysiwyg_wrapper">
+        <div id="test-container">
             <div id="dom-col">
                 <h1>DOM</h1>
                 <hr/>
