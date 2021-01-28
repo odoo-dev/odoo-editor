@@ -60,6 +60,9 @@ export class OdooEditor {
         if (typeof this.options.toSanitize === 'undefined') {
             this.options.toSanitize = true;
         }
+        if (typeof this.options.setContentEditable === 'undefined') {
+            this.options.setContentEditable = true;
+        }
 
         this.document = options.document || document;
 
@@ -69,7 +72,9 @@ export class OdooEditor {
         this.undos = new Map();
 
         // set contenteditable before clone as FF updates the content at this point
-        dom.setAttribute('contenteditable', true);
+        if (this.options.setContentEditable) {
+            dom.setAttribute('contenteditable', this.options.setContentEditable);
+        }
         this.vdom = dom.cloneNode(true);
         this.vdom.removeAttribute('contenteditable');
         this.idSet(dom, this.vdom);
