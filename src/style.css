@@ -79,7 +79,7 @@ html, body {
     top: var(--arrow-top-pos);
     border: transparent 10px solid;
     border-bottom: #222222 10px solid;
-    z-index: 0;
+    z-index: -1;
 }
 .toolbar:not(.toolbar-bottom)::before {
     content: '';
@@ -99,20 +99,15 @@ html, body {
 .toolbar .button-group:last-of-type {
     margin-right: 0;
 }
-.toolbar .btn {
-    position: relative;
+.toolbar div.btn {
     box-sizing: content-box;
     display: inline-block;
     padding: 7px;
-    color: white;
 }
-.toolbar .btn:hover {
-    background: #868686;
-}
-.dropdown-menu .btn {
+.dropdown-menu div.btn {
     background: #222222;
 }
-.toolbar .btn.active {
+.toolbar div.active {
     background: #555555;
 }
 .tablepicker {
@@ -150,10 +145,6 @@ html, body {
     min-width: -webkit-max-content;
     text-align: center;
 }
-.dropdown-item {
-    background: transparent;
-    color: white;
-}
 .dropdown-item pre,
 .dropdown-item h1,
 .dropdown-item h2,
@@ -163,18 +154,9 @@ html, body {
 .dropdown-item h6,
 .dropdown-item blockquote {
     margin: 0;
-    color: white;
 }
 li > a.dropdown-item {
     color: white;
-}
-.dropdown-item:hover, .dropdown-item:focus {
-    color: white;
-    background: #868686;
-}
-.dropdown-item.active, .dropdown-item:active {
-    color: white;
-    background: #555555;
 }
 
 #dom {
@@ -250,7 +232,7 @@ li.nested {
 }
 
 #colorInputButtonGroup label {
-    margin-bottom: 0;
+    padding: 0 1px 0 3px;
 }
 .color-indicator {
     background-color: transparent;
@@ -258,9 +240,7 @@ li.nested {
 }
 .color-indicator.fore-color {
     border-bottom: 2px solid var(--fore-color);
-    padding: 5px;
 }
 .color-indicator.hilite-color {
     border-bottom: 2px solid var(--hilite-color);
-    padding: 5px;
 }
