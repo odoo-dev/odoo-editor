@@ -47,13 +47,15 @@ To build contuously as file changes (when developing):
 npm run build -- --watch
 ```
 
-Then, copy bundle:
+Then, copy bundles:
 ```bash
 cp <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
+cp <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.css
 ```
-Or link it (when developing):
+Or link them (when developing):
 ```bash
 ln -s <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
+ln -s <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.css
 ```
 
 To Improve
