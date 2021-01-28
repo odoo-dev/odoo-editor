@@ -1085,6 +1085,7 @@ export class OdooEditor {
     }
     _positionToolbar() {
         const OFFSET = 10;
+        const ARROW_WIDTH = 20;
         let isBottom = false;
         this.toolbar.classList.toggle('toolbar-bottom', false);
         this.toolbar.style.maxWidth = this.dom.offsetWidth - OFFSET * 2 + 'px';
@@ -1102,7 +1103,7 @@ export class OdooEditor {
         const scrollY = this.document.defaultView.window.scrollY;
 
         // Get left position.
-        let left = selRect.left + OFFSET;
+        let left = (selRect.left - editorLeftPos + OFFSET) / 2;
         // Ensure the toolbar doesn't overflow the editor on the left.
         left = Math.max(editorLeftPos + OFFSET, left);
         // Ensure the toolbar doesn't overflow the editor on the right.
@@ -1110,11 +1111,11 @@ export class OdooEditor {
         this.toolbar.style.left = scrollX + left + 'px';
 
         // Get top position.
-        let top = selRect.top - toolbarHeight - OFFSET;
+        let top = selRect.top - toolbarHeight - editorTopPos - OFFSET;
         // Ensure the toolbar doesn't overflow the editor on the top.
         if (top < editorTopPos) {
             // Position the toolbar below the selection.
-            top = selRect.bottom + OFFSET;
+            top = selRect.bottom - editorTopPos + OFFSET;
             isBottom = true;
         }
         // Ensure the toolbar doesn't overflow the editor on the bottom.
@@ -1122,11 +1123,12 @@ export class OdooEditor {
         this.toolbar.style.top = scrollY + top + 'px';
 
         // Position the arrow.
-        let arrowLeftPos = (isSelForward ? selRect.right : selRect.left) - left - OFFSET;
+        const selPos = isSelForward ? selRect.right : selRect.left;
+        let arrowLeftPos = selPos - left - editorLeftPos - (ARROW_WIDTH / 2);
         // Ensure the arrow doesn't overflow the toolbar on the left.
         arrowLeftPos = Math.max(OFFSET, arrowLeftPos);
         // Ensure the arrow doesn't overflow the toolbar on the right.
-        arrowLeftPos = Math.min(toolbarWidth - OFFSET - 20, arrowLeftPos);
+        arrowLeftPos = Math.min(toolbarWidth - OFFSET - ARROW_WIDTH, arrowLeftPos);
         this.toolbar.style.setProperty('--arrow-left-pos', arrowLeftPos + 'px');
         if (isBottom) {
             this.toolbar.classList.toggle('toolbar-bottom', true);
