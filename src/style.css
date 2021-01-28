@@ -1,65 +1,8 @@
-* {
+.odoo-editor {
     box-sizing: border-box;
 }
-html, body {
-    width: 100%;
-    height: 100%;
-    line-height: unset;
-}
 
-/*control panel*/
-
-#control-panel {
-    display: flex;
-    align-items: flex-end;
-    font-size: 1.2rem;
-}
-#control-panel > div {
-    flex: 1 1 0;
-    width: 100%;
-    padding: 15px;
-    text-align: center;
-}
-#control-panel > div:last-child {
-    max-width: 260px;
-}
-#control-panel textarea {
-    width: 100%;
-    height: 300px;
-}
-#control-panel button {
-    width: 100%;
-    font-size: 1.5rem;
-}
-
-/* local storage*/
-#saved-html {
-    padding: 2px 16px;
-}
-#save-c-html-button, #save-i-html-button{
-    display: none;
-}
-#saved-html-list a {
-    display: block;
-    padding: 2px 16px;
-}
-
-/**/
-
-#test-container {
-    display: flex;
-}
-#test-container > * {
-    width: 50%;
-    flex: 1 1 auto;
-    margin: 0 10px;
-}
-@media (max-width: 767px) {
-    #vdom-col {
-        display: none;
-    }
-}
-.toolbar {
+.odoo-editor.toolbar {
     position: absolute;
     visibility: hidden;
     height: fit-content;
@@ -69,8 +12,9 @@ html, body {
     background: #222222;
     color: white;
     border-radius: 8px;
+    z-index: 1051;
 }
-.toolbar.toolbar-bottom::before {
+.odoo-editor.toolbar.toolbar-bottom::before {
     content: '';
     position: absolute;
     width: 0;
@@ -81,7 +25,7 @@ html, body {
     border-bottom: #222222 10px solid;
     z-index: 0;
 }
-.toolbar:not(.toolbar-bottom)::before {
+.odoo-editor.toolbar:not(.toolbar-bottom)::before {
     content: '';
     position: absolute;
     width: 0;
@@ -92,120 +36,116 @@ html, body {
     border-top: #222222 10px solid;
     z-index: -1;
 }
-.toolbar .button-group {
+.odoo-editor.toolbar .button-group {
     display: inline-block;
     margin-right: 13px;
 }
-.toolbar .button-group:last-of-type {
+.odoo-editor.toolbar .button-group:last-of-type {
     margin-right: 0;
 }
-.toolbar .btn {
+.odoo-editor.toolbar .btn {
     position: relative;
     box-sizing: content-box;
     display: inline-block;
     padding: 7px;
     color: white;
 }
-.toolbar .btn:hover {
+.odoo-editor.toolbar .btn:hover {
     background: #868686;
 }
-.dropdown-menu .btn {
+.odoo-editor .dropdown-menu .btn {
     background: #222222;
 }
-.toolbar .btn.active {
+.odoo-editor.toolbar .btn.active {
     background: #555555;
 }
-.tablepicker {
+.odoo-editor .tablepicker {
     margin: -3px 2px -6px 2px;
     width: max-content;
     width: -webkit-max-content;
 }
-.tablepicker .tablepicker-row .tablepicker-cell {
+.odoo-editor .tablepicker .tablepicker-row .tablepicker-cell {
     background: white;
     width: 5px;
     height: 5px;
     margin-right: 3px;
     margin-bottom: 3px;
 }
-.tablepicker .tablepicker-row .tablepicker-cell:last-of-type {
+.odoo-editor .tablepicker .tablepicker-row .tablepicker-cell:last-of-type {
     margin-right: 0;
 }
-.tablepicker .tablepicker-row .tablepicker-cell.active {
+.odoo-editor .tablepicker .tablepicker-row .tablepicker-cell.active {
     background: #ddeafb;
     border-color: #c3d9ff;
 }
-.tablepicker-size {
+.odoo-editor .tablepicker-size {
     margin-top: 7px;
 }
-.dropdown-toggle {
+.odoo-editor .dropdown-toggle {
     background: transparent;
     border: none;
     padding: 7px;
 }
-.dropdown-toggle[aria-expanded="true"] {
+.odoo-editor .dropdown-toggle[aria-expanded="true"] {
     background: #555555;
 }
-.dropdown-menu {
+.odoo-editor .dropdown-menu {
     background: #222222;
     min-width: max-content;
     min-width: -webkit-max-content;
     text-align: center;
 }
-.dropdown-item {
+.odoo-editor .dropdown-item {
     background: transparent;
     color: white;
 }
-.dropdown-item pre,
-.dropdown-item h1,
-.dropdown-item h2,
-.dropdown-item h3,
-.dropdown-item h4,
-.dropdown-item h5,
-.dropdown-item h6,
-.dropdown-item blockquote {
+.odoo-editor .dropdown-item pre,
+.odoo-editor .dropdown-item h1,
+.odoo-editor .dropdown-item h2,
+.odoo-editor .dropdown-item h3,
+.odoo-editor .dropdown-item h4,
+.odoo-editor .dropdown-item h5,
+.odoo-editor .dropdown-item h6,
+.odoo-editor .dropdown-item blockquote {
     margin: 0;
     color: white;
 }
-li > a.dropdown-item {
+.odoo-editor li > a.dropdown-item {
     color: white;
 }
-.dropdown-item:hover, .dropdown-item:focus {
+.odoo-editor .dropdown-item:hover, .dropdown-item:focus {
     color: white;
     background: #868686;
 }
-.dropdown-item.active, .dropdown-item:active {
+.odoo-editor .dropdown-item.active, .dropdown-item:active {
     color: white;
     background: #555555;
 }
 
-#dom {
+.odoo-editor #dom {
     min-height: 500px;
     padding: 5px;
 }
-span.btn {
+.odoo-editor span.btn {
     display: inline-block;
     background-color: blue;
     padding: 15px;
     color: white;
 }
-.mr8 {
+.odoo-editor .mr8 {
     margin-right: 16px;
 }
-td {
+.odoo-editor td {
     border: 1px solid grey;
     padding: 6px;
 }
 
-#sample-dom {
-    display: none;
-}
-
-ul.checklist > li {
+.odoo-editor ul.checklist > li {
     list-style: none;
     position: relative;
     margin-left: 20px;
 }
-ul.checklist > li:not(.nested):before {
+.odoo-editor ul.checklist > li:not(.nested):before {
     content: '';
     position: absolute;
     left: -20px;
@@ -216,7 +156,7 @@ ul.checklist > li:not(.nested):before {
     border: 1px solid;
     cursor: pointer;
 }
-ul.checklist > li.checked:after {
+.odoo-editor ul.checklist > li.checked:after {
     content: "✓";
     transition: opacity .5s;
     position: absolute;
@@ -224,21 +164,21 @@ ul.checklist > li.checked:after {
     top: -1px;
     opacity: 1;
 }
-li.nested {
+.odoo-editor li.nested {
     display: block;
 }
 
 /* hide color input because it's ugly */
 
-.toolbar label {
+.odoo-editor.toolbar label {
     display: inline-block;
 }
 
-.toolbar label span {
+.odoo-editor.toolbar label span {
     display: inline-block;
 }
 
-.toolbar input[type="color"] {
+.odoo-editor.toolbar input[type="color"] {
     width: 0;
     height: 0;
     padding: 0;
@@ -250,18 +190,18 @@ li.nested {
     margin: 2px 0 0;
 }
 
-#colorInputButtonGroup label {
+.odoo-editor #colorInputButtonGroup label {
     margin-bottom: 0;
 }
-.color-indicator {
+.odoo-editor .color-indicator {
     background-color: transparent;
     padding-bottom: 4px;
 }
-.color-indicator.fore-color {
+.odoo-editor .color-indicator.fore-color {
     border-bottom: 2px solid var(--fore-color);
     padding: 5px;
 }
-.color-indicator.hilite-color {
+.odoo-editor .color-indicator.hilite-color {
     border-bottom: 2px solid var(--hilite-color);
     padding: 5px;
 }
