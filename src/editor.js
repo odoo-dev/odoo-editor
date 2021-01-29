@@ -99,10 +99,12 @@ export class OdooEditor extends EventTarget {
             this.toolbar = this.options.toolbar;
             this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
             this.tablePicker = this.toolbar.querySelector('.tablepicker');
-            this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
-            this.toolbar
-                .querySelector('#tableDropdownButton')
-                .addEventListener('click', this._initTablePicker.bind(this));
+            if (this.tablePicker) {
+                this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
+                this.toolbar
+                    .querySelector('#tableDropdownButton')
+                    .addEventListener('click', this._initTablePicker.bind(this));
+            }
             for (const colorLabel of this.toolbar.querySelectorAll('label')) {
                 colorLabel.addEventListener('mousedown', ev => {
                     // Hack to prevent loss of focus (done by preventDefault) while still opening
@@ -1010,6 +1012,9 @@ export class OdooEditor extends EventTarget {
      */
     _updateToolbar(show) {
         if (!this.options.toolbar) return;
+        if (!this.options.autohideToolbar && this.toolbar.style.visibility !== 'visible') {
+            this.toolbar.style.visibility = 'visible';
+        }
 
         let sel = this.document.defaultView.getSelection();
         if (!sel.anchorNode) {
@@ -1033,8 +1038,9 @@ export class OdooEditor extends EventTarget {
             'justifyFull',
         ]) {
             const isStateTrue = this.document.queryCommandState(commandState);
-            this.toolbar.querySelector('#' + commandState).classList.toggle('active', isStateTrue);
-            if (commandState.startsWith('justify')) {
+            const button = this.toolbar.querySelector('#' + commandState);
+            button && button.classList.toggle('active', isStateTrue);
+            if (paragraphDropdownButton && commandState.startsWith('justify')) {
                 const direction = commandState.replace('justify', '').toLowerCase();
                 const newClass = `fa-align-${direction === 'full' ? 'justify' : direction}`;
                 paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
@@ -1042,40 +1048,38 @@ export class OdooEditor extends EventTarget {
         }
         const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
         const selectionStartStyle = getComputedStyle(closestsStartContainer);
-        this.toolbar.querySelector('#fontSizeCurrentValue').innerHTML = /\d+/
-            .exec(selectionStartStyle.fontSize)
-            .pop();
+        const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
+        if (fontSizeValue) {
+            fontSizeValue.innerHTML = /\d+/.exec(selectionStartStyle.fontSize).pop();
+        }
         this._updateColorpickerLabels();
-        let pnode = closestBlock(sel.anchorNode);
-        this.toolbar.querySelector('#paragraph').classList.toggle('active', pnode.tagName === 'P');
-        this.toolbar.querySelector('#heading1').classList.toggle('active', pnode.tagName === 'H1');
-        this.toolbar.querySelector('#heading2').classList.toggle('active', pnode.tagName === 'H2');
-        this.toolbar.querySelector('#heading3').classList.toggle('active', pnode.tagName === 'H3');
-        this.toolbar
-            .querySelector('#blockquote')
-            .classList.toggle('active', pnode.tagName === 'BLOCKQUOTE');
-        this.toolbar
-            .querySelector('#unordered')
-            .classList.toggle(
-                'active',
-                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'UL',
-            );
-        this.toolbar
-            .querySelector('#ordered')
-            .classList.toggle(
-                'active',
-                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'OL',
-            );
-        this.toolbar
-            .querySelector('#checklist')
-            .classList.toggle(
-                'active',
-                pnode.tagName === 'LI' && getListMode(pnode.parentElement) === 'CL',
-            );
+        let block = closestBlock(sel.anchorNode);
+        for (const [style, tag, isList] of [
+            ['paragraph', 'P', false],
+            ['heading1', 'H1', false],
+            ['heading2', 'H2', false],
+            ['heading3', 'H3', false],
+            ['blockquote', 'BLOCKQUOTE', false],
+            ['unordered', 'UL', true],
+            ['ordered', 'OL', true],
+            ['checklist', 'CL', true],
+        ]) {
+            const button = this.toolbar.querySelector('#' + style);
+            if (button) {
+                const isActive = isList
+                    ? block.tagName === 'LI' && getListMode(block.parentElement) === tag
+                    : block.tagName === tag;
+                button.classList.toggle('active', isActive);
+            }
+        }
         const linkNode = closestElement(sel.focusNode, 'a');
-        this.toolbar.querySelector('#createLink').classList.toggle('active', linkNode);
-        this.toolbar.querySelector('#unLink').classList.toggle('active', linkNode);
-        this._positionToolbar();
+        const linkButton = this.toolbar.querySelector('#createLink');
+        linkButton && linkButton.classList.toggle('active', linkNode);
+        const unlinkButton = this.toolbar.querySelector('#unLink');
+        unlinkButton && unlinkButton.classList.toggle('active', linkNode);
+        if (this.options.autohideToolbar) {
+            this._positionToolbar();
+        }
     }
     _updateColorpickerLabels() {
         const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
