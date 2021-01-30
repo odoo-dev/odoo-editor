@@ -730,13 +730,13 @@ export function commonParentGet(node1, node2, root = undefined) {
 
 export function getListMode(pnode) {
     if (pnode.tagName == 'OL') return 'OL';
-    return pnode.classList.contains('checklist') ? 'CL' : 'UL';
+    return pnode.classList.contains('oe-checklist') ? 'CL' : 'UL';
 }
 
 export function createList(mode) {
     let node = document.createElement(mode == 'OL' ? 'OL' : 'UL');
     if (mode == 'CL') {
-        node.classList.add('checklist');
+        node.classList.add('oe-checklist');
     }
     return node;
 }

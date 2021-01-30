@@ -164,7 +164,7 @@ describe('FontAwesome', () => {
                     '<p contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false">​</i>abc</b></p>',
             });
         });
-        it('should not insert navigation helpers when adjacent to a fontawesome in contenteditable=false format (nested)', async () => {
+        it('should not insert navigation helpers when adjacent to a fontawesome in contenteditable=false format (oe-nested)', async () => {
             await testEditor(BasicEditor, {
                 contentBefore:
                     '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false">abc[]<i class="fa fa-pastafarianism"></i></b></a></p>',

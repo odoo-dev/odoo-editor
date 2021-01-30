@@ -21,7 +21,7 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         }
         if (li.parentNode.parentNode.tagName === 'LI') {
             let lip = document.createElement('li');
-            toggleClass(lip, 'nested');
+            toggleClass(lip, 'oe-nested');
             lip.append(ul);
             li.parentNode.parentNode.after(lip);
         } else {
@@ -35,11 +35,11 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         let ul = li.parentNode;
         li.parentNode.parentNode.after(li);
         if (toremove) {
-            if (toremove.classList.contains('nested')) {
+            if (toremove.classList.contains('oe-nested')) {
                 // <li>content<ul>...</ul></li>
                 toremove.remove();
             } else {
-                // <li class="nested"><ul>...</ul></li>
+                // <li class="oe-nested"><ul>...</ul></li>
                 ul.remove();
             }
         }

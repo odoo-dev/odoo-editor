@@ -77,6 +77,24 @@
             #sample-dom {
                 display: none;
             }
+
+            #dom {
+                min-height: 500px;
+                padding: 5px;
+            }
+            span.btn {
+                display: inline-block;
+                background-color: blue;
+                padding: 15px;
+                color: white;
+            }
+            .mr8 {
+                margin-right: 16px;
+            }
+            td {
+                border: 1px solid grey;
+                padding: 6px;
+            }
         </style>
 
         <!-- <script src="https://use.fontawesome.com/80d52a392c.js"></script> -->
@@ -152,8 +170,8 @@
             </p>
             <ul>
                 <li>first item</li>
-                <li class="nested">
-                    <ul class="checklist">
+                <li class="oe-nested">
+                    <ul class="oe-checklist">
                         <li class="checked">first sub-item</li>
                         <li><b>second sub-item</b></li>
                     </ul>
@@ -202,7 +220,7 @@
                 That's all folks!
             </p>
         </div>
-        <div id="toolbar" class="odoo-editor toolbar">
+        <div id="toolbar" class="oe-toolbar">
             <div class="button-group dropdown">
                 <button type="button" class="btn btn-secondary btn-sm dropdown-toggle"
                     data-toggle="dropdown" title="" tabindex="-1"

@@ -47,7 +47,7 @@ export function areSimilarElements(node, node2) {
     ) {
         return false;
     }
-    if (node.tagName == 'LI' && node.classList.contains('nested')) {
+    if (node.tagName == 'LI' && node.classList.contains('oe-nested')) {
         let mode = undefined;
         return (
             node.lastElementChild &&

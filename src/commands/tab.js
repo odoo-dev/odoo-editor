@@ -21,7 +21,7 @@ HTMLLIElement.prototype.oTab = function (offset) {
     lip.append(ul);
 
     const cr = preserveCursor(this.ownerDocument);
-    toggleClass(lip, 'nested');
+    toggleClass(lip, 'oe-nested');
     this.before(lip);
     ul.append(this);
     cr();
