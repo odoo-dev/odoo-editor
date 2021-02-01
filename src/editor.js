@@ -768,7 +768,12 @@ export class OdooEditor extends EventTarget {
         let li = new Set();
         for (let node of leftDeepFirstPath(...pos2)) {
             let cli = closestBlock(node);
-            if (cli && cli.tagName == 'LI' && !li.has(cli) && !cli.classList.contains('oe-nested')) {
+            if (
+                cli &&
+                cli.tagName == 'LI' &&
+                !li.has(cli) &&
+                !cli.classList.contains('oe-nested')
+            ) {
                 li.add(cli);
             }
             if (node == end) break;
@@ -1088,10 +1093,12 @@ export class OdooEditor extends EventTarget {
 
         const sel = this.document.defaultView.getSelection();
         const startContainer = sel.getRangeAt(0).startContainer;
-        const closestBgColor =
-            closestElement(startContainer, '[style*="background-color"]') ||
-            closestElement(startContainer);
-        const hiliteColor = rgbToHex(getComputedStyle(closestBgColor).backgroundColor).slice(0, 7);
+        let closestBgColor = closestElement(startContainer, '[style*="background-color"]');
+        const hasBgColorStyle = !!closestBgColor;
+        closestBgColor = closestBgColor || closestElement(startContainer);
+        const hiliteColor = hasBgColorStyle
+            ? rgbToHex(getComputedStyle(closestBgColor).backgroundColor).slice(0, 7)
+            : 'transparent';
         this.toolbar.style.setProperty('--hilite-color', hiliteColor);
         this.toolbar.querySelector('#hiliteColor input').value = hiliteColor;
     }
@@ -1393,9 +1400,6 @@ export class OdooEditor extends EventTarget {
                 )
             ) {
                 this.document.execCommand(buttonEl.id);
-            } else if (['foreColor', 'hiliteColor'].includes(buttonEl.id)) {
-                document.execCommand('styleWithCSS', false, true);
-                document.execCommand(buttonEl.id, false, 'red');
             } else if (buttonEl.dataset.fontSize) {
                 this.execCommand('setFontSize', buttonEl.dataset.fontSize);
             } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
