@@ -1087,20 +1087,26 @@ export class OdooEditor extends EventTarget {
         }
     }
     _updateColorpickerLabels() {
-        const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
-        this.toolbar.style.setProperty('--fore-color', foreColor);
-        this.toolbar.querySelector('#foreColor input').value = foreColor;
+        const foreColorInput = this.toolbar.querySelector('#foreColor input');
+        if (foreColorInput) {
+            const foreColor = rgbToHex(document.queryCommandValue('foreColor'));
+            this.toolbar.style.setProperty('--fore-color', foreColor);
+            foreColorInput.value = foreColor;
+        }
 
-        const sel = this.document.defaultView.getSelection();
-        const startContainer = sel.getRangeAt(0).startContainer;
-        let closestBgColor = closestElement(startContainer, '[style*="background-color"]');
-        const hasBgColorStyle = !!closestBgColor;
-        closestBgColor = closestBgColor || closestElement(startContainer);
-        const hiliteColor = hasBgColorStyle
-            ? rgbToHex(getComputedStyle(closestBgColor).backgroundColor).slice(0, 7)
-            : 'transparent';
-        this.toolbar.style.setProperty('--hilite-color', hiliteColor);
-        this.toolbar.querySelector('#hiliteColor input').value = hiliteColor;
+        const hiliteColorInput = this.toolbar.querySelector('#hiliteColor input');
+        if (hiliteColorInput) {
+            const sel = this.document.defaultView.getSelection();
+            const startContainer = sel.getRangeAt(0).startContainer;
+            let closestBgColor = closestElement(startContainer, '[style*="background-color"]');
+            const hasBgColorStyle = !!closestBgColor;
+            closestBgColor = closestBgColor || closestElement(startContainer);
+            const hiliteColor = hasBgColorStyle
+                ? rgbToHex(getComputedStyle(closestBgColor).backgroundColor).slice(0, 7)
+                : 'transparent';
+            this.toolbar.style.setProperty('--hilite-color', hiliteColor);
+            hiliteColorInput.value = hiliteColor;
+        }
     }
     _positionToolbar() {
         const OFFSET = 10;
