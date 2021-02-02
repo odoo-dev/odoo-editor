@@ -1120,6 +1120,10 @@ export class OdooEditor extends EventTarget {
         linkButton && linkButton.classList.toggle('active', linkNode);
         const unlinkButton = this.toolbar.querySelector('#unLink');
         unlinkButton && unlinkButton.classList.toggle('active', linkNode);
+        const undoButton = this.toolbar.querySelector('#undo');
+        undoButton && undoButton.classList.toggle('disabled', !this.historyCanUndo());
+        const redoButton = this.toolbar.querySelector('#redo');
+        redoButton && redoButton.classList.toggle('disabled', !this.historyCanRedo());
         if (this.options.autohideToolbar) {
             this._positionToolbar();
         }
@@ -1454,6 +1458,10 @@ export class OdooEditor extends EventTarget {
                 this.execCommand(buttonEl.id);
             } else if (buttonEl.id.startsWith('fontawesome')) {
                 this._insertFontAwesome();
+            } else if (buttonEl.id === 'undo') {
+                this.historyUndo();
+            } else if (buttonEl.id === 'redo') {
+                this.historyRedo();
             } else {
                 const restoreCursor = preserveCursor(this.document);
                 const selectedBlocks = [

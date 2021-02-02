@@ -49,7 +49,7 @@
     padding: 7px;
     color: white;
 }
-.oe-toolbar .btn:hover {
+.oe-toolbar .btn:not(.disabled):hover {
     background: #868686;
 }
 .oe-toolbar .dropdown-menu .btn {
