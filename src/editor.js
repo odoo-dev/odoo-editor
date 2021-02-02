@@ -1395,7 +1395,7 @@ export class OdooEditor extends EventTarget {
     }
 
     _onToolbarClick(ev) {
-        const buttonEl = ev.target.closest('div.btn,a.dropdown-item');
+        const buttonEl = ev.target.closest('div.btn:not(.editor-ignore),a.dropdown-item');
         if (!buttonEl) {
             return;
         }
