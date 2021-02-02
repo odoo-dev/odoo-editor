@@ -640,21 +640,7 @@ export function isInPre(node) {
 const nonWhitespacesRegex = /[\S\u00A0]/;
 export function isVisibleStr(value) {
     const str = typeof value === 'string' ? value : value.nodeValue;
-    return (
-        nonWhitespacesRegex.test(str) ||
-        (str.length > 0 &&
-            value.nextSibling &&
-            value.nextSibling.nodeType !== Node.TEXT_NODE &&
-            window.getComputedStyle(value.nextSibling).display !== 'block') ||
-        (str.length > 0 &&
-            value.nextSibling === null &&
-            value.parentElement &&
-            value.parentElement.lastChild === value &&
-            value.parentElement.nextSibling &&
-            value.parentElement.nextSibling.nodeType === Node.ELEMENT_NODE &&
-            window.getComputedStyle(value.parentElement).display !== 'block' &&
-            window.getComputedStyle(value.parentElement.nextSibling).display !== 'block')
-    );
+    return nonWhitespacesRegex.test(str);
 }
 /**
  * @param {Node} node
@@ -677,30 +663,67 @@ export function isContentTextNode(node) {
 export function isVisible(node) {
     if (!node) return false;
     if (node.nodeType === Node.TEXT_NODE) {
-        if (!node.length) {
-            return false;
-        }
-        // If contains non-whitespaces: visible
-        if (isVisibleStr(node)) {
-            return true;
-        }
-        // If only whitespaces, visible only if has inline content before and
-        // after the text node, so '___' is not visible in those cases:
-        // - <p>a</p>___<p>b</p>
-        // - <p>a</p>___b
-        // - a___<p>b</p>
-        // TODO see documentation comment
-        return (
-            node.previousSibling &&
-            !isBlock(node.previousSibling) &&
-            node.nextSibling &&
-            !isBlock(node.nextSibling)
-        );
+        return isVisibleTextNode(node);
     }
     if (isBlock(node) || isVisibleEmpty(node)) {
         return true;
     }
     return [...node.childNodes].some(n => isVisible(n));
+}
+
+function isVisibleTextNode(testedNode) {
+    if (!testedNode.length) {
+        return false;
+    }
+    if (isVisibleStr(testedNode)) {
+        return true;
+    }
+    // The following assumes node is made entirely of whitespace and is not
+    // preceded of followed by a block.
+    // Find out contiguous preceding and following text nodes
+    let preceding;
+    let following;
+    // Control variable to know whether the current node has been found
+    let foundTestedNode;
+    const currentNodeParentBlock = closestBlock(testedNode);
+    const nodeIterator = document.createNodeIterator(currentNodeParentBlock);
+    for (let node = nodeIterator.nextNode(); node; node = nodeIterator.nextNode()) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            // If we already found the tested node, the current node is the
+            // contiguous following, and we can stop looping
+            // If the current node is the tested node, mark it as found and
+            // continue.
+            // If we haven't reached the tested node, overwrite the preceding
+            // node.
+            if (foundTestedNode) {
+                following = node;
+                break;
+            } else if (testedNode === node) {
+                foundTestedNode = true;
+            } else {
+                preceding = node;
+            }
+        } else if (isBlock(node)) {
+            // If we found the tested node, then the following node is irrelevant
+            // If we didn't, then the current preceding node is irrelevant
+            if (foundTestedNode) {
+                break;
+            } else {
+                preceding = null;
+            }
+        }
+    }
+    // Missing preceding or following: invisible.
+    // Preceding or following not in the same block as tested node: invisible.
+    if (
+        !(preceding && following) ||
+        currentNodeParentBlock !== closestBlock(preceding) ||
+        currentNodeParentBlock !== closestBlock(following)
+    ) {
+        return false;
+    }
+    // Preceding ends with a whitespace: invisible
+    return !/^[\n\t ]+$/.test(preceding.textContent);
 }
 
 export function parentsGet(node, root = undefined) {
