@@ -721,9 +721,17 @@ export class OdooEditor extends EventTarget {
         if (!sel.isCollapsed) {
             this.deleteRange(sel);
         }
-        // We need to add a &#8203; to ensure the insertHTML command is not ignored
-        if (document.execCommand('insertHTML', false, '<i class="' + faClass + '">&#8203;</i>')) {
+        // Add fake non-whistespace content to ensure the insertHTML command is
+        // not ignored on Safari. Adding &#8203; would suffice for Firefox but
+        // Safari is more restrictive and requires actual content.
+        if (document.execCommand('insertHTML', false, '<i>_</i>')) {
             const node = closestElement(sel.focusNode, 'i');
+            // Replace the fake content by a zero-width space as it helps
+            // browsers in handling arrow keys around font awesome nodes.
+            node.textContent = '\u200b';
+            // Manually add fa classes after calling `insertHTML` to prevent
+            // Safari from being a smartass and ruining the output as a result.
+            node.className = faClass;
             let pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
