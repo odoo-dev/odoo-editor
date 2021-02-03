@@ -348,7 +348,7 @@ describe('FontAwesome', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[]cd</p>',
                 stepFunction: async editor => {
-                    editor._insertFontAwesome('fa fa-star');
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter: '<p>ab<i class="fa fa-star" contenteditable="false">​</i>[]cd</p>',
             });
@@ -357,7 +357,7 @@ describe('FontAwesome', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab<i class="fa fa-pastafarianism"></i>c[]d</p>',
                 stepFunction: async editor => {
-                    editor._insertFontAwesome('fa fa-star');
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter:
                     '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i>c<i class="fa fa-star" contenteditable="false">​</i>[]d</p>',
@@ -367,7 +367,7 @@ describe('FontAwesome', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[]<i class="fa fa-pastafarianism"></i>cd</p>',
                 stepFunction: async editor => {
-                    editor._insertFontAwesome('fa fa-star');
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter:
                     '<p>ab<i class="fa fa-star" contenteditable="false">​</i>[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>cd</p>',
@@ -377,7 +377,7 @@ describe('FontAwesome', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[<i class="fa fa-pastafarianism"></i>]cd</p>',
                 stepFunction: async editor => {
-                    editor._insertFontAwesome('fa fa-star');
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter: '<p>abs<i class="fa fa-star" contenteditable="false">​</i>[]cd</p>',
             });
