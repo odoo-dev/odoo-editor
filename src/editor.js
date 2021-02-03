@@ -936,7 +936,23 @@ export class OdooEditor extends EventTarget {
                 return true;
             }
         }
-        if (['toggleList', 'createLink', 'unLink', 'indentList', 'setFontSize'].includes(method)) {
+        if (
+            // This is a whitelist of the commands that are implemented by the
+            // editor itself rather than the node prototypes. It might be
+            // possible to switch the conditions and test if the method exist on
+            // `sel.anchorNode` rather than relying on an expicit whitelist, but
+            // the behavior would change if a method name exists both on the
+            // editor and on the nodes. This is too risky to change in the
+            // absence of a strong test suite, so the whitelist stays for now.
+            [
+                'toggleList',
+                'createLink',
+                'unLink',
+                'indentList',
+                'setFontSize',
+                'insertFontAwesome',
+            ].includes(method)
+        ) {
             return this['_' + method](...args);
         }
         if (method.startsWith('justify')) {
