@@ -631,7 +631,7 @@ export class OdooEditor extends EventTarget {
         // A selection spanning multiple nodes and ending at position 0 of a
         // node, like the one resulting from a triple click, are corrected so
         // that it ends at the last position of the previous node instead.
-        if (!pos2[1] && pos1[1] !== nodeSize(pos1[0])) {
+        if (!pos2[1]) {
             pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
             const previousElement = leftDeepOnlyPath(...pos2).next().value;
             pos2[0] = latestChild(previousElement);
