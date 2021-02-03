@@ -892,7 +892,7 @@ describe('Editor', () => {
                     await testEditor(BasicEditor, {
                         contentBefore: `<p>mollis.</p><p>\n <i>[]Pe</i><i>lentesque</i></p>`,
                         stepFunction: deleteBackward,
-                        contentAfter: `<p>mollis.[]<i>Pe</i><i>lentesque</i></p>`,
+                        contentAfter: `<p>mollis.[]<i>Pelentesque</i></p>`,
                     });
                 });
             });

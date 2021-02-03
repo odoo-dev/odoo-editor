@@ -82,6 +82,14 @@ describe('Utils', () => {
                 const result = isVisible(textNode);
                 window.chai.expect(result).not.to.be.ok;
             });
+            it('should identify a space between to visible char in inline nodes as visible', () => {
+                const [p] = insertTestHtml('<p><i>a</i> <i>b</i></p>');
+                const textNode = p.firstChild.nextSibling;
+
+                const result = isVisible(textNode);
+
+                window.chai.expect(result).to.be.ok;
+            });
         });
     });
 });
