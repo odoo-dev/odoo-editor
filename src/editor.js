@@ -727,21 +727,42 @@ export class OdooEditor extends EventTarget {
     }
 
     _insertFontAwesome(faClass = 'fa fa-star') {
-        const sel = this.document.defaultView.getSelection();
-        if (!sel.isCollapsed) {
-            this.deleteRange(sel);
+        const insertedNode = this._insertHTML('<i></i>')[0];
+        insertedNode.className = faClass;
+        const position = rightPos(insertedNode);
+        setCursor(...position, ...position, false);
+    }
+
+    _insertHTML(html) {
+        const selection = this.document.defaultView.getSelection();
+        const range = selection.getRangeAt(0);
+        let startNode;
+        if (selection.isCollapsed) {
+            if (range.startContainer.nodeType === Node.TEXT_NODE) {
+                splitTextNode(range.startContainer, range.startOffset, DIRECTIONS.LEFT);
+                startNode = range.startContainer;
+            }
+        } else {
+            this.deleteRange(selection);
         }
-        // Add fake non-whistespace content to ensure the insertHTML command is
-        // not ignored on Safari. Adding &#8203; would suffice for Firefox but
-        // Safari is more restrictive and requires actual content.
-        if (document.execCommand('insertHTML', false, '<i>_</i>')) {
-            const node = closestElement(sel.focusNode, 'i');
-            // Manually add fa classes after calling `insertHTML` to prevent
-            // Safari from being a smartass and ruining the output as a result.
-            node.className = faClass;
-            let pos = [node.parentElement, childNodeIndex(node) + 1];
-            setCursor(...pos, ...pos, false);
+        startNode = startNode || this.document.defaultView.getSelection().anchorNode;
+
+        const fakeEl = document.createElement('fake-element');
+        fakeEl.innerHTML = html;
+        let nodeToInsert;
+        const insertedNodes = [...fakeEl.childNodes];
+        while ((nodeToInsert = fakeEl.childNodes[0])) {
+            startNode.after(nodeToInsert);
+            startNode = nodeToInsert;
         }
+
+        selection.removeAllRanges();
+        const newRange = new Range();
+        const lastPosition = rightPos(startNode);
+        newRange.setStart(lastPosition[0], lastPosition[1]);
+        newRange.setEnd(lastPosition[0], lastPosition[1]);
+        selection.addRange(newRange);
+        return insertedNodes;
     }
 
     _createLink(link, content) {
@@ -957,6 +978,7 @@ export class OdooEditor extends EventTarget {
                 'indentList',
                 'setFontSize',
                 'insertFontAwesome',
+                'insertHTML',
             ].includes(method)
         ) {
             return this['_' + method](...args);
