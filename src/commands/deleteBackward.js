@@ -21,6 +21,7 @@ import {
     splitTextNode,
     isFontAwesome,
     isUnbreakable,
+    isMediaElement,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -67,7 +68,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         if (isUnbreakable(leftNode)) {
             throw UNBREAKABLE_ROLLBACK_CODE;
         }
-        if (isFontAwesome(leftNode)) {
+        if (isMediaElement(leftNode)) {
             leftNode.remove();
             return;
         }
