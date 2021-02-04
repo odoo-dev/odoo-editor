@@ -720,8 +720,8 @@ export class OdooEditor extends EventTarget {
                 this._recordHistoryCursor();
                 sel = this.document.defaultView.getSelection();
                 pos2 = isSelForward
-                    ? [sel.anchorNode, sel.anchorOffset]
-                    : [sel.focusNode, sel.focusOffset];
+                    ? [sel.focusNode, sel.focusOffset]
+                    : [sel.anchorNode, sel.anchorOffset];
             }
         } while (fakeEl.parentNode);
     }
