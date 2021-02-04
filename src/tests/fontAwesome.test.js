@@ -67,7 +67,7 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="fa
                                 fa-pastafarianism"></i></p>`,
                 contentAfter: `<p><i class="fa
-                                fa-pastafarianism" contenteditable="false">​</i></p>`,
+                                fa-pastafarianism" contenteditable="false"></i></p>`,
             });
         });
         it('should parse a fontawesome with more multi-line classes', async () => {
@@ -75,7 +75,7 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="red fa bordered
                                 big fa-pastafarianism scary"></i></p>`,
                 contentAfter: `<p><i class="red fa bordered
-                                big fa-pastafarianism scary" contenteditable="false">​</i></p>`,
+                                big fa-pastafarianism scary" contenteditable="false"></i></p>`,
             });
         });
         it('should parse a fontawesome at the beginning of a paragraph', async () => {
@@ -104,36 +104,36 @@ describe('FontAwesome', () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>abc[]<i class="fa fa-pastafarianism"></i></p>',
                 contentAfter:
-                    '<p>abc[]\u200B<i class="fa fa-pastafarianism" contenteditable="false">​</i>\u200B</p>',
+                    '<p>abc[]\u200B<i class="fa fa-pastafarianism" contenteditable="false"></i>\u200B</p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore: '<p>[]<i class="fa fa-pastafarianism"></i></p>',
                 contentAfter:
-                    '<p>\u200B[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>\u200B</p>',
+                    '<p>\u200B[]<i class="fa fa-pastafarianism" contenteditable="false"></i>\u200B</p>',
             });
         });
         it('should insert navigation helpers when after a fontawesome, in an editable', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i>[]abc</p>',
                 contentAfter:
-                    '<p>\u200B<i class="fa fa-pastafarianism" contenteditable="false">​</i>\u200B[]abc</p>',
+                    '<p>\u200B<i class="fa fa-pastafarianism" contenteditable="false"></i>\u200B[]abc</p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i>[]</p>',
                 contentAfter:
-                    '<p>\u200B<i class="fa fa-pastafarianism" contenteditable="false">​</i>\u200B[]</p>',
+                    '<p>\u200B<i class="fa fa-pastafarianism" contenteditable="false"></i>\u200B[]</p>',
             });
         });
         it('should not insert navigation helpers when not adjacent to a fontawesome, in an editable', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[]c<i class="fa fa-pastafarianism"></i></p>',
                 contentAfter:
-                    '<p>ab[]c<i class="fa fa-pastafarianism" contenteditable="false">​</i></p>',
+                    '<p>ab[]c<i class="fa fa-pastafarianism" contenteditable="false"></i></p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i>a[]bc</p>',
                 contentAfter:
-                    '<p><i class="fa fa-pastafarianism" contenteditable="false">​</i>a[]bc</p>',
+                    '<p><i class="fa fa-pastafarianism" contenteditable="false"></i>a[]bc</p>',
             });
         });
         it('should not insert navigation helpers when adjacent to a fontawesome in contenteditable=false container', async () => {
@@ -141,13 +141,13 @@ describe('FontAwesome', () => {
                 contentBefore:
                     '<p contenteditable="false">abc[]<i class="fa fa-pastafarianism"></i></p>',
                 contentAfter:
-                    '<p contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false">​</i></p>',
+                    '<p contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false"></i></p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore:
                     '<p contenteditable="false"><i class="fa fa-pastafarianism"></i>[]abc</p>',
                 contentAfter:
-                    '<p contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false">​</i>abc</p>',
+                    '<p contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false"></i>abc</p>',
             });
         });
         it('should not insert navigation helpers when adjacent to a fontawesome in contenteditable=false format', async () => {
@@ -155,13 +155,13 @@ describe('FontAwesome', () => {
                 contentBefore:
                     '<p contenteditable="true"><b contenteditable="false">abc[]<i class="fa fa-pastafarianism"></i></b></p>',
                 contentAfter:
-                    '<p contenteditable="true"><b contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false">​</i></b></p>',
+                    '<p contenteditable="true"><b contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false"></i></b></p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore:
                     '<p contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism"></i>[]abc</b></p>',
                 contentAfter:
-                    '<p contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false">​</i>abc</b></p>',
+                    '<p contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false"></i>abc</b></p>',
             });
         });
         it('should not insert navigation helpers when adjacent to a fontawesome in contenteditable=false format (oe-nested)', async () => {
@@ -169,13 +169,13 @@ describe('FontAwesome', () => {
                 contentBefore:
                     '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false">abc[]<i class="fa fa-pastafarianism"></i></b></a></p>',
                 contentAfter:
-                    '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false">​</i></b></a></p>',
+                    '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false">abc<i class="fa fa-pastafarianism" contenteditable="false"></i></b></a></p>',
             });
             await testEditor(BasicEditor, {
                 contentBefore:
                     '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism"></i>[]abc</b></a></p>',
                 contentAfter:
-                    '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false">​</i>abc</b></a></p>',
+                    '<p contenteditable="true"><a contenteditable="true"><b contenteditable="false"><i class="fa fa-pastafarianism" contenteditable="false"></i>abc</b></a></p>',
             });
         });*/
     });

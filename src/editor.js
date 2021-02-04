@@ -736,9 +736,6 @@ export class OdooEditor extends EventTarget {
         // Safari is more restrictive and requires actual content.
         if (document.execCommand('insertHTML', false, '<i>_</i>')) {
             const node = closestElement(sel.focusNode, 'i');
-            // Replace the fake content by a zero-width space as it helps
-            // browsers in handling arrow keys around font awesome nodes.
-            node.textContent = '\u200b';
             // Manually add fa classes after calling `insertHTML` to prevent
             // Safari from being a smartass and ruining the output as a result.
             node.className = faClass;
@@ -1472,7 +1469,7 @@ export class OdooEditor extends EventTarget {
             } else if (buttonEl.id.startsWith('justify')) {
                 this.execCommand(buttonEl.id);
             } else if (buttonEl.id.startsWith('fontawesome')) {
-                this._insertFontAwesome();
+                this.execCommand('insertFontAwesome');
             } else if (buttonEl.id === 'undo') {
                 this.historyUndo();
             } else if (buttonEl.id === 'redo') {
