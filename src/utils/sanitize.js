@@ -10,6 +10,7 @@ import {
     preserveCursor,
     isFontAwesome,
     closestElement,
+    isMediaElement,
 } from './utils.js';
 
 export function areSimilarElements(node, node2) {
@@ -108,8 +109,11 @@ class Sanitize {
         if (isFontAwesome(node)) {
             // Ensure a zero width space is present inside the FA element.
             if (node.innerHTML !== '​') node.innerHTML = '​';
+        }
 
-            // Ensure all Font awesome element are tagged contenteditable=false.
+        // Sanitize media elements
+        if (isMediaElement(node)) {
+            // Ensure all media elements are tagged contenteditable=false.
             // we cannot use the node.isContentEditable because it can wrongly return false
             // when the editor is starting up ( first sanitize )
             if (node.getAttribute('contenteditable') !== 'false') {

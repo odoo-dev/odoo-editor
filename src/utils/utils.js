@@ -592,6 +592,13 @@ export function isFontAwesome(node) {
         ['fa', 'fab', 'fad', 'far'].some(faClass => node.classList.contains(faClass))
     );
 }
+export function isMediaElement(node) {
+    return (
+        isFontAwesome(node) ||
+        (node.classList &&
+            (node.classList.contains('o_image') || node.classList.contains('media_iframe_video')))
+    );
+}
 
 export function containsUnremovable(node) {
     if (!node) {
