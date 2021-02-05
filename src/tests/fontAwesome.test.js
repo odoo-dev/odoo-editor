@@ -67,7 +67,7 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="fa
                                 fa-pastafarianism"></i></p>`,
                 contentAfter: `<p><i class="fa
-                                fa-pastafarianism" contenteditable="false"></i></p>`,
+                                fa-pastafarianism" contenteditable="false">​</i></p>`,
             });
         });
         it('should parse a fontawesome with more multi-line classes', async () => {
@@ -75,7 +75,7 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="red fa bordered
                                 big fa-pastafarianism scary"></i></p>`,
                 contentAfter: `<p><i class="red fa bordered
-                                big fa-pastafarianism scary" contenteditable="false"></i></p>`,
+                                big fa-pastafarianism scary" contenteditable="false">​</i></p>`,
             });
         });
         it('should parse a fontawesome at the beginning of a paragraph', async () => {

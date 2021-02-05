@@ -1264,7 +1264,7 @@ export class OdooEditor extends EventTarget {
         this._recordHistoryCursor(true);
         const cursor = this.history[this.history.length - 1].cursor;
         const { focusOffset, focusNode, anchorNode, anchorOffset } = cursor || {};
-        const wasCollapsed = !cursor && focusNode === anchorNode && focusOffset === anchorOffset;
+        const wasCollapsed = !cursor || (focusNode === anchorNode && focusOffset === anchorOffset);
         if (this.keyboardType === KEYBOARD_TYPES.PHYSICAL || !wasCollapsed) {
             if (ev.inputType === 'deleteContentBackward') {
                 this.historyRollback();
@@ -1316,6 +1316,16 @@ export class OdooEditor extends EventTarget {
             ev.preventDefault();
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
                 this._applyCommand('oShiftEnter');
+            }
+        } else if (ev.keyCode === 8 && !ev.ctrlKey) {
+            // backspace
+            // We need to hijack it because firefox doesn't trigger a
+            // deleteBackward input event with a collapsed cursor in front of a
+            // contentEditable="false" (eg: font awesome)
+            const selection = this.document.getSelection();
+            if (selection.isCollapsed) {
+                ev.preventDefault();
+                this._applyCommand('oDeleteBackward');
             }
         } else if (ev.keyCode === 9) {
             // Tab
