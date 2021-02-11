@@ -870,6 +870,12 @@ export class OdooEditor extends EventTarget {
             }
         }
     }
+    _bold() {
+        this._applyInlineStyle(el => {
+            el.style.fontWeight = 'bold';
+        });
+    }
+
     /**
      * @param {string} size A valid css size string
      */
@@ -980,6 +986,7 @@ export class OdooEditor extends EventTarget {
                 'setFontSize',
                 'insertFontAwesome',
                 'insertHTML',
+                'bold',
             ].includes(method)
         ) {
             return this['_' + method](...args);
@@ -1488,14 +1495,12 @@ export class OdooEditor extends EventTarget {
                 sel.focusNode.parentNode.insertBefore(table, sel.focusNode);
                 setCursorStart(table.querySelector('td'));
             } else if (
-                ['bold', 'italic', 'underline', 'strikeThrough', 'removeFormat'].includes(
-                    buttonEl.id,
-                )
+                ['italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)
             ) {
                 this.document.execCommand(buttonEl.id);
             } else if (buttonEl.dataset.fontSize) {
                 this.execCommand('setFontSize', buttonEl.dataset.fontSize);
-            } else if (['createLink', 'unLink'].includes(buttonEl.id)) {
+            } else if (['bold', 'createLink', 'unLink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
