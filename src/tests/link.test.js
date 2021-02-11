@@ -8,8 +8,8 @@ import {
 } from './utils.js';
 
 const convertToLink = createLink;
-const unLink = async function (editor) {
-    editor.execCommand('unLink');
+const unlink = async function (editor) {
+    editor.execCommand('unlink');
 };
 
 describe('Link', () => {
@@ -144,7 +144,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">bcd[]</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>abcd[]e</p>',
                 });
@@ -153,7 +153,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">b[]cd</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>ab[]cde</p>',
                 });
@@ -162,7 +162,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">[]bcd</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a[]bcde</p>',
                 });
@@ -172,7 +172,7 @@ describe('Link', () => {
                     contentBefore:
                         '<p><a href="exist">a</a>b<a href="exist">c[]d</a>e<a href="exist">f</a></p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p><a href="exist">a</a>bc[]de<a href="exist">f</a></p>',
                 });
@@ -183,7 +183,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">bc[d]</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a<a href="exist">bc[</a>d]e</p>',
                 });
@@ -192,7 +192,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">b[c]d</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a<a href="exist">b[</a>c]<a href="exist">d</a>e</p>',
                 });
@@ -201,17 +201,16 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">[b]cd</a>e</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a[b]<a href="exist">cd</a>e</p>',
-
                 });
             });
             it('should remove the link in the selected range overlapping the end of a link', async () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a<a href="exist">bc[d</a>e]f</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a<a href="exist">bc[</a>de]f</p>',
                 });
@@ -220,7 +219,7 @@ describe('Link', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a[b<a href="exist">c]de</a>f</p>',
                     stepFunction: async editor => {
-                        await unLink(editor);
+                        await unlink(editor);
                     },
                     contentAfter: '<p>a[bc]<a href="exist">de</a>f</p>',
                 });

@@ -43,6 +43,7 @@ import {
     setCursorStart,
     rgbToHex,
     isFontAwesome,
+    getCurrentLink,
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
@@ -785,7 +786,7 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    _unLink(offset, content) {
+    _unlink(offset, content) {
         const sel = this.document.defaultView.getSelection();
         if (sel.isCollapsed) {
             const cr = preserveCursor(this.document);
@@ -981,7 +982,7 @@ export class OdooEditor extends EventTarget {
             [
                 'toggleList',
                 'createLink',
-                'unLink',
+                'unlink',
                 'indentList',
                 'setFontSize',
                 'insertFontAwesome',
@@ -1118,7 +1119,7 @@ export class OdooEditor extends EventTarget {
         if (show !== undefined && this.options.autohideToolbar) {
             this.toolbar.style.visibility = show ? 'visible' : 'hidden';
         }
-        if (show === false) {
+        if (show === false && this.options.autohideToolbar) {
             return;
         }
         const paragraphDropdownButton = this.toolbar.querySelector('#paragraphDropdownButton');
@@ -1167,11 +1168,11 @@ export class OdooEditor extends EventTarget {
                 button.classList.toggle('active', isActive);
             }
         }
-        const linkNode = closestElement(sel.focusNode, 'a');
+        const linkNode = getCurrentLink(this.document);
         const linkButton = this.toolbar.querySelector('#createLink');
         linkButton && linkButton.classList.toggle('active', linkNode);
-        const unlinkButton = this.toolbar.querySelector('#unLink');
-        unlinkButton && unlinkButton.classList.toggle('active', linkNode);
+        const unlinkButton = this.toolbar.querySelector('#unlink');
+        unlinkButton && unlinkButton.classList.toggle('d-none', !linkNode);
         const undoButton = this.toolbar.querySelector('#undo');
         undoButton && undoButton.classList.toggle('disabled', !this.historyCanUndo());
         const redoButton = this.toolbar.querySelector('#redo');
@@ -1500,7 +1501,7 @@ export class OdooEditor extends EventTarget {
                 this.document.execCommand(buttonEl.id);
             } else if (buttonEl.dataset.fontSize) {
                 this.execCommand('setFontSize', buttonEl.dataset.fontSize);
-            } else if (['bold', 'createLink', 'unLink'].includes(buttonEl.id)) {
+            } else if (['bold', 'createLink', 'unlink'].includes(buttonEl.id)) {
                 this.execCommand(buttonEl.id);
             } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
                 this.execCommand('toggleList', TAGS[buttonEl.id]);
