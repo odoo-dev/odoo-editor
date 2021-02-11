@@ -607,6 +607,16 @@ export function containsUnremovable(node) {
     return isUnremovable(node) || containsUnremovable(node.firstChild);
 }
 
+export function getCurrentLink(document) {
+    const range = document.defaultView.getSelection().getRangeAt(0);
+    return (
+        closestElement(range.startContainer, 'a') ||
+        [...closestElement(range.commonAncestorContainer).querySelectorAll('a')].find(node =>
+            range.intersectsNode(node),
+        )
+    );
+}
+
 // optimize: use the parent Oid to speed up detection
 export function getOuid(node, optimize = false) {
     while (node && !isUnbreakable(node)) {
