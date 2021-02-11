@@ -45,6 +45,7 @@ import {
     isFontAwesome,
 } from './utils/utils.js';
 
+export * from './utils/utils.js';
 export const UNBREAKABLE_ROLLBACK_CODE = 100;
 export const UNREMOVABLE_ROLLBACK_CODE = 110;
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
