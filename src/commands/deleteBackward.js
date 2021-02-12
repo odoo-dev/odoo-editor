@@ -22,6 +22,7 @@ import {
     isFontAwesome,
     isUnbreakable,
     isMediaElement,
+    isVisibleEmpty,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -72,7 +73,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
             leftNode.remove();
             return;
         }
-        if (!isBlock(leftNode)) {
+        if (!isBlock(leftNode) || isVisibleEmpty(leftNode)) {
             /**
              * Backspace just after an inline node, convert to backspace at the
              * end of that inline node.
