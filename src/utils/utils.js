@@ -948,6 +948,9 @@ export function moveNodes(
     startIndex = 0,
     endIndex = sourceEl.childNodes.length,
 ) {
+    if (selfClosingElementTags.includes(destinationEl.nodeName)) {
+        throw new Error(`moveNodes: Invalid destination element ${destinationEl.nodeName}`);
+    }
     // For table elements, there just cannot be a meaningful move, add them
     // after the table.
     if (['TBODY', 'THEAD', 'TFOOT', 'TR', 'TH', 'TD'].includes(destinationEl.tagName)) {

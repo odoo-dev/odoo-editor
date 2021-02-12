@@ -651,6 +651,13 @@ describe('Editor', () => {
                         ),
                     });
                 });
+                it('should delete an image that is displayed as a block', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore: unformat(`<div>a[b<img style="display: block;"/>c]d</div>`),
+                        stepFunction: editor => editor._applyCommand('oDeleteBackward'),
+                        contentAfter: unformat(`<div>a[]d</div>`),
+                    });
+                });
             });
         });
         describe('Selection not collapsed', () => {
