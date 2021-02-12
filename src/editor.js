@@ -43,7 +43,7 @@ import {
     setCursorStart,
     rgbToHex,
     isFontAwesome,
-    getCurrentLink,
+    getInSelection,
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
@@ -1168,7 +1168,7 @@ export class OdooEditor extends EventTarget {
                 button.classList.toggle('active', isActive);
             }
         }
-        const linkNode = getCurrentLink(this.document);
+        const linkNode = getInSelection(this.document, 'a');
         const linkButton = this.toolbar.querySelector('#createLink');
         linkButton && linkButton.classList.toggle('active', linkNode);
         const unlinkButton = this.toolbar.querySelector('#unlink');

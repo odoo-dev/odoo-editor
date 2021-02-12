@@ -607,13 +607,15 @@ export function containsUnremovable(node) {
     return isUnremovable(node) || containsUnremovable(node.firstChild);
 }
 
-export function getCurrentLink(document) {
-    const range = document.defaultView.getSelection().getRangeAt(0);
+export function getInSelection(document, selector) {
+    const selection = document.defaultView.getSelection();
+    const range = !!selection.rangeCount && selection.getRangeAt(0);
     return (
-        closestElement(range.startContainer, 'a') ||
-        [...closestElement(range.commonAncestorContainer).querySelectorAll('a')].find(node =>
-            range.intersectsNode(node),
-        )
+        range &&
+        (closestElement(range.startContainer, selector) ||
+            [
+                ...closestElement(range.commonAncestorContainer).querySelectorAll(selector),
+            ].find(node => range.intersectsNode(node)))
     );
 }
 
