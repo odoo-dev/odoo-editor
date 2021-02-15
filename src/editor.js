@@ -827,19 +827,15 @@ export class OdooEditor extends EventTarget {
     }
 
     _toggleList(mode) {
-        let sel = this.document.defaultView.getSelection();
-        let end = leftDeepFirstPath(sel.anchorNode, sel.anchorOffset).next().value;
-
         let li = new Set();
         let blocks = new Set();
 
-        for (let node of leftDeepFirstPath(sel.focusNode, sel.focusOffset)) {
+        for (let node of getTraversedNodes(this.document)) {
             let block = closestBlock(node);
             if (!['OL', 'UL'].includes(block.tagName)) {
                 let ublock = block.closest('ol, ul');
                 ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
             }
-            if (node == end) break;
         }
 
         let target = [...(blocks.size ? blocks : li)];
