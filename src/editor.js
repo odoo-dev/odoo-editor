@@ -1471,6 +1471,7 @@ export class OdooEditor extends EventTarget {
         this._protect(() => {
             if (buttonEl.classList.contains('tablepicker-cell')) {
                 const table = this.document.createElement('table');
+                table.classList.add('table', 'table-bordered'); // for bootstrap
                 const tbody = this.document.createElement('tbody');
                 table.appendChild(tbody);
                 const rowId = +buttonEl.dataset.rowId;
