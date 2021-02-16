@@ -245,6 +245,7 @@ export class OdooEditor extends EventTarget {
 
     observerApply(destel, records) {
         for (let record of records) {
+            if (!this.filterMutationRecord(record)) continue;
             switch (record.type) {
                 case 'characterData': {
                     this.history[this.history.length - 1].dom.push({
@@ -312,6 +313,15 @@ export class OdooEditor extends EventTarget {
                 }
             }
         }
+    }
+    filterMutationRecord(record) {
+        // discard attribute mutations that gets back to the same value.
+        if (
+            record.type === 'attribute' &&
+            record.oldValue === record.target.getAttribute(record.attributeName)
+        )
+            return false;
+        return true;
     }
 
     resetHistory() {
