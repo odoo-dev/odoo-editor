@@ -108,7 +108,7 @@ class Sanitize {
         // Sanitize font awesome elements
         if (isFontAwesome(node)) {
             // Ensure a zero width space is present inside the FA element.
-            if (node.innerHTML !== '&#x200B;') node.innerHTML = '&#x200B;';
+            if (node.innerHTML !== '\u200B') node.innerHTML = '&#x200B;';
         }
 
         // Sanitize media elements
