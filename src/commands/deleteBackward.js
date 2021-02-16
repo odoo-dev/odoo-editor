@@ -101,7 +101,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
         }
         const parentEl = this.parentNode;
 
-        if (!isBlock(this)) {
+        if (!isBlock(this) || isVisibleEmpty(this)) {
             /**
              * Backspace at the beginning of an inline node, nothing has to be
              * done: propagate the backspace. If the node was empty, we remove
