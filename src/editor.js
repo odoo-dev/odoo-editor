@@ -1148,11 +1148,13 @@ export class OdooEditor extends EventTarget {
                 paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
             }
         }
-        const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
-        const selectionStartStyle = getComputedStyle(closestsStartContainer);
-        const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
-        if (fontSizeValue) {
-            fontSizeValue.innerHTML = /\d+/.exec(selectionStartStyle.fontSize).pop();
+        if (sel.rangeCount) {
+            const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
+            const selectionStartStyle = getComputedStyle(closestsStartContainer);
+            const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
+            if (fontSizeValue) {
+                fontSizeValue.innerHTML = /\d+/.exec(selectionStartStyle.fontSize).pop();
+            }
         }
         this._updateColorpickerLabels();
         let block = closestBlock(sel.anchorNode);
@@ -1167,7 +1169,9 @@ export class OdooEditor extends EventTarget {
             ['checklist', 'CL', true],
         ]) {
             const button = this.toolbar.querySelector('#' + style);
-            if (button) {
+            if (button && !block) {
+                button.classList.toggle('active', false);
+            } else if (button) {
                 const isActive = isList
                     ? block.tagName === 'LI' && getListMode(block.parentElement) === tag
                     : block.tagName === tag;
@@ -1198,8 +1202,9 @@ export class OdooEditor extends EventTarget {
         const hiliteColorInput = this.toolbar.querySelector('#hiliteColor input');
         if (hiliteColorInput) {
             const sel = this.document.defaultView.getSelection();
-            const startContainer = sel.getRangeAt(0).startContainer;
-            let closestBgColor = closestElement(startContainer, '[style*="background-color"]');
+            const startContainer = sel.rangeCount && sel.getRangeAt(0).startContainer;
+            let closestBgColor =
+                startContainer && closestElement(startContainer, '[style*="background-color"]');
             const hasBgColorStyle = !!closestBgColor;
             closestBgColor = closestBgColor || closestElement(startContainer);
             const hiliteColor = hasBgColorStyle
