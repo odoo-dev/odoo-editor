@@ -430,19 +430,102 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
  * @returns {Node[]}
  */
 export function getTraversedNodes(document) {
-    const sel = document.defaultView.getSelection();
-    const iterator = document.createNodeIterator(sel.getRangeAt(0).commonAncestorContainer);
+    const range = getDeepRange(document);
+    if (!range) return [];
+    const iterator = document.createNodeIterator(range.commonAncestorContainer);
     let node;
     do {
         node = iterator.nextNode();
-    } while (node && node !== sel.anchorNode && node !== sel.focusNode);
-    const end = node === sel.anchorNode ? sel.focusNode : sel.anchorNode;
+    } while (node && node !== range.startContainer);
     const traversedNodes = [node];
-    while (node && node !== end) {
+    while (node && node !== range.endContainer) {
         node = iterator.nextNode();
         node && traversedNodes.push(node);
     }
     return traversedNodes;
+}
+/**
+ * Returns an array containing all the nodes fully contained in the selection.
+ *
+ * @param {Document} document
+ * @returns {Node[]}
+ */
+export function getSelectedNodes(document) {
+    const sel = document.defaultView.getSelection();
+    if (!sel.rangeCount) {
+        return [];
+    }
+    const range = sel.getRangeAt(0);
+    return getTraversedNodes(document).filter(
+        node => range.isPointInRange(node, 0) && range.isPointInRange(node, nodeSize(node)),
+    );
+}
+
+/**
+ * Returns the current range (if any), adapted to target the deepest
+ * descendants.
+ *
+ * @param {Document} document
+ * @param {object} [options]
+ * @param {boolean} [options.splitText] split the targeted text nodes at offset.
+ * @param {boolean} [options.select] select the new range if it changed (via splitText)
+ * @returns {Range}
+ */
+export function getDeepRange(document, options = {}) {
+    const sel = document.defaultView.getSelection();
+    if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0).cloneRange();
+    let start = range.startContainer;
+    let startOffset = range.startOffset;
+    let end = range.endContainer;
+    let endOffset = range.endOffset;
+
+    // Target the deepest descendant of the range nodes.
+    while (start.childNodes.length) {
+        start = start.childNodes[startOffset - 1] || start.firstChild;
+        startOffset = 0;
+    }
+    while (end.childNodes.length) {
+        end = end.childNodes[endOffset - 1] || end.firstChild;
+        endOffset = 0;
+    }
+
+    // Split text nodes if that was requested.
+    if (options.splitText) {
+        const isInSingleContainer = start === end;
+        if (
+            end.nodeType === Node.TEXT_NODE &&
+            endOffset !== 0 &&
+            endOffset !== end.textContent.length
+        ) {
+            const endParent = end.parentNode;
+            const splitOffset = splitTextNode(end, endOffset);
+            end = endParent.childNodes[splitOffset - 1] || endParent.firstChild;
+            if (isInSingleContainer) {
+                start = end;
+            }
+            endOffset = end.textContent.length;
+        }
+        if (
+            start.nodeType === Node.TEXT_NODE &&
+            startOffset !== 0 &&
+            startOffset !== start.textContent.length
+        ) {
+            splitTextNode(start, startOffset);
+            startOffset = 0;
+            if (isInSingleContainer) {
+                endOffset = start.textContent.length;
+            }
+        }
+    }
+
+    range.setStart(start, startOffset);
+    range.setEnd(end, endOffset);
+    if (options.select) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+    return range;
 }
 
 export function getCursors(document) {
@@ -877,6 +960,29 @@ export function splitTextNode(textNode, offset, originalNodeSide = DIRECTIONS.RI
         }
     }
     return parentOffset;
+}
+
+/**
+ * Split the given element at the given offset. The element will be removed in
+ * the process so caution is advised in dealing with its reference. Returns a
+ * tuple containing the new elements on both sides of the split.
+ *
+ * @param {Element} element
+ * @param {number} offset
+ * @returns {[Element, Element]}
+ */
+export function splitElement(element, offset) {
+    const before = element.cloneNode();
+    const after = element.cloneNode();
+    let index = 0;
+    for (const child of [...element.childNodes]) {
+        index < offset ? before.appendChild(child) : after.appendChild(child);
+        index++;
+    }
+    element.before(before);
+    element.after(after);
+    element.remove();
+    return [before, after];
 }
 
 export function insertText(sel, content) {
