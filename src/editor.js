@@ -244,8 +244,8 @@ export class OdooEditor extends EventTarget {
     }
 
     observerApply(destel, records) {
+        records = this.filterMutationRecords(records);
         for (let record of records) {
-            if (!this.filterMutationRecord(record)) continue;
             switch (record.type) {
                 case 'characterData': {
                     this.history[this.history.length - 1].dom.push({
@@ -314,14 +314,29 @@ export class OdooEditor extends EventTarget {
             }
         }
     }
-    filterMutationRecord(record) {
-        // discard attribute mutations that gets back to the same value.
-        if (
-            record.type === 'attribute' &&
-            record.oldValue === record.target.getAttribute(record.attributeName)
-        )
-            return false;
-        return true;
+    filterMutationRecords(records) {
+        // Save the firt attribute in a cache to compare only the first
+        // attribute record of node to it's latest state.
+        const attributeCache = new Map();
+        const filteredRecords = [];
+
+        for (const record of records) {
+            if (record.type === 'attributes') {
+                attributeCache.set(record.target, attributeCache.get(record.target) || {});
+                if (
+                    typeof attributeCache.get(record.target)[record.attributeName] === 'undefined'
+                ) {
+                    const oldValue = record.oldvalue === undefined ? null : record.oldValue;
+                    attributeCache.get(record.target)[record.attributeName] =
+                        oldValue !== record.target.getAttribute(record.attributeName);
+                }
+                if (!attributeCache.get(record.target)[record.attributeName]) {
+                    continue;
+                }
+            }
+            filteredRecords.push(record);
+        }
+        return filteredRecords;
     }
 
     resetHistory() {
