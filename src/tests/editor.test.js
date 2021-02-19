@@ -1499,26 +1499,30 @@ describe('Editor', () => {
                 });
                 it('should merge in nested paragraphs and remove invisible inline content', async () => {
                     await testEditor(BasicEditor, {
-                        contentBefore: '<div><p>ab</p>    </div><p>[]c</p>',
+                        contentBefore:
+                            '<custom-block style="display: block;"><p>ab</p>    </custom-block><p>[]c</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<div><p>ab[]c</p></div>',
+                        contentAfter: '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
                     });
                     await testEditor(BasicEditor, {
-                        contentBefore: '<div><p>ab</p> <i> </i> </div><p>[]c</p>',
+                        contentBefore:
+                            '<custom-block style="display: block;"><p>ab</p> <i> </i> </custom-block><p>[]c</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<div><p>ab[]c</p></div>',
+                        contentAfter: '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
                     });
                 });
                 it('should not merge in nested blocks if inline content afterwards', async () => {
                     await testEditor(BasicEditor, {
-                        contentBefore: '<div><p>ab</p>de</div><p>[]fg</p>',
+                        contentBefore:
+                            '<custom-block style="display: block;"><p>ab</p>de</custom-block><p>[]fg</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<div><p>ab</p>de[]fg</div>',
+                        contentAfter: '<custom-block style="display: block;"><p>ab</p>de[]fg</custom-block>',
                     });
                     await testEditor(BasicEditor, {
-                        contentBefore: '<div><p>ab</p><img></div><p>[]fg</p>',
+                        contentBefore:
+                            '<custom-block style="display: block;"><p>ab</p><img></custom-block><p>[]fg</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<div><p>ab</p><img>[]fg</div>',
+                        contentAfter: '<custom-block style="display: block;"><p>ab</p><img>[]fg</custom-block>',
                     });
                 });
                 it('should move paragraph content to empty block', async () => {
