@@ -265,7 +265,8 @@ describe('List', () => {
                             contentBefore: '<div><p>ab[]cd</p></div>',
                             stepFunction: toggleCheckList,
                             // JW cAfter: '<div><ul class="oe-checklist"><li>ab[]cd</li></ul></div>',
-                            contentAfter: '<div><ul class="oe-checklist"><li>ab[]cd</li></ul></div>',
+                            contentAfter:
+                                '<div><ul class="oe-checklist"><li>ab[]cd</li></ul></div>',
                         });
                     });
                     it('should turn a paragraph with formats into a checklist', async () => {
@@ -658,7 +659,8 @@ describe('List', () => {
                         await testEditor(BasicEditor, {
                             contentBefore: '<p>ab</p><p>cd[ef]gh</p>',
                             stepFunction: toggleCheckList,
-                            contentAfter: '<p>ab</p><ul class="oe-checklist"><li>cd[ef]gh</li></ul>',
+                            contentAfter:
+                                '<p>ab</p><ul class="oe-checklist"><li>cd[ef]gh</li></ul>',
                         });
                     });
                     it('should turn a heading into a checklist', async () => {
@@ -741,7 +743,8 @@ describe('List', () => {
                 describe('Remove', () => {
                     it('should turn a checklist into a paragraph', async () => {
                         await testEditor(BasicEditor, {
-                            contentBefore: '<p>ab</p><ul class="oe-checklist"><li>cd[ef]gh</li></ul>',
+                            contentBefore:
+                                '<p>ab</p><ul class="oe-checklist"><li>cd[ef]gh</li></ul>',
                             stepFunction: toggleCheckList,
                             contentAfter: '<p>ab</p><p>cd[ef]gh</p>',
                         });
@@ -1741,7 +1744,8 @@ describe('List', () => {
                             contentBefore:
                                 '<ul class="oe-checklist"><li><br></li><li>[]<br></li><li>abc</li></ul>',
                             stepFunction: deleteForward,
-                            contentAfter: '<ul class="oe-checklist"><li><br></li><li>[]abc</li></ul>',
+                            contentAfter:
+                                '<ul class="oe-checklist"><li><br></li><li>[]abc</li></ul>',
                         });
                     });
                     it('should rejoin sibling lists', async () => {
@@ -2227,20 +2231,22 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a list item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a list item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ol><li>fg</li><li>h]i</li><li>jk</li></ol></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display:block;"><ol><li>fg</li><li>h]i</li><li>jk</li></ol></span>',
                             stepFunction: deleteForward,
-                            contentAfter: '<h1>a[]i</h1><div><ol><li>jk</li></ol></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display:block;"><ol><li>jk</li></ol></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ol><li>fg</li><li>h[i</li><li>jk</li></ol></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display:block;"><ol><li>fg</li><li>h[i</li><li>jk</li></ol></span>',
                             stepFunction: deleteForward,
-                            contentAfter: '<h1>a[]i</h1><div><ol><li>jk</li></ol></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display:block;"><ol><li>jk</li></ol></span>',
                         });
                     });
                 });
@@ -2317,20 +2323,22 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a list item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a list item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul><li>fg</li><li>h]i</li><li>jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul><li>fg</li><li>h]i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
-                            contentAfter: '<h1>a[]i</h1><div><ul><li>jk</li></ul></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ul><li>jk</li></ul></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul><li>fg</li><li>h[i</li><li>jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul><li>fg</li><li>h[i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
-                            contentAfter: '<h1>a[]i</h1><div><ul><li>jk</li></ul></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ul><li>jk</li></ul></span>',
                         });
                     });
                 });
@@ -2517,64 +2525,64 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a checklist item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a checklist item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul class="oe-checklist"><li class="checked">fg</li><li>h]i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li class="checked">fg</li><li>h]i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li>h]i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li>h]i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul class="oe-checklist"><li class="checked">fg</li><li>h]i</li><li>jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li class="checked">fg</li><li>h]i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li>jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li>jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li>h]i</li><li>jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li>h]i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li>jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li>jk</li></ul></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li class="checked">h[i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li class="checked">h[i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li>h[i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li>h[i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li class="checked">h[i</li><li>jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li class="checked">h[i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li>jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li>jk</li></ul></span>',
                         });
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul class="oe-checklist"><li>fg</li><li>h[i</li><li>jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul class="oe-checklist"><li>fg</li><li>h[i</li><li>jk</li></ul></span>',
                             stepFunction: deleteForward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li>jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display: block;"><ul class="oe-checklist"><li>jk</li></ul></span>',
                         });
                     });
                 });
@@ -4554,7 +4562,8 @@ describe('List', () => {
                                 contentBefore:
                                     '<p>abc</p><ul class="oe-checklist"><li class="oe-nested"><ul><li>[]def</li></ul></li></ul>',
                                 stepFunction: deleteBackward,
-                                contentAfter: '<p>abc</p><ul class="oe-checklist"><li>[]def</li></ul>',
+                                contentAfter:
+                                    '<p>abc</p><ul class="oe-checklist"><li>[]def</li></ul>',
                             });
                         });
                         it('should outdent an empty unordered list item within an checklist list (checked)', async () => {
@@ -4772,20 +4781,22 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a list item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a list item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ol><li>fg</li><li>h]i</li><li>jk</li></ol></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ol><li>fg</li><li>h]i</li><li>jk</li></ol></span>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<h1>a[]i</h1><div><ol><li>jk</li></ol></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ol><li>jk</li></ol></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ol><li>fg</li><li>h[i</li><li>jk</li></ol></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ol><li>fg</li><li>h[i</li><li>jk</li></ol></span>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<h1>a[]i</h1><div><ol><li>jk</li></ol></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ol><li>jk</li></ol></span>',
                         });
                     });
                 });
@@ -4862,20 +4873,22 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a list item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a list item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul><li>fg</li><li>h]i</li><li>jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display: block;"><ul><li>fg</li><li>h]i</li><li>jk</li></ul></span>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<h1>a[]i</h1><div><ul><li>jk</li></ul></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ul><li>jk</li></ul></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul><li>fg</li><li>h[i</li><li>jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display: block;"><ul><li>fg</li><li>h[i</li><li>jk</li></ul></span>',
                             stepFunction: deleteBackward,
-                            contentAfter: '<h1>a[]i</h1><div><ul><li>jk</li></ul></div>',
+                            contentAfter:
+                                '<h1>a[]i</h1><span style="display: block;"><ul><li>jk</li></ul></span>',
                         });
                     });
                 });
@@ -5006,22 +5019,22 @@ describe('List', () => {
                             contentAfter: '<p>abc[]</p>',
                         });
                     });
-                    it('should merge the contents of a checklist item within a divider into a heading, and leave the rest of its list as it is', async () => {
+                    it('should merge the contents of a checklist item within a block into a heading, and leave the rest of its list as it is', async () => {
                         // Forward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a[b</h1><p>de</p><div><ul class="oe-checklist"><li class="checked">fg</li><li class="checked">h]i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a[b</h1><p>de</p><span style="display:block;"><ul class="oe-checklist"><li class="checked">fg</li><li class="checked">h]i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteBackward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display:block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                         // Backward selection
                         await testEditor(BasicEditor, {
                             contentBefore:
-                                '<h1>a]b</h1><p>de</p><div><ul class="oe-checklist"><li class="checked">fg</li><li class="checked">h[i</li><li class="checked">jk</li></ul></div>',
+                                '<h1>a]b</h1><p>de</p><span style="display:block;"><ul class="oe-checklist"><li class="checked">fg</li><li class="checked">h[i</li><li class="checked">jk</li></ul></span>',
                             stepFunction: deleteBackward,
                             contentAfter:
-                                '<h1>a[]i</h1><div><ul class="oe-checklist"><li class="checked">jk</li></ul></div>',
+                                '<h1>a[]i</h1><span style="display:block;"><ul class="oe-checklist"><li class="checked">jk</li></ul></span>',
                         });
                     });
                 });
@@ -5245,18 +5258,18 @@ describe('List', () => {
                 });
                 await testEditor(BasicEditor, {
                     contentBefore: unformat(`
-                        <div>
+                        <span style="display: block;">
                             <p>a[bc</p>
-                        </div>
+                        </span>
                         <ol>
                             <li>d]ef</li>
                             <li>ghi</li>
                         </ol>`),
                     stepFunction: deleteBackward,
                     contentAfter: unformat(`
-                        <div>
+                        <span style="display: block;">
                             <p>a[]ef</p>
-                        </div>
+                        </span>
                         <ol>
                             <li>ghi</li>
                         </ol>`),
@@ -5422,28 +5435,30 @@ describe('List', () => {
                                     '<ol><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ol>',
                             });
                         });
-                        it('should split dividers insite the li rather than create new list items', async () => {
+                        it('should split blocks inside the li rather than create new list items', async () => {
                             await testEditor(BasicEditor, {
-                                contentBefore: '<ol><li class="a"><div>abc[]</div></li></ol>',
+                                contentBefore:
+                                    '<ol><li class="a"><span style="display: block;">abc[]</span></li></ol>',
                                 stepFunction: async editor => {
                                     await insertParagraphBreak(editor);
                                     await insertText(editor, 'b');
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ol>',
+                                    '<ol><li class="a"><span style="display: block;">abc</span><span style="display: block;">b</span><span style="display: block;">[]<br></span></li></ol>',
                             });
                         });
-                        it('should split dividers instead of creating new list items', async () => {
+                        it('should split blocks instead of creating new list items', async () => {
                             await testEditor(BasicEditor, {
-                                contentBefore: '<ol><li><div class="a">abc[]</div></li></ol>',
+                                contentBefore:
+                                    '<ol><li><span class="a" style="display: block;">abc[]</span></li></ol>',
                                 stepFunction: async editor => {
                                     await insertParagraphBreak(editor);
                                     await insertText(editor, 'b');
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ol>',
+                                    '<ol><li><span class="a" style="display: block;">abc</span><span class="a" style="display: block;">b</span><span class="a" style="display: block;">[]<br></span></li></ol>',
                             });
                         });
                         it('should add two list items with a font at the end of a list within a list', async () => {
@@ -5568,28 +5583,30 @@ describe('List', () => {
                                     '<ul><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ul>',
                             });
                         });
-                        it('should split dividers instead of creating new list items', async () => {
+                        it('should split blocks instead of creating new list items', async () => {
                             await testEditor(BasicEditor, {
-                                contentBefore: '<ul><li class="a"><div>abc[]</div></li></ul>',
+                                contentBefore:
+                                    '<ul><li class="a"><span style="display: block;">abc[]</span></li></ul>',
                                 stepFunction: async editor => {
                                     await insertParagraphBreak(editor);
                                     await insertText(editor, 'b');
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul><li class="a"><div>abc</div><div>b</div><div>[]<br></div></li></ul>',
+                                    '<ul><li class="a"><span style="display: block;">abc</span><span style="display: block;">b</span><span style="display: block;">[]<br></span></li></ul>',
                             });
                         });
-                        it('should split the div rather than create new list items', async () => {
+                        it('should split the blocks rather than create new list items', async () => {
                             await testEditor(BasicEditor, {
-                                contentBefore: '<ul><li><div class="a">abc[]</div></li></ul>',
+                                contentBefore:
+                                    '<ul><li><span class="a" style="display: block;">abc[]</span></li></ul>',
                                 stepFunction: async editor => {
                                     await insertParagraphBreak(editor);
                                     await insertText(editor, 'b');
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul><li><div class="a">abc</div><div class="a">b</div><div class="a">[]<br></div></li></ul>',
+                                    '<ul><li><span class="a" style="display: block;">abc</span><span class="a" style="display: block;">b</span><span class="a" style="display: block;">[]<br></span></li></ul>',
                             });
                         });
                         it('should keep the list-style when add li', async () => {
@@ -5630,7 +5647,8 @@ describe('List', () => {
                             await testEditor(BasicEditor, {
                                 contentBefore: '<ul class="oe-checklist"><li>ab[]cd</li></ul>',
                                 stepFunction: insertParagraphBreak,
-                                contentAfter: '<ul class="oe-checklist"><li>ab</li><li>[]cd</li></ul>',
+                                contentAfter:
+                                    '<ul class="oe-checklist"><li>ab</li><li>[]cd</li></ul>',
                             });
                         });
                         it('should split a checklist item in two (checked)', async () => {
@@ -5742,30 +5760,30 @@ describe('List', () => {
                                         '<ul class="oe-checklist"><li class="a unchecked">abc</li><li class="a unchecked">d</li><li class="a unchecked">[]<br></li></ul>',
                                 });
                             });
-                            it('should split dividers rather than create new list items', async () => {
+                            it('should split blocks rather than create new list items', async () => {
                                 await testEditor(BasicEditor, {
                                     contentBefore:
-                                        '<ul class="oe-checklist"><li class="a unchecked"><div>abc[]</div></li></ul>',
+                                        '<ul class="oe-checklist"><li class="a unchecked"><span style="display: block;">abc[]</span></li></ul>',
                                     stepFunction: async editor => {
                                         await insertParagraphBreak(editor);
                                         await insertText(editor, 'd');
                                         await insertParagraphBreak(editor);
                                     },
                                     contentAfter:
-                                        '<ul class="oe-checklist"><li class="a unchecked"><div>abc</div><div>d</div><div>[]<br></div></li></ul>',
+                                        '<ul class="oe-checklist"><li class="a unchecked"><span style="display: block;">abc</span><span style="display: block;">d</span><span style="display: block;">[]<br></span></li></ul>',
                                 });
                             });
-                            it('should split diviers rather than create new list items', async () => {
+                            it('should split blocks rather than create new list items', async () => {
                                 await testEditor(BasicEditor, {
                                     contentBefore:
-                                        '<ul class="oe-checklist"><li><div class="a">abc[]</div></li></ul>',
+                                        '<ul class="oe-checklist"><li><span class="a" style="display: block;">abc[]</span></li></ul>',
                                     stepFunction: async editor => {
                                         await insertParagraphBreak(editor);
                                         await insertText(editor, 'd');
                                         await insertParagraphBreak(editor);
                                     },
                                     contentAfter:
-                                        '<ul class="oe-checklist"><li><div class="a">abc</div><div class="a">d</div><div class="a">[]<br></div></li></ul>',
+                                        '<ul class="oe-checklist"><li><span class="a" style="display: block;">abc</span><span class="a" style="display: block;">d</span><span class="a" style="display: block;">[]<br></span></li></ul>',
                                 });
                             });
                             it('should add two list items with a font at the end of a checklist within a checklist', async () => {
