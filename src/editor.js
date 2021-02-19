@@ -381,6 +381,7 @@ export class OdooEditor extends EventTarget {
             dom: [],
         });
         this._recordHistoryCursor();
+        this.dispatchEvent(new Event('historyStep'));
     }
 
     // apply changes according to some records
@@ -423,7 +424,6 @@ export class OdooEditor extends EventTarget {
                 }
             }
         }
-        this.dispatchEvent(new Event('historyApply'));
     }
 
     // send changes to server
