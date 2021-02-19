@@ -893,8 +893,11 @@ export class OdooEditor extends EventTarget {
         }
     }
     _bold() {
+        const isAlreadyBold = !getTraversedNodes(this.document)
+            .filter(n => n.nodeType === Node.TEXT_NODE)
+            .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
         this._applyInlineStyle(el => {
-            el.style.fontWeight = 'bold';
+            el.style.fontWeight = isAlreadyBold ? 'normal' : 'bold';
         });
     }
 
