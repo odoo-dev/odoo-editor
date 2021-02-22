@@ -323,7 +323,7 @@ export class OdooEditor extends EventTarget {
     }
     filterMutationRecords(records) {
         // Save the first attribute in a cache to compare only the first
-        // attribute record of node to it's latest state.
+        // attribute record of node to its latest state.
         const attributeCache = new Map();
         const filteredRecords = [];
 
