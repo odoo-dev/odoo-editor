@@ -84,6 +84,7 @@ export class OdooEditor extends EventTarget {
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
         this.resetHistory();
         this.undos = new Map();
+        this._observerTimeoutUnactive = new Set();
 
         // set contenteditable before clone as FF updates the content at this point
         if (this.options.setContentEditable) {
@@ -224,6 +225,13 @@ export class OdooEditor extends EventTarget {
         return this.collaborate ? objectToNode(obj) : obj;
     }
 
+    automaticStepActive(label) {
+        this._observerTimeoutUnactive.delete(label);
+    }
+    automaticStepUnactive(label) {
+        clearTimeout(this.observerTimeout);
+        this._observerTimeoutUnactive.add(label);
+    }
     observerUnactive() {
         clearTimeout(this.observerTimeout);
         this.observer.disconnect();
@@ -237,9 +245,11 @@ export class OdooEditor extends EventTarget {
         if (!this.observer) {
             this.observer = new MutationObserver(records => {
                 clearTimeout(this.observerTimeout);
-                this.observerTimeout = setTimeout(() => {
-                    this.historyStep();
-                }, 100);
+                if (this._observerTimeoutUnactive.size === 0) {
+                    this.observerTimeout = setTimeout(() => {
+                        this.historyStep();
+                    }, 100);
+                }
                 this.observerApply(this.vdom, records);
             });
         }
