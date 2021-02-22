@@ -322,7 +322,7 @@ export class OdooEditor extends EventTarget {
         }
     }
     filterMutationRecords(records) {
-        // Save the firt attribute in a cache to compare only the first
+        // Save the first attribute in a cache to compare only the first
         // attribute record of node to it's latest state.
         const attributeCache = new Map();
         const filteredRecords = [];
@@ -333,7 +333,7 @@ export class OdooEditor extends EventTarget {
                 if (
                     typeof attributeCache.get(record.target)[record.attributeName] === 'undefined'
                 ) {
-                    const oldValue = record.oldvalue === undefined ? null : record.oldValue;
+                    const oldValue = record.oldValue === undefined ? null : record.oldValue;
                     attributeCache.get(record.target)[record.attributeName] =
                         oldValue !== record.target.getAttribute(record.attributeName);
                 }
