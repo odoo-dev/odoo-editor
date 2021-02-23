@@ -542,6 +542,8 @@ export class OdooEditor extends EventTarget {
      * 2: The position has been undone and is considered consumed.
      */
     historyUndo() {
+        // The last step is considered an uncommited draft so always revert it.
+        this.historyRevert(this.history[this.history.length - 1]);
         const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
