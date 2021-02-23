@@ -625,7 +625,7 @@ export class OdooEditor extends EventTarget {
     }
 
     historySetCursor(step) {
-        if (step.cursor.anchorNode) {
+        if (step.cursor && step.cursor.anchorNode) {
             const anchorNode = this.idFind(this.dom, step.cursor.anchorNode);
             const focusNode = step.cursor.focusNode
                 ? this.idFind(this.dom, step.cursor.focusNode)
