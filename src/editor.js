@@ -277,7 +277,7 @@ export class OdooEditor extends EventTarget {
                     break;
                 }
                 case 'childList': {
-                    record.addedNodes.forEach((added, index) => {
+                    record.addedNodes.forEach(added => {
                         this.torollback =
                             this.torollback ||
                             (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
@@ -288,6 +288,8 @@ export class OdooEditor extends EventTarget {
                             action.append = record.target.oid;
                         } else if (record.nextSibling.oid) {
                             action.before = record.nextSibling.oid;
+                        } else if (!record.previousSibling && record.target.oid) {
+                            action.prepend = record.target.oid;
                         } else if (record.previousSibling.oid) {
                             action.after = record.previousSibling.oid;
                         } else {
