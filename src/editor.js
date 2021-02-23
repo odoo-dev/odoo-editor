@@ -1226,7 +1226,8 @@ export class OdooEditor extends EventTarget {
      */
     _recordHistoryCursor(useCache = false) {
         const latest = this.history[this.history.length - 1];
-        latest.cursor = useCache ? this._latestComputedCursor : this._computeHistoryCursor();
+        latest.cursor =
+            (useCache ? this._latestComputedCursor : this._computeHistoryCursor()) || {};
     }
     /**
      * Get the step index in the history to undo.
