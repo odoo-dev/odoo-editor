@@ -1477,7 +1477,7 @@ export class OdooEditor extends EventTarget {
         // is a non-empty Unicode character string containing the printable
         // representation of the key. In this case, call `deleteRange` before
         // inserting the printed representation of the character.
-        if (!ev.ctrlKey && /^.$/u.test(ev.key)) {
+        if (/^.$/u.test(ev.key) && !ev.ctrlKey && !ev.metaKey) {
             const selection = this.document.defaultView.getSelection();
             if (selection && !selection.isCollapsed) {
                 this.deleteRange(selection);
@@ -1489,7 +1489,7 @@ export class OdooEditor extends EventTarget {
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
                 this._applyCommand('oShiftEnter');
             }
-        } else if (ev.keyCode === 8 && !ev.ctrlKey) {
+        } else if (ev.keyCode === 8 && !ev.ctrlKey && !ev.metaKey) {
             // backspace
             // We need to hijack it because firefox doesn't trigger a
             // deleteBackward input event with a collapsed cursor in front of a
@@ -1504,11 +1504,11 @@ export class OdooEditor extends EventTarget {
             if (this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent')) {
                 ev.preventDefault();
             }
-        } else if (ev.key === 'z' && ev.ctrlKey) {
+        } else if (ev.key === 'z' && (ev.ctrlKey || ev.metaKey)) {
             // Ctrl-Z
             ev.preventDefault();
             this.historyUndo();
-        } else if (ev.key === 'y' && ev.ctrlKey) {
+        } else if (ev.key === 'y' && (ev.ctrlKey || ev.metaKey)) {
             // Ctrl-Y
             ev.preventDefault();
             this.historyRedo();
