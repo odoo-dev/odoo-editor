@@ -156,6 +156,17 @@ export function closestElement(node, selector) {
     return selector && element ? element.closest(selector) : element || node;
 }
 
+/**
+ * Returns a list of all the ancestors nodes of the provided node.
+ *
+ * @param {Node} node
+ * @returns {HTMLElement[]}
+ */
+export function ancestors(node) {
+    if (!node) return [];
+    return [node.parentElement, ...ancestors(node.parentElement)];
+}
+
 export function closestBlock(node) {
     return findNode(closestPath(node), node => isBlock(node));
 }
