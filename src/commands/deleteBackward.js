@@ -194,3 +194,12 @@ HTMLBRElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false
         HTMLElement.prototype.oDeleteBackward.call(this, offset, alreadyMoved);
     }
 };
+
+HTMLTableElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
+    // Replace the table with a <p>.
+    const p = document.createElement('p');
+    p.appendChild(document.createElement('br'));
+    this.after(p);
+    this.remove();
+    setCursor(p, 0);
+};
