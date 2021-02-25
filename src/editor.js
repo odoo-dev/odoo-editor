@@ -49,6 +49,7 @@ import {
     getSelectedNodes,
     getDeepRange,
     splitElement,
+    ancestors,
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
@@ -1572,6 +1573,34 @@ export class OdooEditor extends EventTarget {
             this.selectionChanged = true;
         } else {
             this._fixFontAwesomeSelection();
+        }
+        // When the browser set the selection inside a node that is
+        // contenteditable=false, it breaks the edition upon keystroke. Move the
+        // selection so that it remain in an editable area. An example of this
+        // case happend when the selection goes into a fontawesome node.
+        const startContainer = sel.rangeCount && closestElement(sel.getRangeAt(0).startContainer);
+        const contenteditableFalseNode =
+            startContainer &&
+            !startContainer.isContentEditable &&
+            ancestors(startContainer).includes(this.dom) &&
+            startContainer.closest('[contenteditable=false]');
+        if (contenteditableFalseNode) {
+            sel.removeAllRanges();
+            const range = new Range();
+            if (contenteditableFalseNode.previousSibling) {
+                range.setStart(
+                    contenteditableFalseNode.previousSibling,
+                    contenteditableFalseNode.previousSibling.length,
+                );
+                range.setEnd(
+                    contenteditableFalseNode.previousSibling,
+                    contenteditableFalseNode.previousSibling.length,
+                );
+            } else {
+                range.setStart(contenteditableFalseNode.parentElement, 0);
+                range.setEnd(contenteditableFalseNode.parentElement, 0);
+            }
+            sel.addRange(range);
         }
     }
 
