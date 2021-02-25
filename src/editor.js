@@ -63,8 +63,11 @@ const TEXT_CLASSES_REGEX = /\btext-.*\b/g;
 const BG_CLASSES_REGEX = /\bbg-.*\b/g;
 
 const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
+
+const isUndo = ev => ev.key === 'z' && (ev.ctrlKey || ev.metaKey);
+const isRedo = ev => ev.key === 'y' && (ev.ctrlKey || ev.metaKey);
 export class OdooEditor extends EventTarget {
-    constructor(dom, options = {}) {
+    constructor(dom, options = { controlHistoryFromDocument: false }) {
         super();
         this.options = options;
 
@@ -111,6 +114,29 @@ export class OdooEditor extends EventTarget {
         this.selectionChanged = true;
         this.dom.addEventListener('mousedown', this._updateMouseState.bind(this));
         this.dom.addEventListener('mouseup', this._updateMouseState.bind(this));
+
+        this.document.addEventListener('keydown', ev => {
+            if (this.options.controlHistoryFromDocument) {
+                if (isUndo(ev)) {
+                    ev.preventDefault();
+                    this.historyUndo();
+                } else if (isRedo(ev)) {
+                    ev.preventDefault();
+                    this.historyRedo();
+                }
+            } else {
+                if (isRedo(ev) || isUndo(ev)) {
+                    this.automaticStepUnactive('controlHistoryFromDocument');
+                    this.dom.setAttribute('contenteditable', false);
+                }
+            }
+        });
+        this.document.addEventListener('keyup', ev => {
+            if (!this.options.controlHistoryFromDocument && (isRedo(ev) || isUndo(ev))) {
+                this.dom.setAttribute('contenteditable', true);
+                this.automaticStepActive('controlHistoryFromDocument');
+            }
+        });
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -1504,13 +1530,15 @@ export class OdooEditor extends EventTarget {
             if (this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent')) {
                 ev.preventDefault();
             }
-        } else if (ev.key === 'z' && (ev.ctrlKey || ev.metaKey)) {
+        } else if (isUndo(ev)) {
             // Ctrl-Z
             ev.preventDefault();
+            ev.stopPropagation();
             this.historyUndo();
-        } else if (ev.key === 'y' && (ev.ctrlKey || ev.metaKey)) {
+        } else if (isRedo(ev)) {
             // Ctrl-Y
             ev.preventDefault();
+            ev.stopPropagation();
             this.historyRedo();
         }
     }
