@@ -32,6 +32,7 @@ import {
     setCursor,
     setTagName,
     splitTextNode,
+    startPos,
     toggleClass,
     findNode,
     closestElement,
@@ -1195,6 +1196,13 @@ export class OdooEditor extends EventTarget {
                 'insertFontAwesome',
                 'insertHTML',
                 'bold',
+                'addColumnLeft',
+                'addColumnRight',
+                'addRowAbove',
+                'addRowBelow',
+                'removeColumn',
+                'removeRow',
+                'deleteTable',
             ].includes(method)
         ) {
             return this['_' + method](...args);
@@ -1702,6 +1710,11 @@ export class OdooEditor extends EventTarget {
                 this.execCommand(buttonEl.id);
             } else if (buttonEl.id.startsWith('fontawesome')) {
                 this.execCommand('insertFontAwesome');
+            } else if (buttonEl.id.startsWith('table-')) {
+                // table-do-this -> doThis
+                this.execCommand(
+                    buttonEl.id.substr(6).replace(/(-)(\w)/g, (m, d, w) => w.toUpperCase()),
+                );
             } else if (buttonEl.id === 'undo') {
                 this.historyUndo();
             } else if (buttonEl.id === 'redo') {
@@ -1812,6 +1825,66 @@ export class OdooEditor extends EventTarget {
             }
             this.tablePicker.dataset.colCount = colCount - removedColIds.size;
         }
+    }
+    _addColumnLeft() {
+        this._addColumn('before');
+    }
+    _addColumnRight() {
+        this._addColumn('after');
+    }
+    _addColumn(beforeOrAfter) {
+        getDeepRange(this.document, { select: true }); // Ensure deep range for finding td.
+        const c = getInSelection(this.document, 'td');
+        if (!c) return;
+        const i = [...closestElement(c, 'tr').querySelectorAll('th, td')].findIndex(td => td === c);
+        const column = closestElement(c, 'table').querySelectorAll(`tr td:nth-of-type(${i + 1})`);
+        column.forEach(row => row[beforeOrAfter](document.createElement('td')));
+    }
+    _addRowAbove() {
+        this._addRow('before');
+    }
+    _addRowBelow() {
+        this._addRow('after');
+    }
+    _addRow(beforeOrAfter) {
+        getDeepRange(this.document, { select: true }); // Ensure deep range for finding tr.
+        const row = getInSelection(this.document, 'tr');
+        if (!row) return;
+        const newRow = document.createElement('tr');
+        const cells = row.querySelectorAll('td');
+        newRow.append(...Array.from(Array(cells.length)).map(() => document.createElement('td')));
+        row[beforeOrAfter](newRow);
+    }
+    _removeColumn() {
+        getDeepRange(this.document, { select: true }); // Ensure deep range for finding td.
+        const cell = getInSelection(this.document, 'td');
+        if (!cell) return;
+        const table = closestElement(cell, 'table');
+        const cells = [...closestElement(cell, 'tr').querySelectorAll('th, td')];
+        const index = cells.findIndex(td => td === cell);
+        const siblingCell = cells[index - 1] || cells[index + 1];
+        table.querySelectorAll(`tr td:nth-of-type(${index + 1})`).forEach(td => td.remove());
+        siblingCell ? setCursor(...startPos(siblingCell)) : this._deleteTable(table);
+    }
+    _removeRow() {
+        getDeepRange(this.document, { select: true }); // Ensure deep range for finding tr.
+        const row = getInSelection(this.document, 'tr');
+        if (!row) return;
+        const table = closestElement(row, 'table');
+        const rows = [...table.querySelectorAll('tr')];
+        const rowIndex = rows.findIndex(tr => tr === row);
+        const siblingRow = rows[rowIndex - 1] || rows[rowIndex + 1];
+        row.remove();
+        siblingRow ? setCursor(...startPos(siblingRow)) : this._deleteTable(table);
+    }
+    _deleteTable(table) {
+        table = table || getInSelection(this.document, 'table');
+        if (!table) return;
+        const p = document.createElement('p');
+        p.appendChild(document.createElement('br'));
+        table.before(p);
+        table.remove();
+        setCursor(p, 0);
     }
 
     /**
