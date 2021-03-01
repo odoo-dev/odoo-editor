@@ -156,6 +156,9 @@
     border-bottom: 2px solid var(--hilite-color);
     padding: 5px;
 }
+.oe-toolbar #style .dropdown-menu {
+    text-align: left;
+}
 /* Content styling */
 
 ul.oe-checklist > li {
