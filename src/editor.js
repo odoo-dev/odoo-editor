@@ -87,8 +87,8 @@ export class OdooEditor extends EventTarget {
         // Wether we should check for unbreakable the next history step.
         this._checkStepUnbreakable = true;
 
-        if (dom.textContent.trim() === '') {
-            dom.innerHTML = '<p></p>';
+        if (dom.innerHTML.trim() === '') {
+            dom.innerHTML = '<p><br></p>';
         }
 
         dom.oid = 1; // convention: root node is ID 1
