@@ -132,7 +132,6 @@ export class OdooEditor extends EventTarget {
                 }
             } else {
                 if (isRedo(ev) || isUndo(ev)) {
-                    this.automaticStepUnactive('controlHistoryFromDocument');
                     this.dom.setAttribute('contenteditable', false);
                 }
             }
@@ -140,7 +139,6 @@ export class OdooEditor extends EventTarget {
         this.document.addEventListener('keyup', ev => {
             if (!this.options.controlHistoryFromDocument && (isRedo(ev) || isUndo(ev))) {
                 this.dom.setAttribute('contenteditable', true);
-                this.automaticStepActive('controlHistoryFromDocument');
             }
         });
 
@@ -378,6 +376,9 @@ export class OdooEditor extends EventTarget {
 
         for (const record of records) {
             if (record.type === 'attributes') {
+                // Skip the attributes change on the dom.
+                if (record.target === this.dom) continue;
+
                 attributeCache.set(record.target, attributeCache.get(record.target) || {});
                 if (
                     typeof attributeCache.get(record.target)[record.attributeName] === 'undefined'
