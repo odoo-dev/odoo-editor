@@ -768,7 +768,7 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
@@ -780,7 +780,7 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
                 });
             });
             it('should not break unbreakables', async () => {
@@ -881,6 +881,59 @@ describe('Editor', () => {
                         stepFunction: deleteBackward,
                         contentAfter:
                             '<table><tbody><tr><td>[]<br></td><td>abc</td></tr></tbody></table>',
+                    });
+                });
+                it('should not break a table', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>[ab</td><td>cd</td><td>e]f</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>[]<br></td><td></td><td>f</td></tr></tbody></table>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>a[b</td><td>cd</td><td>e]f</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>a[]</td><td></td><td>f</td></tr></tbody></table>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>a[b</td><td>cd</td><td>ef]</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>a[]</td><td></td><td></td></tr></tbody></table>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>[ab</td><td>cd</td><td>ef]</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>[]<br></td><td></td><td></td></tr></tbody></table>',
+                    });
+                });
+                it('should not break a table (cross rows)', async () => {
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>[ab</td><td>cd</td><td>ef</td></tr><tr><td>gh</td><td>ij</td><td>k]l</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>[]<br></td><td></td><td></td></tr><tr><td></td><td></td><td>l</td></tr></tbody></table>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>a[b</td><td>cd</td><td>ef</td></tr><tr><td>gh</td><td>ij</td><td>k]l</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>a[]</td><td></td><td></td></tr><tr><td></td><td></td><td>l</td></tr></tbody></table>',
+                    });
+                    await testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td>a[b</td><td>cd</td><td>ef</td></tr><tr><td>gh</td><td>ij</td><td>kl]</td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter:
+                            '<table><tbody><tr><td>a[]</td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></tbody></table>',
                     });
                 });
                 it('should merge the following inline text node', async () => {
@@ -1502,13 +1555,15 @@ describe('Editor', () => {
                         contentBefore:
                             '<custom-block style="display: block;"><p>ab</p>    </custom-block><p>[]c</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
+                        contentAfter:
+                            '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore:
                             '<custom-block style="display: block;"><p>ab</p> <i> </i> </custom-block><p>[]c</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
+                        contentAfter:
+                            '<custom-block style="display: block;"><p>ab[]c</p></custom-block>',
                     });
                 });
                 it('should not merge in nested blocks if inline content afterwards', async () => {
@@ -1516,13 +1571,15 @@ describe('Editor', () => {
                         contentBefore:
                             '<custom-block style="display: block;"><p>ab</p>de</custom-block><p>[]fg</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<custom-block style="display: block;"><p>ab</p>de[]fg</custom-block>',
+                        contentAfter:
+                            '<custom-block style="display: block;"><p>ab</p>de[]fg</custom-block>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore:
                             '<custom-block style="display: block;"><p>ab</p><img></custom-block><p>[]fg</p>',
                         stepFunction: deleteBackward,
-                        contentAfter: '<custom-block style="display: block;"><p>ab</p><img>[]fg</custom-block>',
+                        contentAfter:
+                            '<custom-block style="display: block;"><p>ab</p><img>[]fg</custom-block>',
                     });
                 });
                 it('should move paragraph content to empty block', async () => {
@@ -1698,7 +1755,7 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteBackward,
-                    contentAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
@@ -1710,7 +1767,7 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteBackward,
-                    contentAfter: '<h1>[]gh</h1>',
+                    contentAfter: '<h1><b>[]</b>gh</h1>',
                 });
             });
             it('should delete a heading (triple click backspace)', async () => {
@@ -1769,7 +1826,7 @@ describe('Editor', () => {
                     contentAfter: '<p>a[]l</p>',
                 });
             });
-            it('should only remove the text content a partly selected table', async () => {
+            it('should only remove the text content and full rows a partly selected table', async () => {
                 await testEditor(BasicEditor, {
                     contentBefore: unformat(
                         `<p>a[b</p>
@@ -1783,7 +1840,6 @@ describe('Editor', () => {
                     contentAfter: unformat(
                         `<p>a[]</p>
                         <table><tbody>
-                            <tr><td><br></td><td><br></td></tr>
                             <tr><td>h</td><td>ij</td></tr>
                         </tbody></table>
                         <p>kl</p>`,

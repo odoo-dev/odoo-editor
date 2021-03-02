@@ -25,8 +25,6 @@ import {
     insertText,
     nodeSize,
     leftDeepFirstPath,
-    leftDeepOnlyPath,
-    prepareUpdate,
     preserveCursor,
     rightPos,
     setCursor,
@@ -40,7 +38,6 @@ import {
     isBlock,
     isVisible,
     isContentTextNode,
-    latestChild,
     setCursorStart,
     rgbToHex,
     isFontAwesome,
@@ -50,6 +47,10 @@ import {
     getDeepRange,
     splitElement,
     ancestors,
+    firstChild,
+    previousLeaf,
+    nextLeaf,
+    isUnremovable,
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
@@ -366,13 +367,7 @@ export class OdooEditor extends EventTarget {
                         this.history[this.history.length - 1].dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
-                        // Tables can be safely removed even though their
-                        // contents are unremovable.
-                        if (
-                            !this.torollback &&
-                            removed.tagName !== 'TABLE' &&
-                            containsUnremovable(removed)
-                        ) {
+                        if (!this.torollback && containsUnremovable(removed)) {
                             this.torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
                         this.history[this.history.length - 1].dom.push({
@@ -439,10 +434,10 @@ export class OdooEditor extends EventTarget {
     //
 
     // One step completed: apply to vDOM, setup next history step
-    historyStep() {
+    historyStep(skipRollback = false) {
         this.observerFlush();
         // check that not two unBreakables modified
-        if (this.torollback) {
+        if (this.torollback && !skipRollback) {
             this.historyRollback();
             this.torollback = false;
         }
@@ -620,7 +615,7 @@ export class OdooEditor extends EventTarget {
             this.historyRevert(this.history[pos]);
             // Consider the last position of the history as an undo.
             this.undos.set(this.history.length - 1, 1);
-            this.historyStep();
+            this.historyStep(true);
             this.dispatchEvent(new Event('historyUndo'));
         }
     }
@@ -637,7 +632,7 @@ export class OdooEditor extends EventTarget {
             this.historyRevert(this.history[pos]);
             this.undos.set(this.history.length - 1, 0);
             this.historySetCursor(this.history[pos]);
-            this.historyStep();
+            this.historyStep(true);
             this.dispatchEvent(new Event('historyRedo'));
         }
     }
@@ -746,98 +741,96 @@ export class OdooEditor extends EventTarget {
     // ===============
 
     deleteRange(sel) {
-        const range = sel.getRangeAt(0);
-        const isSelForward =
-            sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
-        let pos1 = [range.startContainer, range.startOffset];
-        let pos2 = [range.endContainer, range.endOffset];
+        let range = getDeepRange(this.document, { sel, splitText: true, select: true });
+        if (!range) return;
         // A selection spanning multiple nodes and ending at position 0 of a
         // node, like the one resulting from a triple click, are corrected so
         // that it ends at the last position of the previous node instead.
-        if (!pos2[1]) {
-            pos2 = rightPos(leftDeepOnlyPath(...pos2).next().value);
-            const previousElement = leftDeepOnlyPath(...pos2).next().value;
-            pos2[0] = latestChild(previousElement);
-            pos2[1] = nodeSize(pos2[0]);
+        if (!range.endOffset && !range.endContainer.previousSibling) {
+            const previous = previousLeaf(range.endContainer, this.dom);
+            if (previous) {
+                range.setEndAfter(previous);
+            }
         }
-
-        // Hack: we will follow the logic "do many backspace until the
-        // selection is collapsed". The problem is that after one backspace
-        // the node the starting position of the cursor is in may have
-        // changed (split, removed, moved, etc) so there is no reliable
-        // way to know when there has been enough backspaces... except for
-        // this hack: we put a fake element acting as a one-space-to-remove
-        // element (like an image) at the selection start position and we
-        // hit backspace until that element is removed.
-        if (pos1[0].nodeType === Node.TEXT_NODE) {
-            // First, if the selection start is in a text node, we have to
-            // split that text node to be able to put the fake element
-            // in-between.
-            const splitNode = pos1[0];
-            const splitOffset = pos1[1];
-            const willActuallySplitPos2 =
-                pos2[0] === splitNode && splitOffset > 0 && splitOffset < splitNode.length;
-            pos1 = [splitNode.parentNode, splitTextNode(splitNode, splitOffset)];
-            if (willActuallySplitPos2) {
-                if (pos2[1] < splitOffset) {
-                    pos2[0] = splitNode.previousSibling;
-                } else {
-                    pos2[1] -= splitOffset;
+        const start = range.startContainer;
+        let end = range.endContainer;
+        // Let the DOM split and delete the range.
+        const doJoin = closestBlock(start) !== closestBlock(range.commonAncestorContainer);
+        let next = nextLeaf(end, this.dom);
+        const splitEndTd = closestElement(end, 'td') && end.nextSibling;
+        const contents = range.extractContents();
+        setCursor(start, nodeSize(start));
+        range = getDeepRange(this.document, { sel });
+        // Restore unremovables removed by extractContents.
+        [...contents.querySelectorAll('*')].filter(isUnremovable).forEach(n => {
+            closestBlock(range.endContainer).after(n);
+            n.textContent = '';
+        });
+        // Restore table contents removed by extractContents.
+        const tds = [...contents.querySelectorAll('td')].filter(n => !closestElement(n, 'table'));
+        let currentFragmentTr, currentTr;
+        let currentTd = closestElement(range.endContainer, 'td');
+        tds.forEach((td, i) => {
+            const parentFragmentTr = closestElement(td, 'tr');
+            // Skip the first and the last partially selected TD.
+            if (i && !(splitEndTd && i === tds.length - 1)) {
+                if (parentFragmentTr !== currentFragmentTr) {
+                    currentTr = currentTr
+                        ? currentTr.nextElementSibling
+                        : closestElement(range.endContainer, 'tr').nextElementSibling;
                 }
+                currentTr ? currentTr.prepend(td) : currentTd.after(td);
+            }
+            currentFragmentTr = parentFragmentTr;
+            td.textContent = '';
+        });
+        this.observerFlush();
+        this.torollback = false; // Errors caught with observerFlush were already handled.
+        // If the end container was fully selected, extractContents may have
+        // emptied it without removing it. Ensure it's gone.
+        while (
+            end &&
+            end !== this.dom &&
+            !end.contains(range.endContainer) &&
+            !isVisible(end, false)
+        ) {
+            const parent = end.parentNode;
+            end.remove();
+            end = parent;
+        }
+        // Ensure empty blocks be given a <br> child.
+        const block = closestBlock(range.endContainer);
+        if (isBlock(block) && !isVisible(block, false)) {
+            block.appendChild(document.createElement('br'));
+        }
+        // Ensure trailing space remains visible.
+        const joinWith = range.endContainer;
+        let oldText = joinWith.textContent;
+        if (doJoin && oldText.endsWith(' ')) {
+            joinWith.textContent = oldText.replace(/ $/, '\u00A0');
+        }
+        // Rejoin blocks that extractContents may have split in two.
+        while (doJoin && next && !(next.previousSibling && next.previousSibling === joinWith)) {
+            const restore = preserveCursor(this.document);
+            this.observerFlush();
+            const res = this._protect(() => {
+                next.oDeleteBackward();
+                if (!this.dom.contains(joinWith)) {
+                    this.torollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
+                } else {
+                    next = firstChild(next);
+                }
+            }, this.history[this.history.length - 1].dom.length);
+            if ([UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE].includes(res)) {
+                restore();
+                break;
             }
         }
-        // Then we add the fake element. However to add it properly without
-        // risking breaking the DOM states, we still have to prepareUpdate
-        // and restore here.
-        const restore = prepareUpdate(...pos1);
-        const fakeEl = this.document.createElement('img');
-        if (pos1[1] >= pos1[0].childNodes.length) {
-            pos1[0].appendChild(fakeEl);
-        } else {
-            pos1[0].insertBefore(fakeEl, pos1[0].childNodes[pos1[1]]);
+        // Restore the text we modified in order to preserve trailing space.
+        if (doJoin && oldText.endsWith(' ')) {
+            joinWith.textContent = oldText;
         }
-        if (pos1[0] === pos2[0] && pos2[1] > pos1[1]) {
-            // Update first backspace position offset if it was relative
-            // to the same element the fake element has been put in.
-            pos2[1]++;
-        }
-        restore();
-        // Check pos2 still make sense as the restoreState may have broken
-        // it, if that is is the case, set it just after the fake element.
-        if (!pos2[0].parentNode || pos2[1] > nodeSize(pos2[0])) {
-            pos2 = rightPos(fakeEl);
-        }
-
-        // If there's a fully selected table, remove it.
-        let traversedNodes = getTraversedNodes(this.document);
-        for (const table of traversedNodes.filter(node => node.nodeName === 'TABLE')) {
-            const tableDescendantElements = [...table.querySelectorAll('*')];
-            if (tableDescendantElements.every(child => traversedNodes.includes(child))) {
-                table.remove();
-                traversedNodes = getTraversedNodes(this.document);
-            }
-        }
-
-        // Starting from the second position, hit backspace until the fake
-        // element we added is removed.
-        let gen;
-        do {
-            const histPos = this.history[this.history.length - 1].dom.length;
-            const err = this._protect(() => {
-                pos2[0].oDeleteBackward(pos2[1]);
-                gen = undefined;
-            }, histPos);
-            if (err === UNREMOVABLE_ROLLBACK_CODE || err === UNBREAKABLE_ROLLBACK_CODE) {
-                gen = gen || leftDeepOnlyPath(...pos2);
-                pos2 = rightPos(gen.next().value);
-            } else {
-                this._recordHistoryCursor();
-                sel = this.document.defaultView.getSelection();
-                pos2 = isSelForward
-                    ? [sel.focusNode, sel.focusOffset]
-                    : [sel.anchorNode, sel.anchorOffset];
-            }
-        } while (fakeEl.parentNode);
+        setCursor(joinWith, nodeSize(joinWith));
     }
 
     /**

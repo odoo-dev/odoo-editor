@@ -196,6 +196,20 @@ export function firstChild(node, inline = false) {
     }
     return node;
 }
+export function previousLeaf(node, editable) {
+    let ancestor = node;
+    while (ancestor && !ancestor.previousSibling && ancestor !== editable) {
+        ancestor = ancestor.parentElement;
+    }
+    return ancestor && ancestor !== editable && latestChild(ancestor.previousSibling);
+}
+export function nextLeaf(node, editable) {
+    let ancestor = node;
+    while (ancestor && !ancestor.nextSibling && ancestor !== editable) {
+        ancestor = ancestor.parentElement;
+    }
+    return ancestor && ancestor !== editable && firstChild(ancestor.nextSibling);
+}
 /**
  * Values which can be returned while browsing the DOM which gives information
  * to why the path ended.
@@ -478,14 +492,16 @@ export function getSelectedNodes(document) {
  *
  * @param {Document} document
  * @param {object} [options]
+ * @param {Selection} [options.range] the range to use.
+ * @param {Selection} [options.sel] the selection to use.
  * @param {boolean} [options.splitText] split the targeted text nodes at offset.
  * @param {boolean} [options.select] select the new range if it changed (via splitText)
  * @returns {Range}
  */
-export function getDeepRange(document, options = {}) {
-    const sel = document.defaultView.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0).cloneRange();
+export function getDeepRange(document, { range, sel, splitText, select } = {}) {
+    sel = sel || document.defaultView.getSelection();
+    range = range ? range.cloneRange() : sel.rangeCount && sel.getRangeAt(0).cloneRange();
+    if (!range) return;
     let start = range.startContainer;
     let startOffset = range.startOffset;
     let end = range.endContainer;
@@ -502,7 +518,7 @@ export function getDeepRange(document, options = {}) {
     }
 
     // Split text nodes if that was requested.
-    if (options.splitText) {
+    if (splitText) {
         const isInSingleContainer = start === end;
         if (
             end.nodeType === Node.TEXT_NODE &&
@@ -532,7 +548,7 @@ export function getDeepRange(document, options = {}) {
 
     range.setStart(start, startOffset);
     range.setEnd(end, endOffset);
-    if (options.select) {
+    if (select) {
         sel.removeAllRanges();
         sel.addRange(range);
     }
@@ -774,12 +790,12 @@ export function isContentTextNode(node) {
  * @param {Node} node
  * @returns {boolean}
  */
-export function isVisible(node) {
+export function isVisible(node, areBlocksAlwaysVisible = true) {
     if (!node) return false;
     if (node.nodeType === Node.TEXT_NODE) {
         return isVisibleTextNode(node);
     }
-    if (isBlock(node) || isVisibleEmpty(node)) {
+    if ((areBlocksAlwaysVisible && isBlock(node)) || isVisibleEmpty(node)) {
         return true;
     }
     return [...node.childNodes].some(n => isVisible(n));
