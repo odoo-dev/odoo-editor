@@ -669,7 +669,8 @@ export function isUnremovable(node) {
     if (node.nodeType !== Node.ELEMENT_NODE && node.nodeType !== Node.TEXT_NODE) {
         return true;
     }
-    const isEditableRoot = node.isContentEditable && !node.parentElement.isContentEditable;
+    const isEditableRoot =
+        node.isContentEditable && node.parentElement && !node.parentElement.isContentEditable;
     return isEditableRoot || (node.classList && node.classList.contains('oe_unremovable'));
 }
 
