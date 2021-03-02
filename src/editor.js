@@ -264,7 +264,6 @@ export class OdooEditor extends EventTarget {
         this._observerTimeoutUnactive.delete(label);
     }
     automaticStepUnactive(label) {
-        clearTimeout(this.observerTimeout);
         this._observerTimeoutUnactive.add(label);
     }
     observerUnactive() {
