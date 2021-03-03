@@ -1105,6 +1105,8 @@ export class OdooEditor extends EventTarget {
         }
     }
     _bold() {
+        const selection = this.document.getSelection();
+        if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
         const isAlreadyBold = !getTraversedNodes(this.document)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
             .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
@@ -1117,6 +1119,8 @@ export class OdooEditor extends EventTarget {
      * @param {string} size A valid css size string
      */
     _setFontSize(size) {
+        const selection = this.document.getSelection();
+        if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
         this._applyInlineStyle(element => {
             element.style.fontSize = size;
         });
