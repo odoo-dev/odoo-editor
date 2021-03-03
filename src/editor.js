@@ -121,24 +121,41 @@ export class OdooEditor extends EventTarget {
         this.dom.addEventListener('mousedown', this._updateMouseState.bind(this));
         this.dom.addEventListener('mouseup', this._updateMouseState.bind(this));
 
+        this._onKeyupResetContenteditableNodes = [];
         this.document.addEventListener('keydown', ev => {
-            if (this.options.controlHistoryFromDocument) {
-                if (isUndo(ev)) {
+            const isEditorActive =
+                this.document.activeElement === this.dom ||
+                ancestors(this.document.activeElement).includes(this.dom);
+
+            if (this.options.controlHistoryFromDocument && isEditorActive) {
+                if (isUndo(ev) && isEditorActive) {
                     ev.preventDefault();
                     this.historyUndo();
-                } else if (isRedo(ev)) {
+                } else if (isRedo(ev) && isEditorActive) {
                     ev.preventDefault();
                     this.historyRedo();
                 }
             } else {
                 if (isRedo(ev) || isUndo(ev)) {
-                    this.dom.setAttribute('contenteditable', false);
+                    this._onKeyupResetContenteditableNodes.push(
+                        ...this.dom.querySelectorAll('[contenteditable=true]'),
+                    );
+                    if (this.dom.getAttribute('contenteditable') === 'true') {
+                        this._onKeyupResetContenteditableNodes.push(this.dom);
+                    }
+
+                    for (const node of this._onKeyupResetContenteditableNodes) {
+                        node.setAttribute('contenteditable', false);
+                    }
                 }
             }
         });
         this.document.addEventListener('keyup', ev => {
-            if (!this.options.controlHistoryFromDocument && (isRedo(ev) || isUndo(ev))) {
-                this.dom.setAttribute('contenteditable', true);
+            if (this._onKeyupResetContenteditableNodes.length) {
+                for (const node of this._onKeyupResetContenteditableNodes) {
+                    node.setAttribute('contenteditable', true);
+                }
+                this._onKeyupResetContenteditableNodes = [];
             }
         });
 
