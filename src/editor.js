@@ -123,15 +123,15 @@ export class OdooEditor extends EventTarget {
 
         this._onKeyupResetContenteditableNodes = [];
         this.document.addEventListener('keydown', ev => {
-            const isEditorActive =
-                this.document.activeElement === this.dom ||
-                ancestors(this.document.activeElement).includes(this.dom);
+            const canUndoRedo = !['INPUT', 'TEXTAREA'].includes(
+                this.document.activeElement.tagName,
+            );
 
-            if (this.options.controlHistoryFromDocument && isEditorActive) {
-                if (isUndo(ev) && isEditorActive) {
+            if (this.options.controlHistoryFromDocument && canUndoRedo) {
+                if (isUndo(ev) && canUndoRedo) {
                     ev.preventDefault();
                     this.historyUndo();
-                } else if (isRedo(ev) && isEditorActive) {
+                } else if (isRedo(ev) && canUndoRedo) {
                     ev.preventDefault();
                     this.historyRedo();
                 }
@@ -145,6 +145,7 @@ export class OdooEditor extends EventTarget {
                     }
 
                     for (const node of this._onKeyupResetContenteditableNodes) {
+                        this.automaticStepSkipStack();
                         node.setAttribute('contenteditable', false);
                     }
                 }
@@ -153,6 +154,7 @@ export class OdooEditor extends EventTarget {
         this.document.addEventListener('keyup', ev => {
             if (this._onKeyupResetContenteditableNodes.length) {
                 for (const node of this._onKeyupResetContenteditableNodes) {
+                    this.automaticStepSkipStack();
                     node.setAttribute('contenteditable', true);
                 }
                 this._onKeyupResetContenteditableNodes = [];
