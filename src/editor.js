@@ -1956,7 +1956,11 @@ export class OdooEditor extends EventTarget {
      */
     _fixFontAwesomeSelection() {
         const selection = this.document.defaultView.getSelection();
-        if (selection.isCollapsed) return;
+        if (
+            selection.isCollapsed ||
+            (selection.anchorNode && !ancestors(selection.anchorNode).includes(this.dom))
+        )
+            return;
         let shouldUpdateSelection = false;
         const fixedSelection = {
             anchorNode: selection.anchorNode,
