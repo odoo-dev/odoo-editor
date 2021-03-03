@@ -264,6 +264,10 @@ export class OdooEditor extends EventTarget {
     automaticStepUnactive(label) {
         this._observerTimeoutUnactive.add(label);
     }
+    automaticStepSkipStack() {
+        this.automaticStepUnactive('skipStack');
+        setTimeout(() => this.automaticStepActive('skipStack'));
+    }
     observerUnactive() {
         clearTimeout(this.observerTimeout);
         this.observer.disconnect();
