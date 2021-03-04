@@ -285,6 +285,38 @@ export function createDOMPathGenerator(direction, deepOnly, inline, inScope = fa
         reasons.push(PATH_END_REASONS.NO_NODE);
     };
 }
+/**
+ * Returns all the previous siblings of the first parameter until the first
+ * sibling that does not satisfy the predicat.
+ * @param {Node} node
+ * @param {Function} predicat A function that receives a node as parameter and
+ * returns true or false
+ */
+export function getAdjacentPreviousSiblings(node, predicat = n => n) {
+    let previous = node.previousSibling;
+    const list = [];
+    while (previous && predicat(previous)) {
+        list.push(previous);
+        previous = previous.previousSibling;
+    }
+    return list;
+}
+/**
+ * Returns all the next siblings of the first parameter until the first
+ * sibling that does not satisfy the predicat.
+ * @param {Node} node
+ * @param {Function} predicat A function that receives a node as parameter and
+ * returns true or false
+ */
+export function getAdjacentNextSiblings(node, predicat = n => n) {
+    let next = node.nextSibling;
+    const list = [];
+    while (next && predicat(next)) {
+        list.push(next);
+        next = next.nextSibling;
+    }
+    return list;
+}
 
 //------------------------------------------------------------------------------
 // Cursor management
