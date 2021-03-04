@@ -955,6 +955,14 @@ export class OdooEditor extends EventTarget {
             this.deleteRange(selection);
         }
         startNode = startNode || this.document.defaultView.getSelection().anchorNode;
+        if (startNode.nodeType === Node.ELEMENT_NODE) {
+            if (selection.anchorOffset === 0) {
+                startNode.prepend(this.document.createTextNode(''));
+                startNode = startNode.firstChild;
+            } else {
+                startNode = startNode.childNodes[selection.anchorOffset - 1];
+            }
+        }
 
         const fakeEl = document.createElement('fake-element');
         fakeEl.innerHTML = html;
