@@ -1694,20 +1694,7 @@ export class OdooEditor extends EventTarget {
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        const sel = this.document.defaultView.getSelection();
-        if (!sel.isCollapsed) {
-            this.deleteRange(sel);
-        }
-        if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
-            // Prevent text directly in div contenteditable and other weird
-            // manipulations by execCommand.
-            const p = this.document.createElement('p');
-            p.appendChild(document.createElement('br'));
-            const block = closestBlock(sel.anchorNode);
-            block.parentElement.insertBefore(p, block);
-            setCursorStart(p);
-        }
-        this.document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
+        this._insertHTML(pastedText.replace(/\n+/g, '<br/>'));
     }
 
     /**
@@ -1739,16 +1726,7 @@ export class OdooEditor extends EventTarget {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                if (sel.anchorOffset === 0 && childNodeIndex(sel.anchorNode) === 0) {
-                    // Prevent text directly in div contenteditable and other weird
-                    // manipulations by execCommand.
-                    const p = this.document.createElement('p');
-                    p.appendChild(document.createElement('br'));
-                    const block = closestBlock(sel.anchorNode);
-                    block.parentElement.insertBefore(p, block);
-                    setCursorStart(p);
-                }
-                this.document.execCommand('insertHTML', false, pastedText.replace(/\n+/g, '<br/>'));
+                this._insertHTML(pastedText.replace(/\n+/g, '<br/>'));
             });
         }
     }
