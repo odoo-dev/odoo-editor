@@ -938,7 +938,7 @@ export class OdooEditor extends EventTarget {
         this.toolbar.style.setProperty('--hilite-color', hiliteColor);
         const hiliteColorInput = this.toolbar.querySelector('#hiliteColor input');
         if (hiliteColorInput) {
-            hiliteColorInput.value = hiliteColor;
+            hiliteColorInput.value = hiliteColor.length <= 7 ? hiliteColor : rgbToHex(hiliteColor);
         }
     }
 
