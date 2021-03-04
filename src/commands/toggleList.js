@@ -6,6 +6,8 @@ import {
     preserveCursor,
     setTagName,
     toggleClass,
+    getAdjacentNextSiblings,
+    getAdjacentPreviousSiblings,
 } from '../utils/utils.js';
 
 Text.prototype.oToggleList = function (offset, mode) {
@@ -26,9 +28,22 @@ HTMLElement.prototype.oToggleList = function (offset, mode = 'UL') {
     main.append(li);
     const restoreCursor = preserveCursor(this.ownerDocument);
 
-    this.after(main);
-    li.append(this);
-    restoreCursor(new Map([[this, li]]));
+    // if `this` is the root editable
+    if (this.oid === 1) {
+        const callingNode = this.childNodes[offset];
+        const group = [
+            ...getAdjacentPreviousSiblings(callingNode, n => !isBlock(n)),
+            callingNode,
+            ...getAdjacentNextSiblings(callingNode, n => !isBlock(n)),
+        ];
+        callingNode.after(main);
+        li.append(...group);
+        restoreCursor();
+    } else {
+        this.after(main);
+        li.append(this);
+        restoreCursor(new Map([[this, li]]));
+    }
 };
 
 HTMLParagraphElement.prototype.oToggleList = function (offset, mode = 'UL') {
