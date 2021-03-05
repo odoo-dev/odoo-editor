@@ -732,15 +732,13 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
                     stepFunction: deleteForward,
-                    // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]</b><br></p>', // Note: this is actually like that on google doc
+                    contentAfter: '<p>[]<br></p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
                     stepFunction: deleteForward,
-                    // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]</b><br></p>', // Note: this is actually like that on google doc
+                    contentAfter: '<p>[]<br></p>',
                 });
             });
             it('should delete a selection accross a heading1 and a paragraph', async () => {
@@ -762,25 +760,23 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1><b>[abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteForward,
-                    // JW cAfter: '<h1>[]gh</h1>',
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1><b>]abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteForward,
-                    // JW cAfter: '<h1>[]gh</h1>',
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteForward,
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
             });
             it('should not break unbreakables', async () => {
@@ -1719,15 +1715,13 @@ describe('Editor', () => {
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>[abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn]</p>',
                     stepFunction: deleteBackward,
-                    // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]</b><br></p>',
+                    contentAfter: '<p>[]<br></p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p><b>]abcd</b></p><p><b>ef<br/>gh</b>ij<i>kl</i>mn[</p>',
                     stepFunction: deleteBackward,
-                    // JW cAfter: '<p>[]<br></p>',
-                    contentAfter: '<p><b>[]</b><br></p>',
+                    contentAfter: '<p>[]<br></p>',
                 });
             });
             it('should delete a selection accross a heading1 and a paragraph', async () => {
@@ -1744,30 +1738,28 @@ describe('Editor', () => {
                     contentAfter: '<h1>ab []gh</h1>',
                 });
             });
-            it('should delete a selection from the beginning of a heading1 with a format to the middle fo a paragraph', async () => {
+            it('should delete a selection from the beginning of a heading1 with a format to the middle of a paragraph', async () => {
                 // Forward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1><b>[abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteBackward,
-                    // JW cAfter: '<h1>[]gh</h1>',
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>[<b>abcd</b></h1><p>ef]gh</p>',
                     stepFunction: deleteBackward,
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1><b>]abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteBackward,
-                    // JW cAfter: '<h1>[]gh</h1>',
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>]<b>abcd</b></h1><p>ef[gh</p>',
                     stepFunction: deleteBackward,
-                    contentAfter: '<h1><b>[]</b>gh</h1>',
+                    contentAfter: '<h1>[]gh</h1>',
                 });
             });
             it('should delete a heading (triple click backspace)', async () => {
@@ -2048,16 +2040,14 @@ describe('Editor', () => {
                         // That selection is equivalent to </b>[]
                         contentBefore: '<p><b>abc[]</b>def</p>',
                         stepFunction: insertParagraphBreak,
-                        // JW cAfter: '<p><b>abc</b></p><p>[]def</p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]</b>def</p>',
+                        contentAfter: '<p><b>abc</b></p><p>[]def</p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>abc[]</b> def</p>',
                         stepFunction: insertParagraphBreak,
                         // The space is converted to a non-breaking
                         // space so it is visible.
-                        // JW cAfter: '<p><b>abc</b></p><p>[]&nbsp;def</p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]</b>&nbsp;def</p>',
+                        contentAfter: '<p><b>abc</b></p><p>[]&nbsp;def</p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>abc []</b>def</p>',
@@ -2065,8 +2055,7 @@ describe('Editor', () => {
                         // The space is converted to a non-breaking
                         // space so it is visible (because it's before a
                         // <br>).
-                        // JW cAfter: '<p><b>abc&nbsp;</b></p><p>[]def</p>',
-                        contentAfter: '<p><b>abc&nbsp;</b></p><p><b>[]</b>def</p>',
+                        contentAfter: '<p><b>abc&nbsp;</b></p><p>[]def</p>',
                     });
                 });
                 it('should split a paragraph at the beginning of a format node', async () => {
@@ -2120,15 +2109,13 @@ describe('Editor', () => {
                         // That selection is equivalent to </b>[]
                         contentBefore: '<p><b>abc[]</b></p>',
                         stepFunction: insertParagraphBreak,
-                        // JW cAfter: '<p><b>abc</b></p><p>[]<br></p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]</b><br></p>',
+                        contentAfter: '<p><b>abc</b></p><p>[]<br></p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p><b>abc[] </b></p>',
                         stepFunction: insertParagraphBreak,
                         // The space should have been parsed away.
-                        // JW cAfter: '<p><b>abc</b></p><p>[]<br></p>',
-                        contentAfter: '<p><b>abc</b></p><p><b>[]</b><br></p>',
+                        contentAfter: '<p><b>abc</b></p><p>[]<br></p>',
                     });
                 });
             });

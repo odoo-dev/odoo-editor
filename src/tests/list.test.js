@@ -5486,8 +5486,8 @@ describe('List', () => {
                                         <li class="oe-nested">
                                             <ul>
                                                 <li><font style="color: red;">cd</font></li>
-                                                <li><font style="color: red;">b</font></li>
-                                                <li><font style="color: red;">[]</font><br></li>
+                                                <li>b</li>
+                                                <li>[]<br></li>
                                             </ul>
                                         </li>
                                         <li>ef</li>
@@ -5811,8 +5811,8 @@ describe('List', () => {
                                         <li class="oe-nested">
                                             <ul class="oe-checklist">
                                                 <li><font style="color: red;">cd</font></li>
-                                                <li><font style="color: red;">0</font></li>
-                                                <li><font style="color: red;">[]</font><br></li>
+                                                <li>0</li>
+                                                <li>[]<br></li>
                                             </ul>
                                         </li>
                                         <li class="checked">ef</li>
@@ -5901,8 +5901,8 @@ describe('List', () => {
                                         <li class="oe-nested">
                                             <ul class="oe-checklist">
                                                 <li class="checked"><font style="color: red;">cd</font></li>
-                                                <li><font style="color: red;">0</font></li>
-                                                <li><font style="color: red;">[]</font><br></li>
+                                                <li>0</li>
+                                                <li>[]<br></li>
                                             </ul>
                                         </li>
                                         <li class="checked">ef</li>

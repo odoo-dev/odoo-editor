@@ -12,6 +12,7 @@ import {
     setTagName,
     splitTextNode,
     toggleClass,
+    isVisible,
 } from '../utils/utils.js';
 
 Text.prototype.oEnter = function (offset) {
@@ -30,6 +31,7 @@ Text.prototype.oEnter = function (offset) {
  * beginning of the first split node
  */
 HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
+    let didSplit = false;
     if (isUnbreakable(this)) {
         throw UNBREAKABLE_ROLLBACK_CODE;
     }
@@ -43,12 +45,19 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
     while (offset < this.childNodes.length) {
         splitEl.appendChild(this.childNodes[offset]);
     }
-    this.after(splitEl);
+    if (isBlock(this) || splitEl.hasChildNodes()) {
+        this.after(splitEl);
+        if (isVisible(splitEl)) {
+            didSplit = true;
+        } else {
+            splitEl.remove();
+        }
+    }
 
     // Propagate the split until reaching a block element
     if (!isBlock(this)) {
         if (this.parentElement) {
-            this.parentElement.oEnter(childNodeIndex(this) + 1, false);
+            this.parentElement.oEnter(childNodeIndex(this) + 1, !didSplit);
         } else {
             // There was no block parent element in the original chain, consider
             // this unsplittable, like an unbreakable.
@@ -58,7 +67,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
 
     // All split have been done, place the cursor at the right position, and
     // fill/remove empty nodes.
-    if (firstSplit) {
+    if (firstSplit && didSplit) {
         restore();
 
         fillEmpty(clearEmpty(this));
