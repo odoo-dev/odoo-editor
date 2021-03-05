@@ -855,8 +855,13 @@ export class OdooEditor extends EventTarget {
      *
      * @param {string} color hexadecimal or bg-name/text-name class
      * @param {string} mode 'color' or 'backgroundColor'
+     * @param {Node} [target]
      */
-    applyColor(color, mode) {
+    applyColor(color, mode, target) {
+        if (target) {
+            this._colorElement(target, color, mode);
+            return;
+        }
         const range = getDeepRange(document, { splitText: true, select: true });
         if (!range) return;
         const restoreCursor = preserveCursor(this.document);
@@ -1422,11 +1427,15 @@ export class OdooEditor extends EventTarget {
         ]) {
             const isStateTrue = this.document.queryCommandState(commandState);
             const button = this.toolbar.querySelector('#' + commandState);
-            button && button.classList.toggle('active', isStateTrue);
-            if (paragraphDropdownButton && commandState.startsWith('justify')) {
-                const direction = commandState.replace('justify', '').toLowerCase();
-                const newClass = `fa-align-${direction === 'full' ? 'justify' : direction}`;
-                paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
+            if (commandState.startsWith('justify')) {
+                if (paragraphDropdownButton) {
+                    button.classList.toggle('active', isStateTrue);
+                    const direction = commandState.replace('justify', '').toLowerCase();
+                    const newClass = `fa-align-${direction === 'full' ? 'justify' : direction}`;
+                    paragraphDropdownButton.classList.toggle(newClass, isStateTrue);
+                }
+            } else if (button) {
+                button.classList.toggle('active', isStateTrue);
             }
         }
         if (sel.rangeCount) {
