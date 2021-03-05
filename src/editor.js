@@ -51,6 +51,7 @@ import {
     previousLeaf,
     nextLeaf,
     isUnremovable,
+    fillEmpty,
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
@@ -769,7 +770,7 @@ export class OdooEditor extends EventTarget {
                 range.setEndAfter(previous);
             }
         }
-        const start = range.startContainer;
+        let start = range.startContainer;
         let end = range.endContainer;
         // Let the DOM split and delete the range.
         const doJoin = closestBlock(start) !== closestBlock(range.commonAncestorContainer);
@@ -815,11 +816,17 @@ export class OdooEditor extends EventTarget {
             end.remove();
             end = parent;
         }
-        // Ensure empty blocks be given a <br> child.
-        const block = closestBlock(range.endContainer);
-        if (isBlock(block) && !isVisible(block, false)) {
-            block.appendChild(document.createElement('br'));
+        // Same with the start container
+        while (start && start !== this.dom && !isVisible(start)) {
+            const parent = start.parentNode;
+            start.remove();
+            start = parent;
         }
+        // Ensure empty blocks be given a <br> child.
+        if (start) {
+            fillEmpty(closestBlock(start));
+        }
+        fillEmpty(closestBlock(range.endContainer));
         // Ensure trailing space remains visible.
         const joinWith = range.endContainer;
         let oldText = joinWith.textContent;
@@ -846,8 +853,8 @@ export class OdooEditor extends EventTarget {
         // Restore the text we modified in order to preserve trailing space.
         if (doJoin && oldText.endsWith(' ')) {
             joinWith.textContent = oldText;
+            setCursor(joinWith, nodeSize(joinWith));
         }
-        setCursor(joinWith, nodeSize(joinWith));
     }
 
     /**
