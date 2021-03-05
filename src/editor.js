@@ -1245,6 +1245,7 @@ export class OdooEditor extends EventTarget {
                 'setFontSize',
                 'insertFontAwesome',
                 'insertHTML',
+                'insertTable',
                 'bold',
                 'addColumnLeft',
                 'addColumnRight',
@@ -1754,28 +1755,10 @@ export class OdooEditor extends EventTarget {
         ev.preventDefault();
         this._protect(() => {
             if (buttonEl.classList.contains('tablepicker-cell')) {
-                const table = this.document.createElement('table');
-                table.classList.add('table', 'table-bordered'); // for bootstrap
-                const tbody = this.document.createElement('tbody');
-                table.appendChild(tbody);
-                const rowId = +buttonEl.dataset.rowId;
-                const colId = +buttonEl.dataset.colId;
-                for (let rowIndex = 0; rowIndex < rowId; rowIndex++) {
-                    const tr = this.document.createElement('tr');
-                    tbody.appendChild(tr);
-                    for (let colIndex = 0; colIndex < colId; colIndex++) {
-                        const td = this.document.createElement('td');
-                        const br = this.document.createElement('br');
-                        td.appendChild(br);
-                        tr.appendChild(td);
-                    }
-                }
-                const sel = this.document.defaultView.getSelection();
-                if (!sel.isCollapsed) {
-                    this.deleteRange(sel);
-                }
-                sel.focusNode.parentNode.insertBefore(table, sel.focusNode);
-                setCursorStart(table.querySelector('td'));
+                this.execCommand('insertTable', {
+                    rowCount: +buttonEl.dataset.rowId,
+                    colCount: +buttonEl.dataset.colId,
+                });
             } else if (
                 ['italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)
             ) {
@@ -1905,6 +1888,26 @@ export class OdooEditor extends EventTarget {
             }
             this.tablePicker.dataset.colCount = colCount - removedColIds.size;
         }
+    }
+    _insertTable({ rowCount = 2, colCount = 2 } = {}) {
+        const tdsHtml = new Array(colCount).fill('<td><br></td>').join('');
+        const trsHtml = new Array(rowCount).fill(`<tr>${tdsHtml}</tr>`).join('');
+        const tableHtml = `<table class="table table-bordered"><tbody>${trsHtml}</tbody></table>`;
+        const sel = this.document.defaultView.getSelection();
+        if (!sel.isCollapsed) {
+            this.deleteRange(sel);
+        }
+        while (!isBlock(sel.anchorNode)) {
+            const anchorNode = sel.anchorNode;
+            const isTextNode = anchorNode.nodeType === Node.TEXT_NODE;
+            const newAnchorNode = isTextNode
+                ? splitTextNode(anchorNode, sel.anchorOffset, DIRECTIONS.LEFT) + 1 && anchorNode
+                : splitElement(anchorNode, sel.anchorOffset).shift();
+            const newPosition = rightPos(newAnchorNode);
+            setCursor(...newPosition, ...newPosition, false);
+        }
+        const [table] = this._insertHTML(tableHtml);
+        setCursorStart(table.querySelector('td'));
     }
     _addColumnLeft() {
         this._addColumn('before');
