@@ -705,6 +705,7 @@ export class OdooEditor extends EventTarget {
                 }
             }
         }
+        this._activateContenteditable();
         this.historySetCursor(step);
     }
 
