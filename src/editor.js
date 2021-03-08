@@ -1055,6 +1055,13 @@ export class OdooEditor extends EventTarget {
 
     _unlink(offset, content) {
         const sel = this.document.defaultView.getSelection();
+        // we need to remove the contentEditable isolation of links
+        // before we apply the unlink, otherwise the command is not performed
+        // because the content editable root is the link
+        const closestEl = closestElement(sel.focusNode);
+        if (closestEl.tagName === 'A' && closestEl.getAttribute('contenteditable') === 'true') {
+            this._activateContenteditable();
+        }
         if (sel.isCollapsed) {
             const cr = preserveCursor(this.document);
             const node = closestElement(sel.focusNode, 'a');
