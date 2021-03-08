@@ -539,6 +539,9 @@ export function getDeepRange(document, { range, sel, splitText, select } = {}) {
     let end = range.endContainer;
     let endOffset = range.endOffset;
 
+    const isBackwards =
+        !range.collapsed && start === sel.focusNode && startOffset === sel.focusOffset;
+
     // Target the deepest descendant of the range nodes.
     while (start.childNodes.length) {
         start = start.childNodes[startOffset - 1] || start.firstChild;
@@ -578,11 +581,26 @@ export function getDeepRange(document, { range, sel, splitText, select } = {}) {
         }
     }
 
-    range.setStart(start, startOffset);
-    range.setEnd(end, endOffset);
     if (select) {
+        if (isBackwards) {
+            [start, end, startOffset, endOffset] = [end, start, endOffset, startOffset];
+            range.setEnd(start, startOffset);
+            range.collapse(false);
+        } else {
+            range.setStart(start, startOffset);
+            range.collapse(true);
+        }
         sel.removeAllRanges();
         sel.addRange(range);
+        try {
+            sel.extend(end, endOffset);
+        } catch (e) {
+            // Firefox yells not happy when setting selection on elem with contentEditable=false.
+        }
+        range = sel.getRangeAt(0);
+    } else {
+        range.setStart(start, startOffset);
+        range.setEnd(end, endOffset);
     }
     return range;
 }
