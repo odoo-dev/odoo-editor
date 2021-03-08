@@ -19,7 +19,6 @@ import {
     prepareUpdate,
     setCursor,
     splitTextNode,
-    isFontAwesome,
     isUnbreakable,
     isMediaElement,
     isVisibleEmpty,

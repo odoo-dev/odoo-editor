@@ -543,14 +543,8 @@ export function getDeepRange(document, { range, sel, splitText, select } = {}) {
         !range.collapsed && start === sel.focusNode && startOffset === sel.focusOffset;
 
     // Target the deepest descendant of the range nodes.
-    while (start.childNodes.length) {
-        start = start.childNodes[startOffset - 1] || start.firstChild;
-        startOffset = 0;
-    }
-    while (end.childNodes.length) {
-        end = end.childNodes[endOffset - 1] || end.firstChild;
-        endOffset = 0;
-    }
+    [start, startOffset] = getDeepestPosition(start, startOffset);
+    [end, endOffset] = getDeepestPosition(end, endOffset);
 
     // Split text nodes if that was requested.
     if (splitText) {
@@ -603,6 +597,22 @@ export function getDeepRange(document, { range, sel, splitText, select } = {}) {
         range.setEnd(end, endOffset);
     }
     return range;
+}
+
+export function getDeepestPosition(node, offset) {
+    while (node.hasChildNodes()) {
+        node = node.childNodes[offset - 1] || node.firstChild;
+        offset = offset === 0 ? 0 : nodeSize(node);
+    }
+    let didMove = false;
+    let reversed = false;
+    while (!isVisible(node) && (node.previousSibling || (!reversed && node.nextSibling))) {
+        reversed = reversed || !node.nextSibling;
+        node = reversed ? node.previousSibling : node.nextSibling;
+        offset = 0;
+        didMove = true;
+    }
+    return didMove ? getDeepestPosition(node, offset) : [node, offset];
 }
 
 export function getCursors(document) {
@@ -896,6 +906,9 @@ function isVisibleTextNode(testedNode) {
             }
         }
     }
+    while (following && /^[\n\t ]*$/.test(following.textContent)) {
+        following = following.nextSibling;
+    }
     // Missing preceding or following: invisible.
     // Preceding or following not in the same block as tested node: invisible.
     if (
@@ -905,8 +918,8 @@ function isVisibleTextNode(testedNode) {
     ) {
         return false;
     }
-    // Preceding ends with a whitespace: invisible
-    return !/^[\n\t ]+$/.test(preceding.textContent);
+    // Preceding is whitespace or following is whitespace: invisible
+    return !/^[\n\t ]*$/.test(preceding.textContent);
 }
 
 export function parentsGet(node, root = undefined) {
