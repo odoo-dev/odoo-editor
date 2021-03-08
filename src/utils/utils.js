@@ -718,7 +718,10 @@ export function isUnremovable(node) {
         return true;
     }
     const isEditableRoot =
-        node.isContentEditable && node.parentElement && !node.parentElement.isContentEditable;
+        node.isContentEditable &&
+        node.parentElement &&
+        !node.parentElement.isContentEditable &&
+        node.nodeName !== 'A'; // links can be their own contenteditable but should be removable by default.
     return isEditableRoot || (node.classList && node.classList.contains('oe_unremovable'));
 }
 

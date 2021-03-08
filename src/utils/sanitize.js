@@ -9,7 +9,6 @@ import {
     moveNodes,
     preserveCursor,
     isFontAwesome,
-    closestElement,
     isMediaElement,
 } from './utils.js';
 
@@ -49,7 +48,6 @@ export function areSimilarElements(node, node2) {
         return false;
     }
     if (node.tagName == 'LI' && node.classList.contains('oe-nested')) {
-        let mode = undefined;
         return (
             node.lastElementChild &&
             node2.firstElementChild &&
