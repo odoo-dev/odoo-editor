@@ -10,6 +10,7 @@ import {
     preserveCursor,
     isFontAwesome,
     isMediaElement,
+    getDeepRange,
 } from './utils.js';
 
 export function areSimilarElements(node, node2) {
@@ -82,6 +83,7 @@ class Sanitize {
 
         // Merge identical elements together
         while (areSimilarElements(node, node.previousSibling)) {
+            getDeepRange(this.root.ownerDocument, { select: true });
             let restoreCursor = preserveCursor(this.root.ownerDocument);
             let nodeP = node.previousSibling;
             moveNodes(...endPos(node.previousSibling), node);
