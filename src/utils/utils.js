@@ -196,19 +196,31 @@ export function firstChild(node, inline = false) {
     }
     return node;
 }
-export function previousLeaf(node, editable) {
+export function previousLeaf(node, editable, skipInvisible = false) {
     let ancestor = node;
     while (ancestor && !ancestor.previousSibling && ancestor !== editable) {
         ancestor = ancestor.parentElement;
     }
-    return ancestor && ancestor !== editable && latestChild(ancestor.previousSibling);
+    if (ancestor && ancestor !== editable) {
+        if (skipInvisible && ancestor.previousSibling && !isVisible(ancestor.previousSibling)) {
+            return previousLeaf(ancestor.previousSibling);
+        } else {
+            return latestChild(ancestor.previousSibling);
+        }
+    }
 }
-export function nextLeaf(node, editable) {
+export function nextLeaf(node, editable, skipInvisible = false) {
     let ancestor = node;
     while (ancestor && !ancestor.nextSibling && ancestor !== editable) {
         ancestor = ancestor.parentElement;
     }
-    return ancestor && ancestor !== editable && firstChild(ancestor.nextSibling);
+    if (ancestor && ancestor !== editable) {
+        if (skipInvisible && ancestor.nextSibling && !isVisible(ancestor.nextSibling)) {
+            return nextLeaf(ancestor.nextSibling);
+        } else {
+            return firstChild(ancestor.nextSibling);
+        }
+    }
 }
 /**
  * Values which can be returned while browsing the DOM which gives information
@@ -483,11 +495,12 @@ export function getCursorDirection(anchorNode, anchorOffset, focusNode, focusOff
  * Returns an array containing all the nodes traversed when walking the
  * selection.
  *
- * @param {Document} document
+ * @param {Node} editable
  * @returns {Node[]}
  */
-export function getTraversedNodes(document) {
-    const range = getDeepRange(document);
+export function getTraversedNodes(editable) {
+    const document = editable.ownerDocument;
+    const range = getDeepRange(editable);
     if (!range) return [];
     const iterator = document.createNodeIterator(range.commonAncestorContainer);
     let node;
@@ -504,16 +517,17 @@ export function getTraversedNodes(document) {
 /**
  * Returns an array containing all the nodes fully contained in the selection.
  *
- * @param {Document} document
+ * @param {Node} editable
  * @returns {Node[]}
  */
-export function getSelectedNodes(document) {
+export function getSelectedNodes(editable) {
+    const document = editable.ownerDocument;
     const sel = document.defaultView.getSelection();
     if (!sel.rangeCount) {
         return [];
     }
     const range = sel.getRangeAt(0);
-    return getTraversedNodes(document).filter(
+    return getTraversedNodes(editable).filter(
         node => range.isPointInRange(node, 0) && range.isPointInRange(node, nodeSize(node)),
     );
 }
@@ -522,16 +536,17 @@ export function getSelectedNodes(document) {
  * Returns the current range (if any), adapted to target the deepest
  * descendants.
  *
- * @param {Document} document
+ * @param {Node} editable
  * @param {object} [options]
  * @param {Selection} [options.range] the range to use.
  * @param {Selection} [options.sel] the selection to use.
  * @param {boolean} [options.splitText] split the targeted text nodes at offset.
- * @param {boolean} [options.select] select the new range if it changed (via splitText)
+ * @param {boolean} [options.select] select the new range if it changed (via splitText).
+ * @param {boolean} [options.correctTripleClick] adapt the range if it was a triple click.
  * @returns {Range}
  */
-export function getDeepRange(document, { range, sel, splitText, select } = {}) {
-    sel = sel || document.defaultView.getSelection();
+export function getDeepRange(editable, { range, sel, splitText, select, correctTripleClick } = {}) {
+    sel = sel || editable.ownerDocument.defaultView.getSelection();
     range = range ? range.cloneRange() : sel.rangeCount && sel.getRangeAt(0).cloneRange();
     if (!range) return;
     let start = range.startContainer;
@@ -572,6 +587,15 @@ export function getDeepRange(document, { range, sel, splitText, select } = {}) {
             if (isInSingleContainer) {
                 endOffset = start.textContent.length;
             }
+        }
+    }
+    // A selection spanning multiple nodes and ending at position 0 of a
+    // node, like the one resulting from a triple click, are corrected so
+    // that it ends at the last position of the previous node instead.
+    if (correctTripleClick && !endOffset && !end.previousSibling) {
+        const previous = previousLeaf(end, editable, true);
+        if (previous && closestElement(previous).isContentEditable) {
+            [end, endOffset] = [previous, nodeSize(previous)];
         }
     }
 

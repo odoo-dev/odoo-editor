@@ -48,7 +48,6 @@ import {
     splitElement,
     ancestors,
     firstChild,
-    previousLeaf,
     nextLeaf,
     isUnremovable,
     fillEmpty,
@@ -760,17 +759,13 @@ export class OdooEditor extends EventTarget {
     // ===============
 
     deleteRange(sel) {
-        let range = getDeepRange(this.document, { sel, splitText: true, select: true });
+        let range = getDeepRange(this.dom, {
+            sel,
+            splitText: true,
+            select: true,
+            correctTripleClick: true,
+        });
         if (!range) return;
-        // A selection spanning multiple nodes and ending at position 0 of a
-        // node, like the one resulting from a triple click, are corrected so
-        // that it ends at the last position of the previous node instead.
-        if (!range.endOffset && !range.endContainer.previousSibling) {
-            const previous = previousLeaf(range.endContainer, this.dom);
-            if (previous) {
-                range.setEndAfter(previous);
-            }
-        }
         let start = range.startContainer;
         let end = range.endContainer;
         // Let the DOM split and delete the range.
@@ -779,7 +774,7 @@ export class OdooEditor extends EventTarget {
         const splitEndTd = closestElement(end, 'td') && end.nextSibling;
         const contents = range.extractContents();
         setCursor(start, nodeSize(start));
-        range = getDeepRange(this.document, { sel });
+        range = getDeepRange(this.dom, { sel });
         // Restore unremovables removed by extractContents.
         [...contents.querySelectorAll('*')].filter(isUnremovable).forEach(n => {
             closestBlock(range.endContainer).after(n);
@@ -870,11 +865,11 @@ export class OdooEditor extends EventTarget {
             this._colorElement(target, color, mode);
             return;
         }
-        const range = getDeepRange(document, { splitText: true, select: true });
+        const range = getDeepRange(this.dom, { splitText: true, select: true });
         if (!range) return;
         const restoreCursor = preserveCursor(this.document);
         // Get the <font> nodes to color
-        const selectedNodes = getSelectedNodes(this.document);
+        const selectedNodes = getSelectedNodes(this.dom);
         let fonts = selectedNodes.flatMap(node => {
             let font = closestElement(node, 'font');
             const children = font && [...font.childNodes];
@@ -1105,7 +1100,7 @@ export class OdooEditor extends EventTarget {
         let li = new Set();
         let blocks = new Set();
 
-        for (let node of getTraversedNodes(this.document)) {
+        for (let node of getTraversedNodes(this.dom)) {
             let block = closestBlock(node);
             if (!['OL', 'UL'].includes(block.tagName)) {
                 let ublock = block.closest('ol, ul');
@@ -1128,7 +1123,7 @@ export class OdooEditor extends EventTarget {
     _align(mode) {
         const sel = this.document.defaultView.getSelection();
         const visitedBlocks = new Set();
-        const traversedNode = getTraversedNodes(this.document);
+        const traversedNode = getTraversedNodes(this.dom);
         for (const node of traversedNode) {
             if (isContentTextNode(node) && isVisible(node)) {
                 let block = closestBlock(node);
@@ -1145,7 +1140,7 @@ export class OdooEditor extends EventTarget {
     _bold() {
         const selection = this.document.getSelection();
         if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
-        const isAlreadyBold = !getTraversedNodes(this.document)
+        const isAlreadyBold = !getTraversedNodes(this.dom)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
             .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
         this._applyInlineStyle(el => {
@@ -1177,7 +1172,7 @@ export class OdooEditor extends EventTarget {
         const { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
         const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
         const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
-        const selectedTextNodes = getTraversedNodes(this.document).filter(node =>
+        const selectedTextNodes = getTraversedNodes(this.dom).filter(node =>
             isContentTextNode(node),
         );
         for (const textNode of selectedTextNodes) {
@@ -1808,9 +1803,7 @@ export class OdooEditor extends EventTarget {
                 this.historyRedo();
             } else {
                 const restoreCursor = preserveCursor(this.document);
-                const selectedBlocks = [
-                    ...new Set(getTraversedNodes(this.document).map(closestBlock)),
-                ];
+                const selectedBlocks = [...new Set(getTraversedNodes(this.dom).map(closestBlock))];
                 for (const selectedBlock of selectedBlocks) {
                     const block = closestBlock(selectedBlock);
                     if (
@@ -1940,7 +1933,7 @@ export class OdooEditor extends EventTarget {
         this._addColumn('after');
     }
     _addColumn(beforeOrAfter) {
-        getDeepRange(this.document, { select: true }); // Ensure deep range for finding td.
+        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding td.
         const c = getInSelection(this.document, 'td');
         if (!c) return;
         const i = [...closestElement(c, 'tr').querySelectorAll('th, td')].findIndex(td => td === c);
@@ -1954,7 +1947,7 @@ export class OdooEditor extends EventTarget {
         this._addRow('after');
     }
     _addRow(beforeOrAfter) {
-        getDeepRange(this.document, { select: true }); // Ensure deep range for finding tr.
+        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding tr.
         const row = getInSelection(this.document, 'tr');
         if (!row) return;
         const newRow = document.createElement('tr');
@@ -1963,7 +1956,7 @@ export class OdooEditor extends EventTarget {
         row[beforeOrAfter](newRow);
     }
     _removeColumn() {
-        getDeepRange(this.document, { select: true }); // Ensure deep range for finding td.
+        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding td.
         const cell = getInSelection(this.document, 'td');
         if (!cell) return;
         const table = closestElement(cell, 'table');
@@ -1974,7 +1967,7 @@ export class OdooEditor extends EventTarget {
         siblingCell ? setCursor(...startPos(siblingCell)) : this._deleteTable(table);
     }
     _removeRow() {
-        getDeepRange(this.document, { select: true }); // Ensure deep range for finding tr.
+        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding tr.
         const row = getInSelection(this.document, 'tr');
         if (!row) return;
         const table = closestElement(row, 'table');
