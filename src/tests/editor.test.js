@@ -2785,7 +2785,7 @@ describe('Editor', () => {
                 stepFunction: editor => {
                     window.chai
                         .expect(
-                            getTraversedNodes(editor.document).map(node =>
+                            getTraversedNodes(editor.dom).map(node =>
                                 node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
                             ),
                         )
@@ -2799,7 +2799,7 @@ describe('Editor', () => {
                 stepFunction: editor => {
                     window.chai
                         .expect(
-                            getTraversedNodes(editor.document).map(node =>
+                            getTraversedNodes(editor.dom).map(node =>
                                 node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
                             ),
                         )
@@ -2813,7 +2813,7 @@ describe('Editor', () => {
                 stepFunction: editor => {
                     window.chai
                         .expect(
-                            getTraversedNodes(editor.document).map(node =>
+                            getTraversedNodes(editor.dom).map(node =>
                                 node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
                             ),
                         )

@@ -83,7 +83,7 @@ class Sanitize {
 
         // Merge identical elements together
         while (areSimilarElements(node, node.previousSibling)) {
-            getDeepRange(this.root.ownerDocument, { select: true });
+            getDeepRange(this.root, { select: true });
             let restoreCursor = preserveCursor(this.root.ownerDocument);
             let nodeP = node.previousSibling;
             moveNodes(...endPos(node.previousSibling), node);
