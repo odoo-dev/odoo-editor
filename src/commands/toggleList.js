@@ -69,7 +69,7 @@ HTMLLIElement.prototype.oToggleList = function (offset, mode) {
     switch (getListMode(pnode) + mode) {
         case 'OLCL':
         case 'ULCL':
-            pnode.classList.add('oe-checklist');
+            pnode.classList.add('o_checklist');
             for (let li = pnode.firstElementChild; li !== null; li = li.nextElementSibling) {
                 if (li.style.listStyle != 'none') {
                     li.style.listStyle = null;
@@ -80,7 +80,7 @@ HTMLLIElement.prototype.oToggleList = function (offset, mode) {
             break;
         case 'CLOL':
         case 'CLUL':
-            toggleClass(pnode, 'oe-checklist');
+            toggleClass(pnode, 'o_checklist');
         case 'OLUL':
         case 'ULOL':
             setTagName(pnode, mode);

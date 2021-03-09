@@ -1701,8 +1701,7 @@ export class OdooEditor extends EventTarget {
         // handle checkbox lists
         if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
             if (ev.offsetX < 0) {
-                node.classList.remove('unchecked');
-                toggleClass(node, 'checked');
+                toggleClass(node, 'o_checked');
                 ev.preventDefault();
             }
         }
