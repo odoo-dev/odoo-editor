@@ -18,6 +18,7 @@ import {
     commonParentGet,
     containsUnremovable,
     DIRECTIONS,
+    endPos,
     getCursorDirection,
     getListMode,
     getCursors,
@@ -1629,7 +1630,14 @@ export class OdooEditor extends EventTarget {
             }
         } else if (ev.keyCode === 9) {
             // Tab
-            if (this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent')) {
+            const sel = this.document.getSelection();
+            const closestTag = (closestElement(sel.anchorNode, 'li, table') || {}).tagName;
+
+            if (closestTag === 'LI') {
+                this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent');
+                ev.preventDefault();
+            } else if (closestTag === 'TABLE') {
+                this._onTabulationInTable(ev);
                 ev.preventDefault();
             }
         } else if (isUndo(ev)) {
@@ -1984,6 +1992,24 @@ export class OdooEditor extends EventTarget {
         table.before(p);
         table.remove();
         setCursor(p, 0);
+    }
+    _onTabulationInTable(ev) {
+        const sel = this.document.getSelection();
+        const closestTable = closestElement(sel.anchorNode, 'table');
+        if (!closestTable) {
+            return;
+        }
+        const closestTd = closestElement(sel.anchorNode, 'td');
+        const tds = [...closestTable.querySelectorAll('td')];
+        const direction = ev.shiftKey ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+        const cursorDestination =
+            tds[tds.findIndex(td => closestTd === td) + (direction === DIRECTIONS.LEFT ? -1 : 1)];
+        if (cursorDestination) {
+            setCursor(...startPos(cursorDestination), ...endPos(cursorDestination), true);
+        } else if (direction === DIRECTIONS.RIGHT) {
+            this._addRowBelow();
+            this._onTabulationInTable(ev);
+        }
     }
 
     /**
