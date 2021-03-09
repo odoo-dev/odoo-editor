@@ -973,13 +973,13 @@ export function commonParentGet(node1, node2, root = undefined) {
 
 export function getListMode(pnode) {
     if (pnode.tagName == 'OL') return 'OL';
-    return pnode.classList.contains('oe-checklist') ? 'CL' : 'UL';
+    return pnode.classList.contains('o_checklist') ? 'CL' : 'UL';
 }
 
 export function createList(mode) {
     let node = document.createElement(mode == 'OL' ? 'OL' : 'UL');
     if (mode == 'CL') {
-        node.classList.add('oe-checklist');
+        node.classList.add('o_checklist');
     }
     return node;
 }

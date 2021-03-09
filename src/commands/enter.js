@@ -105,8 +105,8 @@ HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
         let node = HTMLElement.prototype.oEnter.call(this, ...arguments);
-        if (node.classList.contains('checked')) {
-            toggleClass(node, 'checked');
+        if (node.classList.contains('o_checked')) {
+            toggleClass(node, 'o_checked');
         }
         return node;
     }
