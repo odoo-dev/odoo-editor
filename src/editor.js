@@ -255,17 +255,17 @@ export class OdooEditor extends EventTarget {
     }
 
     // TODO: improve to avoid traversing the whole DOM just to find a node of an ID
-    idFind(dom, id, parentid) {
-        if (dom.oid === id && (!parentid || dom.parentNode.oid === parentid)) {
-            return dom;
+    idFind(node, id, parentId) {
+        if (node.oid === id && (!parentId || node.parentNode.oid === parentId)) {
+            return node;
         }
-        let cur = dom.firstChild;
-        while (cur) {
-            const result = this.idFind(cur, id, parentid);
+        let childNode = node.firstChild;
+        while (childNode) {
+            const result = this.idFind(childNode, id, parentId);
             if (result) {
                 return result;
             }
-            cur = cur.nextSibling;
+            childNode = childNode.nextSibling;
         }
     }
 
