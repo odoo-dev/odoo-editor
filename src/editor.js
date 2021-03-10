@@ -214,7 +214,7 @@ export class OdooEditor extends EventTarget {
         // find common ancestror in this.history[-1]
         const step = this.history[this.history.length - 1];
         let commonAncestor, record;
-        for (record of step.dom) {
+        for (record of step.mutations) {
             const node = this.idFind(this.editable, record.parentId || record.id) || this.editable;
             commonAncestor = commonAncestor
                 ? commonParentGet(commonAncestor, node, this.editable)
@@ -332,7 +332,7 @@ export class OdooEditor extends EventTarget {
         for (const record of records) {
             switch (record.type) {
                 case 'characterData': {
-                    this.history[this.history.length - 1].dom.push({
+                    this.history[this.history.length - 1].mutations.push({
                         'type': 'characterData',
                         'id': record.target.oid,
                         'text': record.target.textContent,
@@ -341,7 +341,7 @@ export class OdooEditor extends EventTarget {
                     break;
                 }
                 case 'attributes': {
-                    this.history[this.history.length - 1].dom.push({
+                    this.history[this.history.length - 1].mutations.push({
                         'type': 'attributes',
                         'id': record.target.oid,
                         'attributeName': record.attributeName,
@@ -372,13 +372,13 @@ export class OdooEditor extends EventTarget {
                         this.idSet(added, undefined, this._checkStepUnbreakable);
                         action.id = added.oid;
                         action.node = this.serialize(added);
-                        this.history[this.history.length - 1].dom.push(action);
+                        this.history[this.history.length - 1].mutations.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
                         if (!this._torollback && containsUnremovable(removed)) {
                             this._torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
-                        this.history[this.history.length - 1].dom.push({
+                        this.history[this.history.length - 1].mutations.push({
                             'type': 'remove',
                             'id': removed.oid,
                             'parentId': record.target.oid,
@@ -432,7 +432,7 @@ export class OdooEditor extends EventTarget {
                     focusNode: undefined,
                     focusOffset: undefined,
                 },
-                dom: [],
+                mutations: [],
                 id: undefined,
             },
         ];
@@ -453,16 +453,16 @@ export class OdooEditor extends EventTarget {
 
         // push history
         const latest = this.history[this.history.length - 1];
-        if (!latest.dom.length) {
+        if (!latest.mutations.length) {
             return false;
         }
 
         latest.id = (Math.random() * 2 ** 31) | 0; // TODO: replace by uuid4 generator
-        this.historyApply(this.vdom, latest.dom);
+        this.historyApply(this.vdom, latest.mutations);
         this.historySend(latest);
         this.history.push({
             cursor: {},
-            dom: [],
+            mutations: [],
         });
         this._checkStepUnbreakable = true;
         this._recordHistoryCursor();
@@ -561,17 +561,17 @@ export class OdooEditor extends EventTarget {
                         this.editable.innerHTML = '';
                         this.vdom.innerHTML = '';
                     }
-                    this.historyApply(this.editable, record.dom);
-                    this.historyApply(this.vdom, record.dom);
+                    this.historyApply(this.editable, record.mutations);
+                    this.historyApply(this.vdom, record.mutations);
 
-                    record.dom = record.id === 1 ? [] : record.dom;
+                    record.mutations = record.id === 1 ? [] : record.mutations;
                     this.history.push(record);
                     index++;
                 }
                 if (updated) {
                     this.history.push({
                         cursor: {},
-                        dom: [],
+                        mutations: [],
                     });
                 }
                 this.observerActive();
@@ -603,7 +603,7 @@ export class OdooEditor extends EventTarget {
         this.observerFlush();
         this.historyRevert(hist, until);
         this.observerFlush();
-        hist.dom = hist.dom.slice(0, until);
+        hist.mutations = hist.mutations.slice(0, until);
         this._torollback = false;
     }
 
@@ -663,8 +663,8 @@ export class OdooEditor extends EventTarget {
 
     historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
-        for (let i = step.dom.length - 1; i >= until; i--) {
-            const action = step.dom[i];
+        for (let i = step.mutations.length - 1; i >= until; i--) {
+            const action = step.mutations[i];
             if (!action) {
                 break;
             }
@@ -848,7 +848,7 @@ export class OdooEditor extends EventTarget {
                 } else {
                     next = firstChild(next);
                 }
-            }, this.history[this.history.length - 1].dom.length);
+            }, this.history[this.history.length - 1].mutations.length);
             if ([UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE].includes(res)) {
                 restore();
                 break;
