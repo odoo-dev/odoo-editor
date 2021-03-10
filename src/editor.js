@@ -347,24 +347,24 @@ export class OdooEditor extends EventTarget {
                         this._torollback =
                             this._torollback ||
                             (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
-                        const action = {
+                        const mutation = {
                             'type': 'add',
                         };
                         if (!record.nextSibling && record.target.oid) {
-                            action.append = record.target.oid;
+                            mutation.append = record.target.oid;
                         } else if (record.nextSibling.oid) {
-                            action.before = record.nextSibling.oid;
+                            mutation.before = record.nextSibling.oid;
                         } else if (!record.previousSibling && record.target.oid) {
-                            action.prepend = record.target.oid;
+                            mutation.prepend = record.target.oid;
                         } else if (record.previousSibling.oid) {
-                            action.after = record.previousSibling.oid;
+                            mutation.after = record.previousSibling.oid;
                         } else {
                             return false;
                         }
                         this.idSet(added, this._checkStepUnbreakable);
-                        action.id = added.oid;
-                        action.node = this.serialize(added);
-                        this._historySteps[this._historySteps.length - 1].mutations.push(action);
+                        mutation.id = added.oid;
+                        mutation.node = this.serialize(added);
+                        this._historySteps[this._historySteps.length - 1].mutations.push(mutation);
                     });
                     record.removedNodes.forEach((removed, index) => {
                         if (!this._torollback && containsUnremovable(removed)) {
