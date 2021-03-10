@@ -1677,7 +1677,7 @@ export class OdooEditor extends EventTarget {
         const sel = this.document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
         if (this._currentMouseState === 'mousedown') {
-            // _fixFontAwesomeSelection will be called when the mouseUp event is triggered
+            // _fixFontAwesomeSelection will be called when the mouseup event is triggered.
             this._selectionChanged = true;
         } else {
             this._fixFontAwesomeSelection();
