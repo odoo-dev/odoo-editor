@@ -121,8 +121,8 @@ export class OdooEditor extends EventTarget {
 
         this._onKeyupResetContenteditableNodes = [];
 
-        this._collaborate = false;
-        this._collaborate_last = null;
+        this._isCollaborativeActive = false;
+        this._collaborativeLastSynchronisedId = null;
 
         // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
         this._torollback = false;
@@ -278,10 +278,10 @@ export class OdooEditor extends EventTarget {
 
     // if not in collaboration mode, no need to serialize / unserialize
     serialize(node) {
-        return this._collaborate ? nodeToObject(node) : node;
+        return this._isCollaborativeActive ? nodeToObject(node) : node;
     }
     unserialize(obj) {
-        return this._collaborate ? objectToNode(obj) : obj;
+        return this._isCollaborativeActive ? objectToNode(obj) : obj;
     }
 
     automaticStepActive(label) {
@@ -511,11 +511,11 @@ export class OdooEditor extends EventTarget {
 
     // send changes to server
     historyFetch() {
-        if (!this._collaborate) {
+        if (!this._isCollaborativeActive) {
             return;
         }
         window
-            .fetch(`/history-get/${this._collaborate_last || 0}`, {
+            .fetch(`/history-get/${this._collaborativeLastSynchronisedId || 0}`, {
                 headers: { 'Content-Type': 'application/json;charset=utf-8' },
                 method: 'GET',
             })
@@ -533,13 +533,16 @@ export class OdooEditor extends EventTarget {
 
                 let index = this.history.length;
                 let updated = false;
-                while (index && this.history[index - 1].id !== this._collaborate_last) {
+                while (
+                    index &&
+                    this.history[index - 1].id !== this._collaborativeLastSynchronisedId
+                ) {
                     index--;
                 }
 
                 for (let residx = 0; residx < result.length; residx++) {
                     let record = result[residx];
-                    this._collaborate_last = record.id;
+                    this._collaborativeLastSynchronisedId = record.id;
                     if (index < this.history.length && record.id === this.history[index].id) {
                         index++;
                         continue;
@@ -574,12 +577,12 @@ export class OdooEditor extends EventTarget {
             })
             .catch(err => {
                 // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
-                this._collaborate = false;
+                this._isCollaborativeActive = false;
             });
     }
 
     historySend(item) {
-        if (!this._collaborate) {
+        if (!this._isCollaborativeActive) {
             return;
         }
         window
