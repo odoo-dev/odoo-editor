@@ -215,7 +215,7 @@ export function renderTextualSelection() {
     _insertCharAt(']', focusNode, focusOffset);
 }
 
-export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
+export async function testEditor(Editor = OdooEditor, spec) {
     const testNode = document.createElement('div');
     document.body.appendChild(testNode);
 
@@ -255,7 +255,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
 
     if (spec.contentAfter && !firefoxExecCommandError) {
         renderTextualSelection();
-        const value = useVDom ? editor.vdom.innerHTML : testNode.innerHTML;
+        const value = testNode.innerHTML;
         window.chai.expect(value).to.be.equal(spec.contentAfter);
     }
     testNode.remove();
@@ -394,10 +394,6 @@ export function simulateToolbarClick(editor, buttonId) {
 
 export function applyElementStyle(editor, style) {
     simulateToolbarClick(editor, style);
-}
-
-export async function testVdom(Editor, spec) {
-    return testEditor(Editor, spec, true);
 }
 
 export class BasicEditor extends OdooEditor {}

@@ -142,9 +142,7 @@ export class OdooEditor extends EventTarget {
         // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
 
-        this.vdom = editable.cloneNode(true);
-        this.vdom.removeAttribute('contenteditable');
-        this.idSet(editable, this.vdom);
+        this.idSet(editable);
 
         // -----------
         // Bind events
@@ -235,7 +233,7 @@ export class OdooEditor extends EventTarget {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, dest = undefined, testunbreak = false) {
+    idSet(src, testunbreak = false) {
         if (!src.oid) {
             src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
@@ -249,15 +247,10 @@ export class OdooEditor extends EventTarget {
             }
         }
 
-        if (dest && !dest.oid) {
-            dest.oid = src.oid;
-        }
         let childsrc = src.firstChild;
-        let childdest = dest ? dest.firstChild : undefined;
         while (childsrc) {
-            this.idSet(childsrc, childdest, testunbreak);
+            this.idSet(childsrc, testunbreak);
             childsrc = childsrc.nextSibling;
-            childdest = dest ? childdest.nextSibling : undefined;
         }
     }
 
@@ -302,8 +295,7 @@ export class OdooEditor extends EventTarget {
         this.observerFlush();
     }
     observerFlush() {
-        const records = this.observer.takeRecords();
-        this.observerApply(this.vdom, records);
+        this.observerApply(this.observer.takeRecords());
     }
     observerActive() {
         if (!this.observer) {
@@ -314,7 +306,7 @@ export class OdooEditor extends EventTarget {
                         this.historyStep();
                     }, 100);
                 }
-                this.observerApply(this.vdom, records);
+                this.observerApply(records);
             });
         }
         this.observer.observe(this.editable, {
@@ -327,7 +319,7 @@ export class OdooEditor extends EventTarget {
         });
     }
 
-    observerApply(destel, records) {
+    observerApply(records) {
         records = this.filterMutationRecords(records);
         for (const record of records) {
             switch (record.type) {
@@ -369,7 +361,7 @@ export class OdooEditor extends EventTarget {
                         } else {
                             return false;
                         }
-                        this.idSet(added, undefined, this._checkStepUnbreakable);
+                        this.idSet(added, this._checkStepUnbreakable);
                         action.id = added.oid;
                         action.node = this.serialize(added);
                         this._historySteps[this._historySteps.length - 1].mutations.push(action);
@@ -458,7 +450,6 @@ export class OdooEditor extends EventTarget {
         }
 
         latest.id = (Math.random() * 2 ** 31) | 0; // TODO: replace by uuid4 generator
-        this.historyApply(this.vdom, latest.mutations);
         this.historySend(latest);
         this._historySteps.push({
             cursor: {},
@@ -470,20 +461,20 @@ export class OdooEditor extends EventTarget {
     }
 
     // apply changes according to some records
-    historyApply(destel, records) {
+    historyApply(records) {
         for (const record of records) {
             if (record.type === 'characterData') {
-                const node = this.idFind(destel, record.id);
+                const node = this.idFind(this.editable, record.id);
                 if (node) {
                     node.textContent = record.text;
                 }
             } else if (record.type === 'attributes') {
-                const node = this.idFind(destel, record.id);
+                const node = this.idFind(this.editable, record.id);
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
             } else if (record.type === 'remove') {
-                const toremove = this.idFind(destel, record.id, record.parentId);
+                const toremove = this.idFind(this.editable, record.id, record.parentId);
                 if (toremove) {
                     toremove.remove();
                 }
@@ -493,17 +484,17 @@ export class OdooEditor extends EventTarget {
                 // preserve oid after the clone
                 this.idSet(node, newnode);
 
-                const destnode = this.idFind(destel, record.node.oid);
+                const destnode = this.idFind(this.editable, record.node.oid);
                 if (destnode && record.node.parentNode.oid === destnode.parentNode.oid) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
                     continue;
                 }
-                if (record.append && this.idFind(destel, record.append)) {
-                    this.idFind(destel, record.append).append(newnode);
-                } else if (record.before && this.idFind(destel, record.before)) {
-                    this.idFind(destel, record.before).before(newnode);
-                } else if (record.after && this.idFind(destel, record.after)) {
-                    this.idFind(destel, record.after).after(newnode);
+                if (record.append && this.idFind(this.editable, record.append)) {
+                    this.idFind(this.editable, record.append).append(newnode);
+                } else if (record.before && this.idFind(this.editable, record.before)) {
+                    this.idFind(this.editable, record.before).before(newnode);
+                } else if (record.after && this.idFind(this.editable, record.after)) {
+                    this.idFind(this.editable, record.after).after(newnode);
                 } else {
                     continue;
                 }
@@ -562,10 +553,8 @@ export class OdooEditor extends EventTarget {
 
                     if (record.id === 1) {
                         this.editable.innerHTML = '';
-                        this.vdom.innerHTML = '';
                     }
-                    this.historyApply(this.editable, record.mutations);
-                    this.historyApply(this.vdom, record.mutations);
+                    this.historyApply(record.mutations);
 
                     record.mutations = record.id === 1 ? [] : record.mutations;
                     this._historySteps.push(record);

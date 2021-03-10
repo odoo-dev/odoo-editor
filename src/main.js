@@ -9,7 +9,6 @@ function startEditor(testHTML) {
         toolbar: document.querySelector('#toolbar'),
         autohideToolbar: true,
     });
-    document.getElementById('vdom').append(editor.vdom);
     editor.historyFetch();
 
     // local storage show / hide elements
