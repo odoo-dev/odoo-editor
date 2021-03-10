@@ -278,14 +278,13 @@ describe('List', () => {
                                 '<ul class="o_checklist"><li><span><b>ab</b></span> <span><i>cd</i></span> ef[]gh</li></ul>',
                         });
                     });
-                    it('should turn a paragraph into a checklist betweet 2 checklist', async () => {
+                    it('should turn a paragraph between 2 checklist into a checklist item', async () => {
                         await testEditor(BasicEditor, {
                             contentBefore:
                                 '<ul class="o_checklist"><li class="o_checked">abc</li></ul><p>d[]ef</p><ul class="o_checklist"><li class="o_checked">ghi</li></ul>',
                             stepFunction: toggleCheckList,
-                            // JW cAfter: '<ul class="o_checklist"><li class="o_checked">abc</li><li>d[]ef</li><li class="o_checked">ghi</li></ul>',
                             contentAfter:
-                                '<ul class="o_checklist"><li class="o_checked">abc</li><li>d[]ef</li><li class="checked">ghi</li></ul>',
+                                '<ul class="o_checklist"><li class="o_checked">abc</li><li>d[]ef</li><li class="o_checked">ghi</li></ul>',
                         });
                     });
                     it('should turn a unordered list into a checklist betweet 2 checklist inside a checklist', async () => {
