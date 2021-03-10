@@ -70,20 +70,30 @@ const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKN
 
 const isUndo = ev => ev.key === 'z' && (ev.ctrlKey || ev.metaKey);
 const isRedo = ev => ev.key === 'y' && (ev.ctrlKey || ev.metaKey);
-export class OdooEditor extends EventTarget {
-    constructor(dom, options = { controlHistoryFromDocument: false }) {
-        super();
-        this.options = options;
 
-        if (typeof this.options.toSanitize === 'undefined') {
-            this.options.toSanitize = true;
+function defaultOptions(defaultObject, object) {
+    const newObject = Object.assign({}, defaultObject, object);
+    for (const [key, value] of Object.entries(object)) {
+        if (typeof value === 'undefined') {
+            newObject[key] = defaultObject[key];
         }
-        if (typeof this.options.isRootEditable === 'undefined') {
-            this.options.isRootEditable = true;
-        }
-        if (typeof this.options.getContentEditableAreas === 'undefined') {
-            this.options.getContentEditableAreas = () => [];
-        }
+    }
+    return newObject;
+}
+
+export class OdooEditor extends EventTarget {
+    constructor(dom, options = {}) {
+        super();
+
+        this.options = defaultOptions(
+            {
+                controlHistoryFromDocument: false,
+                toSanitize: true,
+                isRootEditable: true,
+                getContentEditableAreas: () => [],
+            },
+            options,
+        );
 
         this.document = options.document || document;
 
