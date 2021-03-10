@@ -233,24 +233,24 @@ export class OdooEditor extends EventTarget {
     }
 
     // Assign IDs to src, and dest if defined
-    idSet(src, testunbreak = false) {
-        if (!src.oid) {
-            src.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
+    idSet(node, testunbreak = false) {
+        if (!node.oid) {
+            node.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
         }
-        // Rollback if src.ouid changed. This ensures that nodes never change
+        // Rollback if node.ouid changed. This ensures that nodes never change
         // unbreakable ancestors.
-        src.ouid = src.ouid || getOuid(src, true);
+        node.ouid = node.ouid || getOuid(node, true);
         if (testunbreak) {
-            const ouid = getOuid(src);
-            if (!this._torollback && ouid && ouid !== src.ouid) {
+            const ouid = getOuid(node);
+            if (!this._torollback && ouid && ouid !== node.ouid) {
                 this._torollback = UNBREAKABLE_ROLLBACK_CODE;
             }
         }
 
-        let childsrc = src.firstChild;
-        while (childsrc) {
-            this.idSet(childsrc, testunbreak);
-            childsrc = childsrc.nextSibling;
+        let childNode = node.firstChild;
+        while (childNode) {
+            this.idSet(childNode, testunbreak);
+            childNode = childNode.nextSibling;
         }
     }
 
