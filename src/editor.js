@@ -97,7 +97,7 @@ export class OdooEditor extends EventTarget {
 
         this.document = options.document || document;
 
-        // keyboard type detection, happens only at the first keydown event
+        // Keyboard type detection, happens only at the first keydown event.
         this.keyboardType = KEYBOARD_TYPES.UNKNOWN;
 
         // Wether we should check for unbreakable the next history step.
