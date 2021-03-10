@@ -55,8 +55,8 @@ import {
 } from './utils/utils.js';
 
 export * from './utils/utils.js';
-export const UNBREAKABLE_ROLLBACK_CODE = 100;
-export const UNREMOVABLE_ROLLBACK_CODE = 110;
+export const UNBREAKABLE_ROLLBACK_CODE = 'UNBREAKABLE';
+export const UNREMOVABLE_ROLLBACK_CODE = 'UNREMOVABLE';
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
 
