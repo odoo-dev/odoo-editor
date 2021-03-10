@@ -1674,14 +1674,17 @@ export class OdooEditor extends EventTarget {
         // Compute the current cursor on selectionchange but do not record it. Leave
         // that to the command execution or the 'input' event handler.
         this._computeHistoryCursor();
+
         const sel = this.document.defaultView.getSelection();
         this._updateToolbar(!sel.isCollapsed);
+
         if (this._currentMouseState === 'mousedown') {
             // _fixFontAwesomeSelection will be called when the mouseup event is triggered.
             this._selectionChanged = true;
         } else {
             this._fixFontAwesomeSelection();
         }
+
         // When the browser set the selection inside a node that is
         // contenteditable=false, it breaks the edition upon keystroke. Move the
         // selection so that it remain in an editable area. An example of this
