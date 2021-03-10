@@ -13,14 +13,14 @@ HTMLElement.prototype.oShiftTab = function (offset = undefined) {
 
 // returns: is still in a <LI> nested list
 HTMLLIElement.prototype.oShiftTab = function (offset) {
-    let li = this;
+    const li = this;
     if (li.nextElementSibling) {
-        let ul = li.parentElement.cloneNode(false);
+        const ul = li.parentElement.cloneNode(false);
         while (li.nextSibling) {
             ul.append(li.nextSibling);
         }
         if (li.parentNode.parentNode.tagName === 'LI') {
-            let lip = document.createElement('li');
+            const lip = document.createElement('li');
             toggleClass(lip, 'oe-nested');
             lip.append(ul);
             li.parentNode.parentNode.after(lip);
@@ -47,7 +47,7 @@ HTMLLIElement.prototype.oShiftTab = function (offset) {
         restoreCursor();
         return li;
     } else {
-        let ul = li.parentNode;
+        const ul = li.parentNode;
         let p;
         while (li.firstChild) {
             if (isBlock(li.firstChild)) {

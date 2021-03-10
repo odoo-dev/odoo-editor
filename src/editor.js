@@ -212,10 +212,10 @@ export class OdooEditor extends EventTarget {
         this.observerFlush();
 
         // find common ancestror in this.history[-1]
-        let step = this.history[this.history.length - 1];
+        const step = this.history[this.history.length - 1];
         let commonAncestor, record;
         for (record of step.dom) {
-            let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
+            const node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
             commonAncestor = commonAncestor
                 ? commonParentGet(commonAncestor, node, this.dom)
                 : node;
@@ -268,7 +268,7 @@ export class OdooEditor extends EventTarget {
         }
         let cur = dom.firstChild;
         while (cur) {
-            let result = this.idFind(cur, id, parentid);
+            const result = this.idFind(cur, id, parentid);
             if (result) {
                 return result;
             }
@@ -302,7 +302,7 @@ export class OdooEditor extends EventTarget {
         this.observerFlush();
     }
     observerFlush() {
-        let records = this.observer.takeRecords();
+        const records = this.observer.takeRecords();
         this.observerApply(this.vdom, records);
     }
     observerActive() {
@@ -329,7 +329,7 @@ export class OdooEditor extends EventTarget {
 
     observerApply(destel, records) {
         records = this.filterMutationRecords(records);
-        for (let record of records) {
+        for (const record of records) {
             switch (record.type) {
                 case 'characterData': {
                     this.history[this.history.length - 1].dom.push({
@@ -355,7 +355,7 @@ export class OdooEditor extends EventTarget {
                         this._torollback =
                             this._torollback ||
                             (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
-                        let action = {
+                        const action = {
                             'type': 'add',
                         };
                         if (!record.nextSibling && record.target.oid) {
@@ -452,7 +452,7 @@ export class OdooEditor extends EventTarget {
         }
 
         // push history
-        let latest = this.history[this.history.length - 1];
+        const latest = this.history[this.history.length - 1];
         if (!latest.dom.length) {
             return false;
         }
@@ -471,29 +471,29 @@ export class OdooEditor extends EventTarget {
 
     // apply changes according to some records
     historyApply(destel, records) {
-        for (let record of records) {
+        for (const record of records) {
             if (record.type === 'characterData') {
-                let node = this.idFind(destel, record.id);
+                const node = this.idFind(destel, record.id);
                 if (node) {
                     node.textContent = record.text;
                 }
             } else if (record.type === 'attributes') {
-                let node = this.idFind(destel, record.id);
+                const node = this.idFind(destel, record.id);
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
             } else if (record.type === 'remove') {
-                let toremove = this.idFind(destel, record.id, record.parentId);
+                const toremove = this.idFind(destel, record.id, record.parentId);
                 if (toremove) {
                     toremove.remove();
                 }
             } else if (record.type === 'add') {
-                let node = this.unserialize(record.node);
-                let newnode = node.cloneNode(1);
+                const node = this.unserialize(record.node);
+                const newnode = node.cloneNode(1);
                 // preserve oid after the clone
                 this.idSet(node, newnode);
 
-                let destnode = this.idFind(destel, record.node.oid);
+                const destnode = this.idFind(destel, record.node.oid);
                 if (destnode && record.node.parentNode.oid === destnode.parentNode.oid) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
                     continue;
@@ -543,7 +543,7 @@ export class OdooEditor extends EventTarget {
                 }
 
                 for (let residx = 0; residx < result.length; residx++) {
-                    let record = result[residx];
+                    const record = result[residx];
                     this._collaborativeLastSynchronisedId = record.id;
                     if (index < this.history.length && record.id === this.history[index].id) {
                         index++;
@@ -664,7 +664,7 @@ export class OdooEditor extends EventTarget {
     historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
         for (let i = step.dom.length - 1; i >= until; i--) {
-            let action = step.dom[i];
+            const action = step.dom[i];
             if (!action) {
                 break;
             }
@@ -681,7 +681,7 @@ export class OdooEditor extends EventTarget {
                     break;
                 }
                 case 'remove': {
-                    let node = this.unserialize(action.node);
+                    const node = this.unserialize(action.node);
                     if (action.nextId && this.idFind(this.dom, action.nextId)) {
                         this.idFind(this.dom, action.nextId).before(node);
                     } else if (action.previousId && this.idFind(this.dom, action.previousId)) {
@@ -692,7 +692,7 @@ export class OdooEditor extends EventTarget {
                     break;
                 }
                 case 'add': {
-                    let el = this.idFind(this.dom, action.id);
+                    const el = this.idFind(this.dom, action.id);
                     if (el) {
                         el.remove();
                     }
@@ -786,7 +786,7 @@ export class OdooEditor extends EventTarget {
         // Restore table contents removed by extractContents.
         const tds = [...contents.querySelectorAll('td')].filter(n => !closestElement(n, 'table'));
         let currentFragmentTr, currentTr;
-        let currentTd = closestElement(range.endContainer, 'td');
+        const currentTd = closestElement(range.endContainer, 'td');
         tds.forEach((td, i) => {
             const parentFragmentTr = closestElement(td, 'tr');
             // Skip the first and the last partially selected TD.
@@ -828,7 +828,7 @@ export class OdooEditor extends EventTarget {
         fillEmpty(closestBlock(range.endContainer));
         // Ensure trailing space remains visible.
         const joinWith = range.endContainer;
-        let oldText = joinWith.textContent;
+        const oldText = joinWith.textContent;
         if (doJoin && oldText.endsWith(' ')) {
             joinWith.textContent = oldText.replace(/ $/, '\u00A0');
         }
@@ -878,7 +878,7 @@ export class OdooEditor extends EventTarget {
         const restoreCursor = preserveCursor(this.document);
         // Get the <font> nodes to color
         const selectedNodes = getSelectedNodes(this.dom);
-        let fonts = selectedNodes.flatMap(node => {
+        const fonts = selectedNodes.flatMap(node => {
             let font = closestElement(node, 'font');
             const children = font && [...font.childNodes];
             if (font && font.nodeName === 'FONT') {
@@ -928,7 +928,7 @@ export class OdooEditor extends EventTarget {
     }
 
     updateColorpickerLabels(params = {}) {
-        let foreColor = params.foreColor || rgbToHex(document.queryCommandValue('foreColor'));
+        const foreColor = params.foreColor || rgbToHex(document.queryCommandValue('foreColor'));
         this.toolbar.style.setProperty('--fore-color', foreColor);
         const foreColorInput = this.toolbar.querySelector('#foreColor input');
         if (foreColorInput) {
@@ -1052,7 +1052,7 @@ export class OdooEditor extends EventTarget {
         if (res) {
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
             const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
-            let pos = [node.parentElement, childNodeIndex(node) + 1];
+            const pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
     }
@@ -1079,11 +1079,11 @@ export class OdooEditor extends EventTarget {
     }
 
     _indentList(mode = 'indent') {
-        let [pos1, pos2] = getCursors(this.document);
-        let end = leftDeepFirstPath(...pos1).next().value;
-        let li = new Set();
-        for (let node of leftDeepFirstPath(...pos2)) {
-            let cli = closestBlock(node);
+        const [pos1, pos2] = getCursors(this.document);
+        const end = leftDeepFirstPath(...pos1).next().value;
+        const li = new Set();
+        for (const node of leftDeepFirstPath(...pos2)) {
+            const cli = closestBlock(node);
             if (
                 cli &&
                 cli.tagName == 'LI' &&
@@ -1094,7 +1094,7 @@ export class OdooEditor extends EventTarget {
             }
             if (node == end) break;
         }
-        for (let node of li) {
+        for (const node of li) {
             if (mode == 'indent') {
                 node.oTab(0);
             } else {
@@ -1105,20 +1105,20 @@ export class OdooEditor extends EventTarget {
     }
 
     _toggleList(mode) {
-        let li = new Set();
-        let blocks = new Set();
+        const li = new Set();
+        const blocks = new Set();
 
-        for (let node of getTraversedNodes(this.dom)) {
-            let block = closestBlock(node);
+        for (const node of getTraversedNodes(this.dom)) {
+            const block = closestBlock(node);
             if (!['OL', 'UL'].includes(block.tagName)) {
-                let ublock = block.closest('ol, ul');
+                const ublock = block.closest('ol, ul');
                 ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
             }
         }
 
         let target = [...(blocks.size ? blocks : li)];
         while (target.length) {
-            let node = target.pop();
+            const node = target.pop();
             // only apply one li per ul
             if (!node.oToggleList(0, mode)) {
                 target = target.filter(
@@ -1134,7 +1134,7 @@ export class OdooEditor extends EventTarget {
         const traversedNode = getTraversedNodes(this.dom);
         for (const node of traversedNode) {
             if (isContentTextNode(node) && isVisible(node)) {
-                let block = closestBlock(node);
+                const block = closestBlock(node);
                 if (!visitedBlocks.has(block)) {
                     const hasModifier = getComputedStyle(block).textAlign === mode;
                     if (!hasModifier && block.isContentEditable) {
@@ -1245,7 +1245,7 @@ export class OdooEditor extends EventTarget {
      * @returns {?}
      */
     _applyRawCommand(method, ...args) {
-        let sel = this.document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
             this.deleteRange(sel);
             if (BACKSPACE_ONLY_COMMANDS.includes(method)) {
@@ -1311,7 +1311,7 @@ export class OdooEditor extends EventTarget {
      */
     _protect(callback, rollbackCounter) {
         try {
-            let result = callback.call(this);
+            const result = callback.call(this);
             this.observerFlush();
             if (this._torollback) {
                 const torollbackCode = this._torollback;
@@ -1422,7 +1422,7 @@ export class OdooEditor extends EventTarget {
             this.toolbar.style.visibility = 'visible';
         }
 
-        let sel = this.document.defaultView.getSelection();
+        const sel = this.document.defaultView.getSelection();
         if (!sel.anchorNode) {
             show = false;
         }
@@ -1433,7 +1433,7 @@ export class OdooEditor extends EventTarget {
             return;
         }
         const paragraphDropdownButton = this.toolbar.querySelector('#paragraphDropdownButton');
-        for (let commandState of [
+        for (const commandState of [
             'bold',
             'italic',
             'underline',
@@ -1469,7 +1469,7 @@ export class OdooEditor extends EventTarget {
                 : 'none';
         }
         this.updateColorpickerLabels();
-        let block = closestBlock(sel.anchorNode);
+        const block = closestBlock(sel.anchorNode);
         for (const [style, tag, isList] of [
             ['paragraph', 'P', false],
             ['heading1', 'H1', false],
@@ -1728,7 +1728,7 @@ export class OdooEditor extends EventTarget {
             this._activateContenteditable();
         }
 
-        let node = ev.target;
+        const node = ev.target;
         // handle checkbox lists
         if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
             if (ev.offsetX < 0) {

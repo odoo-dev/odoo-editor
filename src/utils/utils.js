@@ -646,7 +646,7 @@ export function getDeepestPosition(node, offset) {
 }
 
 export function getCursors(document) {
-    let sel = document.defaultView.getSelection();
+    const sel = document.defaultView.getSelection();
     if (
         getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ===
         DIRECTIONS.LEFT
@@ -663,7 +663,7 @@ export function getCursors(document) {
 
 export function preserveCursor(document) {
     const sel = document.defaultView.getSelection();
-    let cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
+    const cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
     return replace => {
         replace = replace || new Map();
         cursorPos[0] = replace.get(cursorPos[0]) || cursorPos[0];
@@ -849,7 +849,7 @@ export function isVisibleEmpty(node) {
  * @returns {boolean}
  */
 export function isInPre(node) {
-    let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     return (
         !!element &&
         (!!element.closest('pre') ||
@@ -953,7 +953,7 @@ function isVisibleTextNode(testedNode) {
 }
 
 export function parentsGet(node, root = undefined) {
-    let parents = [];
+    const parents = [];
     while (node) {
         parents.unshift(node);
         if (node === root) {
@@ -968,8 +968,8 @@ export function commonParentGet(node1, node2, root = undefined) {
     if (!node1 || !node2) {
         return null;
     }
-    let n1p = parentsGet(node1, root);
-    let n2p = parentsGet(node2, root);
+    const n1p = parentsGet(node1, root);
+    const n2p = parentsGet(node2, root);
     while (n1p.length > 1 && n1p[1] === n2p[1]) {
         n1p.shift();
         n2p.shift();
@@ -983,7 +983,7 @@ export function getListMode(pnode) {
 }
 
 export function createList(mode) {
-    let node = document.createElement(mode == 'OL' ? 'OL' : 'UL');
+    const node = document.createElement(mode == 'OL' ? 'OL' : 'UL');
     if (mode == 'CL') {
         node.classList.add('o_checklist');
     }
@@ -1124,7 +1124,7 @@ export function splitElement(element, offset) {
 
 export function insertText(sel, content) {
     if (sel.anchorNode.nodeType == Node.TEXT_NODE) {
-        let pos = [sel.anchorNode.parentElement, splitTextNode(sel.anchorNode, sel.anchorOffset)];
+        const pos = [sel.anchorNode.parentElement, splitTextNode(sel.anchorNode, sel.anchorOffset)];
         setCursor(...pos, ...pos, false);
     }
     const txt = document.createTextNode(content || '#');
