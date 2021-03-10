@@ -84,8 +84,8 @@ class Sanitize {
         // Merge identical elements together
         while (areSimilarElements(node, node.previousSibling)) {
             getDeepRange(this.root, { select: true });
-            let restoreCursor = preserveCursor(this.root.ownerDocument);
-            let nodeP = node.previousSibling;
+            const restoreCursor = preserveCursor(this.root.ownerDocument);
+            const nodeP = node.previousSibling;
             moveNodes(...endPos(node.previousSibling), node);
             restoreCursor();
             node = nodeP;
@@ -93,10 +93,10 @@ class Sanitize {
 
         // Remove empty blocks in <li>
         if (node.nodeName == 'P' && node.parentElement.tagName == 'LI') {
-            let next = node.nextSibling;
-            let pnode = node.parentElement;
+            const next = node.nextSibling;
+            const pnode = node.parentElement;
             if (isEmptyBlock(node)) {
-                let restoreCursor = preserveCursor(this.root.ownerDocument);
+                const restoreCursor = preserveCursor(this.root.ownerDocument);
                 node.remove();
                 fillEmpty(pnode);
                 this._parse(next);

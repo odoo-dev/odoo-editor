@@ -31,7 +31,7 @@ export function objectToNode(obj) {
         result = document.createTextNode(obj.textValue);
     } else if (obj.nodeType === Node.ELEMENT_NODE) {
         result = document.createElement(obj.tagName);
-        for (let key in obj.attributes) {
+        for (const key in obj.attributes) {
             result.setAttribute(key, obj.attributes[key]);
         }
         obj.children.forEach(child => result.append(objectToNode(child)));

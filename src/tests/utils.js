@@ -2,7 +2,7 @@ import { OdooEditor } from '../editor.js';
 import { sanitize } from '../utils/sanitize.js';
 import { setCursor, insertText as insertTextSel } from '../utils/utils.js';
 
-let Direction = {
+const Direction = {
     BACKWARD: 'BACKWARD',
     FORWARD: 'FORWARD',
 };
@@ -223,7 +223,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
     // the editor as otherwise those would genererate mutations the editor would
     // consider and the tests would make no sense.
     testNode.innerHTML = spec.contentBefore;
-    let selection = _parseTextualSelection(testNode);
+    const selection = _parseTextualSelection(testNode);
 
     const editor = new Editor(testNode, { toSanitize: false });
     editor.keyboardType = 'PHYSICAL_KEYBOARD';

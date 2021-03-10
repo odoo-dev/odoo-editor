@@ -17,7 +17,7 @@ HTMLElement.prototype.oToggleList = function (offset, mode = 'UL') {
     if (!isBlock(this)) {
         return this.parentElement.oToggleList(childNodeIndex(this));
     }
-    let inLI = this.closest('li');
+    const inLI = this.closest('li');
     if (inLI) {
         return inLI.oToggleList(0, mode);
     }
@@ -44,7 +44,7 @@ HTMLParagraphElement.prototype.oToggleList = function (offset, mode = 'UL') {
 };
 
 HTMLLIElement.prototype.oToggleList = function (offset, mode) {
-    let pnode = this.closest('ul, ol');
+    const pnode = this.closest('ul, ol');
     if (!pnode) return;
     const restoreCursor = preserveCursor(this.ownerDocument);
     switch (getListMode(pnode) + mode) {

@@ -90,7 +90,7 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
 HTMLHeadingElement.prototype.oEnter = function () {
     const newEl = HTMLElement.prototype.oEnter.call(this, ...arguments);
     if (!newEl.textContent) {
-        let node = setTagName(newEl, 'P');
+        const node = setTagName(newEl, 'P');
         setCursorStart(node);
     }
 };
@@ -104,7 +104,7 @@ HTMLQuoteElement.prototype.oEnter = HTMLHeadingElement.prototype.oEnter;
 HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
-        let node = HTMLElement.prototype.oEnter.call(this, ...arguments);
+        const node = HTMLElement.prototype.oEnter.call(this, ...arguments);
         if (node.classList.contains('o_checked')) {
             toggleClass(node, 'o_checked');
         }
@@ -121,7 +121,7 @@ HTMLPreElement.prototype.oEnter = function (offset, firstSplit = true) {
         this.insertBefore(lineBreak, this.childNodes[offset]);
         setCursorEnd(lineBreak);
     } else {
-        let node = document.createElement('p');
+        const node = document.createElement('p');
         this.parentNode.insertBefore(node, this.nextSibling);
         fillEmpty(node);
         setCursorStart(node);
