@@ -113,7 +113,7 @@ export class OdooEditor extends EventTarget {
         dom.oid = 1; // convention: root node is ID 1
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
         this.resetHistory();
-        this.undos = new Map();
+        this._undos = new Map();
         this._observerTimeoutUnactive = new Set();
 
         // Set contenteditable before clone as FF updates the content at this point.
@@ -596,10 +596,10 @@ export class OdooEditor extends EventTarget {
         const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
-            this.undos.set(pos, 2);
+            this._undos.set(pos, 2);
             this.historyRevert(this.history[pos]);
             // Consider the last position of the history as an undo.
-            this.undos.set(this.history.length - 1, 1);
+            this._undos.set(this.history.length - 1, 1);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyUndo'));
         }
@@ -613,9 +613,9 @@ export class OdooEditor extends EventTarget {
     historyRedo() {
         const pos = this._getNextRedoIndex();
         if (pos >= 0) {
-            this.undos.set(pos, 2);
+            this._undos.set(pos, 2);
             this.historyRevert(this.history[pos]);
-            this.undos.set(this.history.length - 1, 0);
+            this._undos.set(this.history.length - 1, 0);
             this.historySetCursor(this.history[pos]);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyRedo'));
@@ -1359,7 +1359,7 @@ export class OdooEditor extends EventTarget {
     _getNextUndoIndex() {
         let index = this.history.length - 2;
         // go back to first step that can be undoed (0 or undefined)
-        while (this.undos.get(index)) {
+        while (this._undos.get(index)) {
             index--;
         }
         return index;
@@ -1373,12 +1373,12 @@ export class OdooEditor extends EventTarget {
         // We cannot redo more than what is consumed.
         // Check if we have no more 2 than 0 until we get to a 1
         let totalConsumed = 0;
-        while (this.undos.has(pos) && this.undos.get(pos) !== 1) {
+        while (this._undos.has(pos) && this._undos.get(pos) !== 1) {
             // here this.undos.get(pos) can only be 2 (consumed) or 0 (undoed).
-            totalConsumed += this.undos.get(pos) === 2 ? 1 : -1;
+            totalConsumed += this._undos.get(pos) === 2 ? 1 : -1;
             pos--;
         }
-        const canRedo = this.undos.get(pos) === 1 && totalConsumed <= 0;
+        const canRedo = this._undos.get(pos) === 1 && totalConsumed <= 0;
         return canRedo ? pos : -1;
     }
 
