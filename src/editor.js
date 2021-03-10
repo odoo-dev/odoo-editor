@@ -185,11 +185,11 @@ export class OdooEditor extends EventTarget {
             }
         }
 
-        this.collaborate = false;
-        this.collaborate_last = null;
+        this._collaborate = false;
+        this._collaborate_last = null;
 
         // used to check if we have to rollback an operation as an unbreakable is
-        this.torollback = false; // unbreakable removed or added
+        this._torollback = false; // unbreakable removed or added
     }
     /**
      * Releases anything that was initialized.
@@ -228,8 +228,8 @@ export class OdooEditor extends EventTarget {
         src.ouid = src.ouid || getOuid(src, true);
         if (testunbreak) {
             const ouid = getOuid(src);
-            if (!this.torollback && ouid && ouid !== src.ouid) {
-                this.torollback = UNBREAKABLE_ROLLBACK_CODE;
+            if (!this._torollback && ouid && ouid !== src.ouid) {
+                this._torollback = UNBREAKABLE_ROLLBACK_CODE;
             }
         }
 
@@ -264,10 +264,10 @@ export class OdooEditor extends EventTarget {
 
     // if not in collaboration mode, no need to serialize / unserialize
     serialize(node) {
-        return this.collaborate ? nodeToObject(node) : node;
+        return this._collaborate ? nodeToObject(node) : node;
     }
     unserialize(obj) {
-        return this.collaborate ? objectToNode(obj) : obj;
+        return this._collaborate ? objectToNode(obj) : obj;
     }
 
     automaticStepActive(label) {
@@ -336,8 +336,8 @@ export class OdooEditor extends EventTarget {
                 }
                 case 'childList': {
                     record.addedNodes.forEach(added => {
-                        this.torollback =
-                            this.torollback ||
+                        this._torollback =
+                            this._torollback ||
                             (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
                         let action = {
                             'type': 'add',
@@ -359,8 +359,8 @@ export class OdooEditor extends EventTarget {
                         this.history[this.history.length - 1].dom.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
-                        if (!this.torollback && containsUnremovable(removed)) {
-                            this.torollback = UNREMOVABLE_ROLLBACK_CODE;
+                        if (!this._torollback && containsUnremovable(removed)) {
+                            this._torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
                         this.history[this.history.length - 1].dom.push({
                             'type': 'remove',
@@ -429,9 +429,9 @@ export class OdooEditor extends EventTarget {
     historyStep(skipRollback = false) {
         this.observerFlush();
         // check that not two unBreakables modified
-        if (this.torollback) {
+        if (this._torollback) {
             if (!skipRollback) this.historyRollback();
-            this.torollback = false;
+            this._torollback = false;
         }
 
         // push history
@@ -496,11 +496,11 @@ export class OdooEditor extends EventTarget {
 
     // send changes to server
     historyFetch() {
-        if (!this.collaborate) {
+        if (!this._collaborate) {
             return;
         }
         window
-            .fetch(`/history-get/${this.collaborate_last || 0}`, {
+            .fetch(`/history-get/${this._collaborate_last || 0}`, {
                 headers: { 'Content-Type': 'application/json;charset=utf-8' },
                 method: 'GET',
             })
@@ -518,13 +518,13 @@ export class OdooEditor extends EventTarget {
 
                 let index = this.history.length;
                 let updated = false;
-                while (index && this.history[index - 1].id !== this.collaborate_last) {
+                while (index && this.history[index - 1].id !== this._collaborate_last) {
                     index--;
                 }
 
                 for (let residx = 0; residx < result.length; residx++) {
                     let record = result[residx];
-                    this.collaborate_last = record.id;
+                    this._collaborate_last = record.id;
                     if (index < this.history.length && record.id === this.history[index].id) {
                         index++;
                         continue;
@@ -559,12 +559,12 @@ export class OdooEditor extends EventTarget {
             })
             .catch(err => {
                 // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
-                this.collaborate = false;
+                this._collaborate = false;
             });
     }
 
     historySend(item) {
-        if (!this.collaborate) {
+        if (!this._collaborate) {
             return;
         }
         window
@@ -584,7 +584,7 @@ export class OdooEditor extends EventTarget {
         this.historyRevert(hist, until);
         this.observerFlush();
         hist.dom = hist.dom.slice(0, until);
-        this.torollback = false;
+        this._torollback = false;
     }
 
     /**
@@ -703,7 +703,8 @@ export class OdooEditor extends EventTarget {
         }
     }
     unbreakableStepUnactive() {
-        this.torollback = this.torollback === UNBREAKABLE_ROLLBACK_CODE ? false : this.torollback;
+        this._torollback =
+            this._torollback === UNBREAKABLE_ROLLBACK_CODE ? false : this._torollback;
         this._checkStepUnbreakable = false;
     }
 
@@ -774,7 +775,7 @@ export class OdooEditor extends EventTarget {
             td.textContent = '';
         });
         this.observerFlush();
-        this.torollback = false; // Errors caught with observerFlush were already handled.
+        this._torollback = false; // Errors caught with observerFlush were already handled.
         // If the end container was fully selected, extractContents may have
         // emptied it without removing it. Ensure it's gone.
         while (
@@ -811,7 +812,7 @@ export class OdooEditor extends EventTarget {
             const res = this._protect(() => {
                 next.oDeleteBackward();
                 if (!this.dom.contains(joinWith)) {
-                    this.torollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
+                    this._torollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
                 } else {
                     next = firstChild(next);
                 }
@@ -1280,8 +1281,8 @@ export class OdooEditor extends EventTarget {
         try {
             let result = callback.call(this);
             this.observerFlush();
-            if (this.torollback) {
-                const torollbackCode = this.torollback;
+            if (this._torollback) {
+                const torollbackCode = this._torollback;
                 this.historyRollback(rollbackCounter);
                 return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
             } else {
