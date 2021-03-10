@@ -139,7 +139,7 @@ export class OdooEditor extends EventTarget {
 
         this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
         this.dom.addEventListener('input', this._onInput.bind(this));
-        this.dom.addEventListener('mousedown', this._onClick.bind(this));
+        this.dom.addEventListener('mousedown', this._onMouseDown.bind(this));
         this.dom.addEventListener('paste', this._onPaste.bind(this));
         this.dom.addEventListener('drop', this._onDrop.bind(this));
 
@@ -1682,7 +1682,7 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    _onClick(ev) {
+    _onMouseDown(ev) {
         let node = ev.target;
         // handle checkbox lists
         if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
