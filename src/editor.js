@@ -212,7 +212,7 @@ export class OdooEditor extends EventTarget {
         this.observerFlush();
 
         // find common ancestror in this.history[-1]
-        const step = this.history[this.history.length - 1];
+        const step = this._historySteps[this._historySteps.length - 1];
         let commonAncestor, record;
         for (record of step.mutations) {
             const node = this.idFind(this.editable, record.parentId || record.id) || this.editable;
@@ -332,7 +332,7 @@ export class OdooEditor extends EventTarget {
         for (const record of records) {
             switch (record.type) {
                 case 'characterData': {
-                    this.history[this.history.length - 1].mutations.push({
+                    this._historySteps[this._historySteps.length - 1].mutations.push({
                         'type': 'characterData',
                         'id': record.target.oid,
                         'text': record.target.textContent,
@@ -341,7 +341,7 @@ export class OdooEditor extends EventTarget {
                     break;
                 }
                 case 'attributes': {
-                    this.history[this.history.length - 1].mutations.push({
+                    this._historySteps[this._historySteps.length - 1].mutations.push({
                         'type': 'attributes',
                         'id': record.target.oid,
                         'attributeName': record.attributeName,
@@ -372,13 +372,13 @@ export class OdooEditor extends EventTarget {
                         this.idSet(added, undefined, this._checkStepUnbreakable);
                         action.id = added.oid;
                         action.node = this.serialize(added);
-                        this.history[this.history.length - 1].mutations.push(action);
+                        this._historySteps[this._historySteps.length - 1].mutations.push(action);
                     });
                     record.removedNodes.forEach((removed, index) => {
                         if (!this._torollback && containsUnremovable(removed)) {
                             this._torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
-                        this.history[this.history.length - 1].mutations.push({
+                        this._historySteps[this._historySteps.length - 1].mutations.push({
                             'type': 'remove',
                             'id': removed.oid,
                             'parentId': record.target.oid,
@@ -423,7 +423,7 @@ export class OdooEditor extends EventTarget {
     }
 
     resetHistory() {
-        this.history = [
+        this._historySteps = [
             {
                 cursor: {
                     // cursor at beginning of step
@@ -452,7 +452,7 @@ export class OdooEditor extends EventTarget {
         }
 
         // push history
-        const latest = this.history[this.history.length - 1];
+        const latest = this._historySteps[this._historySteps.length - 1];
         if (!latest.mutations.length) {
             return false;
         }
@@ -460,7 +460,7 @@ export class OdooEditor extends EventTarget {
         latest.id = (Math.random() * 2 ** 31) | 0; // TODO: replace by uuid4 generator
         this.historyApply(this.vdom, latest.mutations);
         this.historySend(latest);
-        this.history.push({
+        this._historySteps.push({
             cursor: {},
             mutations: [],
         });
@@ -533,11 +533,11 @@ export class OdooEditor extends EventTarget {
                 }
                 this.observerUnactive();
 
-                let index = this.history.length;
+                let index = this._historySteps.length;
                 let updated = false;
                 while (
                     index &&
-                    this.history[index - 1].id !== this._collaborativeLastSynchronisedId
+                    this._historySteps[index - 1].id !== this._collaborativeLastSynchronisedId
                 ) {
                     index--;
                 }
@@ -545,16 +545,19 @@ export class OdooEditor extends EventTarget {
                 for (let residx = 0; residx < result.length; residx++) {
                     const record = result[residx];
                     this._collaborativeLastSynchronisedId = record.id;
-                    if (index < this.history.length && record.id === this.history[index].id) {
+                    if (
+                        index < this._historySteps.length &&
+                        record.id === this._historySteps[index].id
+                    ) {
                         index++;
                         continue;
                     }
                     updated = true;
 
                     // we are not synched with the server anymore, rollback and replay
-                    while (this.history.length > index) {
+                    while (this._historySteps.length > index) {
                         this.historyRollback();
-                        this.history.pop();
+                        this._historySteps.pop();
                     }
 
                     if (record.id === 1) {
@@ -565,11 +568,11 @@ export class OdooEditor extends EventTarget {
                     this.historyApply(this.vdom, record.mutations);
 
                     record.mutations = record.id === 1 ? [] : record.mutations;
-                    this.history.push(record);
+                    this._historySteps.push(record);
                     index++;
                 }
                 if (updated) {
-                    this.history.push({
+                    this._historySteps.push({
                         cursor: {},
                         mutations: [],
                     });
@@ -599,7 +602,7 @@ export class OdooEditor extends EventTarget {
     }
 
     historyRollback(until = 0) {
-        const hist = this.history[this.history.length - 1];
+        const hist = this._historySteps[this._historySteps.length - 1];
         this.observerFlush();
         this.historyRevert(hist, until);
         this.observerFlush();
@@ -619,14 +622,14 @@ export class OdooEditor extends EventTarget {
      */
     historyUndo() {
         // The last step is considered an uncommited draft so always revert it.
-        this.historyRevert(this.history[this.history.length - 1]);
+        this.historyRevert(this._historySteps[this._historySteps.length - 1]);
         const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
             this._undos.set(pos, 2);
-            this.historyRevert(this.history[pos]);
+            this.historyRevert(this._historySteps[pos]);
             // Consider the last position of the history as an undo.
-            this._undos.set(this.history.length - 1, 1);
+            this._undos.set(this._historySteps.length - 1, 1);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyUndo'));
         }
@@ -641,9 +644,9 @@ export class OdooEditor extends EventTarget {
         const pos = this._getNextRedoIndex();
         if (pos >= 0) {
             this._undos.set(pos, 2);
-            this.historyRevert(this.history[pos]);
-            this._undos.set(this.history.length - 1, 0);
-            this.historySetCursor(this.history[pos]);
+            this.historyRevert(this._historySteps[pos]);
+            this._undos.set(this._historySteps.length - 1, 0);
+            this.historySetCursor(this._historySteps[pos]);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyRedo'));
         }
@@ -843,7 +846,7 @@ export class OdooEditor extends EventTarget {
                 } else {
                     next = firstChild(next);
                 }
-            }, this.history[this.history.length - 1].mutations.length);
+            }, this._historySteps[this._historySteps.length - 1].mutations.length);
             if ([UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE].includes(res)) {
                 restore();
                 break;
@@ -1370,7 +1373,7 @@ export class OdooEditor extends EventTarget {
      * @param {boolean} [useCache=false]
      */
     _recordHistoryCursor(useCache = false) {
-        const latest = this.history[this.history.length - 1];
+        const latest = this._historySteps[this._historySteps.length - 1];
         latest.cursor =
             (useCache ? this._latestComputedCursor : this._computeHistoryCursor()) || {};
     }
@@ -1379,7 +1382,7 @@ export class OdooEditor extends EventTarget {
      * Return -1 if no undo index can be found.
      */
     _getNextUndoIndex() {
-        let index = this.history.length - 2;
+        let index = this._historySteps.length - 2;
         // go back to first step that can be undoed (0 or undefined)
         while (this._undos.get(index)) {
             index--;
@@ -1391,7 +1394,7 @@ export class OdooEditor extends EventTarget {
      * Return -1 if no redo index can be found.
      */
     _getNextRedoIndex() {
-        let pos = this.history.length - 2;
+        let pos = this._historySteps.length - 2;
         // We cannot redo more than what is consumed.
         // Check if we have no more 2 than 0 until we get to a 1
         let totalConsumed = 0;
@@ -1565,7 +1568,7 @@ export class OdooEditor extends EventTarget {
         // Record the cursor position that was computed on keydown or before
         // contentEditable execCommand (whatever preceded the 'input' event)
         this._recordHistoryCursor(true);
-        const cursor = this.history[this.history.length - 1].cursor;
+        const cursor = this._historySteps[this._historySteps.length - 1].cursor;
         const { focusOffset, focusNode, anchorNode, anchorOffset } = cursor || {};
         const wasCollapsed = !cursor || (focusNode === anchorNode && focusOffset === anchorOffset);
         if (this.keyboardType === KEYBOARD_TYPES.PHYSICAL || !wasCollapsed) {
