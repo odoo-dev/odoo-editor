@@ -213,17 +213,19 @@ export class OdooEditor extends EventTarget {
 
         // find common ancestror in this.history[-1]
         let step = this.history[this.history.length - 1];
-        let ca, record;
+        let commonAncestor, record;
         for (record of step.dom) {
             let node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
-            ca = ca ? commonParentGet(ca, node, this.dom) : node;
+            commonAncestor = commonAncestor
+                ? commonParentGet(commonAncestor, node, this.dom)
+                : node;
         }
-        if (!ca) {
+        if (!commonAncestor) {
             return false;
         }
 
         // sanitize and mark current position as sanitized
-        sanitize(ca);
+        sanitize(commonAncestor);
     }
 
     addDomListener(element, eventName, callback) {
