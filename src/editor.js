@@ -103,6 +103,9 @@ export class OdooEditor extends EventTarget {
         // Wether we should check for unbreakable the next history step.
         this._checkStepUnbreakable = true;
 
+        // All dom listeners currently active.
+        this._domListeners = [];
+
         if (dom.innerHTML.trim() === '') {
             dom.innerHTML = '<p><br></p>';
         }
@@ -122,22 +125,22 @@ export class OdooEditor extends EventTarget {
 
         this.observerActive();
 
-        this.dom.addEventListener('keydown', this._onKeyDown.bind(this));
-        this.dom.addEventListener('input', this._onInput.bind(this));
-        this.dom.addEventListener('mousedown', this._onMouseDown.bind(this));
-        this.dom.addEventListener('paste', this._onPaste.bind(this));
-        this.dom.addEventListener('drop', this._onDrop.bind(this));
+        this.addDomListener(this.dom, 'keydown', this._onKeyDown);
+        this.addDomListener(this.dom, 'input', this._onInput);
+        this.addDomListener(this.dom, 'mousedown', this._onMouseDown);
+        this.addDomListener(this.dom, 'paste', this._onPaste);
+        this.addDomListener(this.dom, 'drop', this._onDrop);
 
         this.document.onselectionchange = this._onSelectionChange.bind(this);
 
         this._currentMouseState = 'mouseup';
         this._selectionChanged = true;
-        this.dom.addEventListener('mousedown', this._updateMouseState.bind(this));
-        this.dom.addEventListener('mouseup', this._updateMouseState.bind(this));
+        this.addDomListener(this.dom, 'mousedown', this._updateMouseState);
+        this.addDomListener(this.dom, 'mouseup', this._updateMouseState);
 
         this._onKeyupResetContenteditableNodes = [];
-        this.document.addEventListener('keydown', this._onDocumentKeydown.bind(this));
-        this.document.addEventListener('keyup', this._onDocumentKeyup.bind(this));
+        this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
+        this.addDomListener(this.document, 'keyup', this._onDocumentKeyup);
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -183,6 +186,7 @@ export class OdooEditor extends EventTarget {
      */
     destroy() {
         this.observerUnactive();
+        this._removeDomListener();
     }
 
     sanitize() {
@@ -201,6 +205,12 @@ export class OdooEditor extends EventTarget {
 
         // sanitize and mark current position as sanitized
         sanitize(ca);
+    }
+
+    addDomListener(element, eventName, callback) {
+        const boundCallback = callback.bind(this);
+        this._domListeners.push([element, eventName, boundCallback]);
+        element.addEventListener(eventName, boundCallback);
     }
 
     // Assign IDs to src, and dest if defined
@@ -715,6 +725,13 @@ export class OdooEditor extends EventTarget {
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
+
+    _removeDomListener() {
+        for (const [element, eventName, boundCallback] of this._domListeners) {
+            element.removeEventListener(eventName, boundCallback);
+        }
+        this._domListeners = [];
+    }
 
     // EDITOR COMMANDS
     // ===============
