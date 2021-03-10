@@ -1495,6 +1495,13 @@ describe('Editor', () => {
                         contentAfter: '<p>ab []&nbsp;de</p>',
                     });
                 });
+                it('should delete an empty paragraph in a table cell', () =>
+                    testEditor(BasicEditor, {
+                        contentBefore:
+                            '<table><tbody><tr><td><p>a<br></p><p>[]<br></p></td></tr></tbody></table>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<table><tbody><tr><td><p>a[]</p></td></tr></tbody></table>',
+                    }));
                 it('should fill empty block with a <br>', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>a[]</p>',
