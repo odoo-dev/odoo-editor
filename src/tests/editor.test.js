@@ -10,7 +10,6 @@ import {
     insertText,
     redo,
     testEditor,
-    testVdom,
     toggleBold,
     undo,
     unformat,
@@ -2827,14 +2826,6 @@ describe('Editor', () => {
                         .to.eql(['abc', 'DIV', 'def']);
                 },
             });
-        });
-    });
-
-    it('should not delete content from the vdom', async () => {
-        await testVdom(BasicEditor, {
-            contentBefore: '<p><b>a[b]c</b></p>',
-            stepFunction: toggleBold,
-            contentAfter: '<p><b>a</b>b<b>c</b></p>',
         });
     });
 
