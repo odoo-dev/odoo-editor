@@ -113,7 +113,7 @@ export class OdooEditor extends EventTarget {
         this.undos = new Map();
         this._observerTimeoutUnactive = new Set();
 
-        // set contenteditable before clone as FF updates the content at this point
+        // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
 
         // When selecting all the text within a link then triggering delete or
