@@ -128,14 +128,13 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.dom, 'keydown', this._onKeyDown);
         this.addDomListener(this.dom, 'input', this._onInput);
         this.addDomListener(this.dom, 'mousedown', this._onMouseDown);
+        this.addDomListener(this.dom, 'mouseup', this._onMouseup);
         this.addDomListener(this.dom, 'paste', this._onPaste);
         this.addDomListener(this.dom, 'drop', this._onDrop);
 
         this.document.onselectionchange = this._onSelectionChange.bind(this);
 
         this._currentMouseState = 'mouseup';
-        this.addDomListener(this.dom, 'mousedown', this._updateMouseState);
-        this.addDomListener(this.dom, 'mouseup', this._updateMouseState);
 
         this._onKeyupResetContenteditableNodes = [];
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
@@ -1679,14 +1678,15 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    _updateMouseState(ev) {
+    _onMouseup(ev) {
         this._currentMouseState = ev.type;
-        if (ev.type === 'mouseup') {
-            this._fixFontAwesomeSelection();
-        }
+
+        this._fixFontAwesomeSelection();
     }
 
     _onMouseDown(ev) {
+        this._currentMouseState = ev.type;
+
         // When selecting all the text within a link then triggering delete or
         // inserting a character, the cursor and insertion is outside the link.
         // To avoid this problem, we make all editable zone become uneditable
