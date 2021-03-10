@@ -132,7 +132,7 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.dom, 'paste', this._onPaste);
         this.addDomListener(this.dom, 'drop', this._onDrop);
 
-        this.document.onselectionchange = this._onSelectionChange.bind(this);
+        this.addDomListener(this.document, 'selectionchange', this._onSelectionChange);
 
         this._currentMouseState = 'mouseup';
 
