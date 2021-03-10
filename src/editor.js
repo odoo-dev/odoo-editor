@@ -82,7 +82,7 @@ function defaultOptions(defaultObject, object) {
 }
 
 export class OdooEditor extends EventTarget {
-    constructor(dom, options = {}) {
+    constructor(editable, options = {}) {
         super();
 
         this.options = defaultOptions(
@@ -131,20 +131,20 @@ export class OdooEditor extends EventTarget {
         // Alter the editable
         // -------------------
 
-        if (dom.innerHTML.trim() === '') {
-            dom.innerHTML = '<p><br></p>';
+        if (editable.innerHTML.trim() === '') {
+            editable.innerHTML = '<p><br></p>';
         }
 
         // Convention: root node is ID 1.
-        dom.oid = 1;
-        this.dom = this.options.toSanitize ? sanitize(dom) : dom;
+        editable.oid = 1;
+        this.editable = this.options.toSanitize ? sanitize(editable) : editable;
 
         // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
 
-        this.vdom = dom.cloneNode(true);
+        this.vdom = editable.cloneNode(true);
         this.vdom.removeAttribute('contenteditable');
-        this.idSet(dom, this.vdom);
+        this.idSet(editable, this.vdom);
 
         // -----------
         // Bind events
@@ -152,12 +152,12 @@ export class OdooEditor extends EventTarget {
 
         this.observerActive();
 
-        this.addDomListener(this.dom, 'keydown', this._onKeyDown);
-        this.addDomListener(this.dom, 'input', this._onInput);
-        this.addDomListener(this.dom, 'mousedown', this._onMouseDown);
-        this.addDomListener(this.dom, 'mouseup', this._onMouseup);
-        this.addDomListener(this.dom, 'paste', this._onPaste);
-        this.addDomListener(this.dom, 'drop', this._onDrop);
+        this.addDomListener(this.editable, 'keydown', this._onKeyDown);
+        this.addDomListener(this.editable, 'input', this._onInput);
+        this.addDomListener(this.editable, 'mousedown', this._onMouseDown);
+        this.addDomListener(this.editable, 'mouseup', this._onMouseup);
+        this.addDomListener(this.editable, 'paste', this._onPaste);
+        this.addDomListener(this.editable, 'drop', this._onDrop);
 
         this.addDomListener(this.document, 'selectionchange', this._onSelectionChange);
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
@@ -215,9 +215,9 @@ export class OdooEditor extends EventTarget {
         const step = this.history[this.history.length - 1];
         let commonAncestor, record;
         for (record of step.dom) {
-            const node = this.idFind(this.dom, record.parentId || record.id) || this.dom;
+            const node = this.idFind(this.editable, record.parentId || record.id) || this.editable;
             commonAncestor = commonAncestor
-                ? commonParentGet(commonAncestor, node, this.dom)
+                ? commonParentGet(commonAncestor, node, this.editable)
                 : node;
         }
         if (!commonAncestor) {
@@ -317,7 +317,7 @@ export class OdooEditor extends EventTarget {
                 this.observerApply(this.vdom, records);
             });
         }
-        this.observer.observe(this.dom, {
+        this.observer.observe(this.editable, {
             childList: true,
             subtree: true,
             attributes: true,
@@ -403,7 +403,7 @@ export class OdooEditor extends EventTarget {
         for (const record of records) {
             if (record.type === 'attributes') {
                 // Skip the attributes change on the dom.
-                if (record.target === this.dom) continue;
+                if (record.target === this.editable) continue;
 
                 attributeCache.set(record.target, attributeCache.get(record.target) || {});
                 if (
@@ -558,10 +558,10 @@ export class OdooEditor extends EventTarget {
                     }
 
                     if (record.id === 1) {
-                        this.dom.innerHTML = '';
+                        this.editable.innerHTML = '';
                         this.vdom.innerHTML = '';
                     }
-                    this.historyApply(this.dom, record.dom);
+                    this.historyApply(this.editable, record.dom);
                     this.historyApply(this.vdom, record.dom);
 
                     record.dom = record.id === 1 ? [] : record.dom;
@@ -670,11 +670,11 @@ export class OdooEditor extends EventTarget {
             }
             switch (action.type) {
                 case 'characterData': {
-                    this.idFind(this.dom, action.id).textContent = action.oldValue;
+                    this.idFind(this.editable, action.id).textContent = action.oldValue;
                     break;
                 }
                 case 'attributes': {
-                    this.idFind(this.dom, action.id).setAttribute(
+                    this.idFind(this.editable, action.id).setAttribute(
                         action.attributeName,
                         action.oldValue,
                     );
@@ -682,17 +682,17 @@ export class OdooEditor extends EventTarget {
                 }
                 case 'remove': {
                     const node = this.unserialize(action.node);
-                    if (action.nextId && this.idFind(this.dom, action.nextId)) {
-                        this.idFind(this.dom, action.nextId).before(node);
-                    } else if (action.previousId && this.idFind(this.dom, action.previousId)) {
-                        this.idFind(this.dom, action.previousId).after(node);
+                    if (action.nextId && this.idFind(this.editable, action.nextId)) {
+                        this.idFind(this.editable, action.nextId).before(node);
+                    } else if (action.previousId && this.idFind(this.editable, action.previousId)) {
+                        this.idFind(this.editable, action.previousId).after(node);
                     } else {
-                        this.idFind(this.dom, action.parentId).append(node);
+                        this.idFind(this.editable, action.parentId).append(node);
                     }
                     break;
                 }
                 case 'add': {
-                    const el = this.idFind(this.dom, action.id);
+                    const el = this.idFind(this.editable, action.id);
                     if (el) {
                         el.remove();
                     }
@@ -705,9 +705,9 @@ export class OdooEditor extends EventTarget {
 
     historySetCursor(step) {
         if (step.cursor && step.cursor.anchorNode) {
-            const anchorNode = this.idFind(this.dom, step.cursor.anchorNode);
+            const anchorNode = this.idFind(this.editable, step.cursor.anchorNode);
             const focusNode = step.cursor.focusNode
-                ? this.idFind(this.dom, step.cursor.focusNode)
+                ? this.idFind(this.editable, step.cursor.focusNode)
                 : anchorNode;
             if (anchorNode) {
                 setCursor(
@@ -762,7 +762,7 @@ export class OdooEditor extends EventTarget {
     // ===============
 
     deleteRange(sel) {
-        let range = getDeepRange(this.dom, {
+        let range = getDeepRange(this.editable, {
             sel,
             splitText: true,
             select: true,
@@ -773,11 +773,11 @@ export class OdooEditor extends EventTarget {
         let end = range.endContainer;
         // Let the DOM split and delete the range.
         const doJoin = closestBlock(start) !== closestBlock(range.commonAncestorContainer);
-        let next = nextLeaf(end, this.dom);
+        let next = nextLeaf(end, this.editable);
         const splitEndTd = closestElement(end, 'td') && end.nextSibling;
         const contents = range.extractContents();
         setCursor(start, nodeSize(start));
-        range = getDeepRange(this.dom, { sel });
+        range = getDeepRange(this.editable, { sel });
         // Restore unremovables removed by extractContents.
         [...contents.querySelectorAll('*')].filter(isUnremovable).forEach(n => {
             closestBlock(range.endContainer).after(n);
@@ -807,7 +807,7 @@ export class OdooEditor extends EventTarget {
         // emptied it without removing it. Ensure it's gone.
         while (
             end &&
-            end !== this.dom &&
+            end !== this.editable &&
             !end.contains(range.endContainer) &&
             !isVisible(end, false)
         ) {
@@ -816,7 +816,7 @@ export class OdooEditor extends EventTarget {
             end = parent;
         }
         // Same with the start container
-        while (start && start !== this.dom && !isVisible(start)) {
+        while (start && start !== this.editable && !isVisible(start)) {
             const parent = start.parentNode;
             start.remove();
             start = parent;
@@ -838,7 +838,7 @@ export class OdooEditor extends EventTarget {
             this.observerFlush();
             const res = this._protect(() => {
                 next.oDeleteBackward();
-                if (!this.dom.contains(joinWith)) {
+                if (!this.editable.contains(joinWith)) {
                     this._torollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
                 } else {
                     next = firstChild(next);
@@ -868,11 +868,11 @@ export class OdooEditor extends EventTarget {
             this._colorElement(target, color, mode);
             return;
         }
-        const range = getDeepRange(this.dom, { splitText: true, select: true });
+        const range = getDeepRange(this.editable, { splitText: true, select: true });
         if (!range) return;
         const restoreCursor = preserveCursor(this.document);
         // Get the <font> nodes to color
-        const selectedNodes = getSelectedNodes(this.dom);
+        const selectedNodes = getSelectedNodes(this.editable);
         const fonts = selectedNodes.flatMap(node => {
             let font = closestElement(node, 'font');
             const children = font && [...font.childNodes];
@@ -1103,7 +1103,7 @@ export class OdooEditor extends EventTarget {
         const li = new Set();
         const blocks = new Set();
 
-        for (const node of getTraversedNodes(this.dom)) {
+        for (const node of getTraversedNodes(this.editable)) {
             const block = closestBlock(node);
             if (!['OL', 'UL'].includes(block.tagName)) {
                 const ublock = block.closest('ol, ul');
@@ -1126,7 +1126,7 @@ export class OdooEditor extends EventTarget {
     _align(mode) {
         const sel = this.document.defaultView.getSelection();
         const visitedBlocks = new Set();
-        const traversedNode = getTraversedNodes(this.dom);
+        const traversedNode = getTraversedNodes(this.editable);
         for (const node of traversedNode) {
             if (isContentTextNode(node) && isVisible(node)) {
                 const block = closestBlock(node);
@@ -1143,7 +1143,7 @@ export class OdooEditor extends EventTarget {
     _bold() {
         const selection = this.document.getSelection();
         if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
-        const isAlreadyBold = !getTraversedNodes(this.dom)
+        const isAlreadyBold = !getTraversedNodes(this.editable)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
             .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
         this._applyInlineStyle(el => {
@@ -1175,7 +1175,7 @@ export class OdooEditor extends EventTarget {
         const { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
         const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
         const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
-        const selectedTextNodes = getTraversedNodes(this.dom).filter(node =>
+        const selectedTextNodes = getTraversedNodes(this.editable).filter(node =>
             isContentTextNode(node),
         );
         for (const textNode of selectedTextNodes) {
@@ -1326,7 +1326,7 @@ export class OdooEditor extends EventTarget {
     }
 
     _activateContenteditable() {
-        this.dom.setAttribute('contenteditable', this.options.isRootEditable);
+        this.editable.setAttribute('contenteditable', this.options.isRootEditable);
 
         for (const node of this.options.getContentEditableAreas()) {
             if (!node.isContentEditable) {
@@ -1336,7 +1336,7 @@ export class OdooEditor extends EventTarget {
     }
     _stopContenteditable() {
         if (this.options.isRootEditable) {
-            this.dom.setAttribute('contenteditable', !this.options.isRootEditable);
+            this.editable.setAttribute('contenteditable', !this.options.isRootEditable);
         }
         for (const node of this.options.getContentEditableAreas()) {
             if (node.getAttribute('contenteditable') === 'true') {
@@ -1502,7 +1502,7 @@ export class OdooEditor extends EventTarget {
         const OFFSET = 10;
         let isBottom = false;
         this.toolbar.classList.toggle('toolbar-bottom', false);
-        this.toolbar.style.maxWidth = this.dom.offsetWidth - OFFSET * 2 + 'px';
+        this.toolbar.style.maxWidth = this.editable.offsetWidth - OFFSET * 2 + 'px';
         const sel = this.document.defaultView.getSelection();
         const range = sel.getRangeAt(0);
         const isSelForward =
@@ -1510,7 +1510,7 @@ export class OdooEditor extends EventTarget {
         const selRect = range.getBoundingClientRect();
         const toolbarWidth = this.toolbar.offsetWidth;
         const toolbarHeight = this.toolbar.offsetHeight;
-        const editorRect = this.dom.getBoundingClientRect();
+        const editorRect = this.editable.getBoundingClientRect();
         const editorLeftPos = Math.max(0, editorRect.left);
         const editorTopPos = Math.max(0, editorRect.top);
         const scrollX = this.document.defaultView.window.scrollX;
@@ -1521,7 +1521,7 @@ export class OdooEditor extends EventTarget {
         // Ensure the toolbar doesn't overflow the editor on the left.
         left = Math.max(editorLeftPos + OFFSET, left);
         // Ensure the toolbar doesn't overflow the editor on the right.
-        left = Math.min(editorLeftPos + this.dom.offsetWidth - OFFSET - toolbarWidth, left);
+        left = Math.min(editorLeftPos + this.editable.offsetWidth - OFFSET - toolbarWidth, left);
         this.toolbar.style.left = scrollX + left + 'px';
 
         // Get top position.
@@ -1533,7 +1533,7 @@ export class OdooEditor extends EventTarget {
             isBottom = true;
         }
         // Ensure the toolbar doesn't overflow the editor on the bottom.
-        top = Math.min(editorTopPos + this.dom.offsetHeight - OFFSET - toolbarHeight, top);
+        top = Math.min(editorTopPos + this.editable.offsetHeight - OFFSET - toolbarHeight, top);
         this.toolbar.style.top = scrollY + top + 'px';
 
         // Position the arrow.
@@ -1678,7 +1678,7 @@ export class OdooEditor extends EventTarget {
         const contenteditableFalseNode =
             startContainer &&
             !startContainer.isContentEditable &&
-            ancestors(startContainer).includes(this.dom) &&
+            ancestors(startContainer).includes(this.editable) &&
             startContainer.closest('[contenteditable=false]');
         if (contenteditableFalseNode) {
             selection.removeAllRanges();
@@ -1747,10 +1747,10 @@ export class OdooEditor extends EventTarget {
         } else {
             if (isRedo(ev) || isUndo(ev)) {
                 this._onKeyupResetContenteditableNodes.push(
-                    ...this.dom.querySelectorAll('[contenteditable=true]'),
+                    ...this.editable.querySelectorAll('[contenteditable=true]'),
                 );
-                if (this.dom.getAttribute('contenteditable') === 'true') {
-                    this._onKeyupResetContenteditableNodes.push(this.dom);
+                if (this.editable.getAttribute('contenteditable') === 'true') {
+                    this._onKeyupResetContenteditableNodes.push(this.editable);
                 }
 
                 for (const node of this._onKeyupResetContenteditableNodes) {
@@ -1789,7 +1789,7 @@ export class OdooEditor extends EventTarget {
         let isInEditor = false;
         let ancestor = sel.anchorNode;
         while (ancestor && !isInEditor) {
-            if (ancestor === this.dom) {
+            if (ancestor === this.editable) {
                 isInEditor = true;
             }
             ancestor = ancestor.parentNode;
@@ -1866,7 +1866,9 @@ export class OdooEditor extends EventTarget {
                 this.historyRedo();
             } else {
                 const restoreCursor = preserveCursor(this.document);
-                const selectedBlocks = [...new Set(getTraversedNodes(this.dom).map(closestBlock))];
+                const selectedBlocks = [
+                    ...new Set(getTraversedNodes(this.editable).map(closestBlock)),
+                ];
                 for (const selectedBlock of selectedBlocks) {
                     const block = closestBlock(selectedBlock);
                     if (
@@ -1996,7 +1998,7 @@ export class OdooEditor extends EventTarget {
         this._addColumn('after');
     }
     _addColumn(beforeOrAfter) {
-        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding td.
+        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding td.
         const c = getInSelection(this.document, 'td');
         if (!c) return;
         const i = [...closestElement(c, 'tr').querySelectorAll('th, td')].findIndex(td => td === c);
@@ -2010,7 +2012,7 @@ export class OdooEditor extends EventTarget {
         this._addRow('after');
     }
     _addRow(beforeOrAfter) {
-        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding tr.
+        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding tr.
         const row = getInSelection(this.document, 'tr');
         if (!row) return;
         const newRow = document.createElement('tr');
@@ -2019,7 +2021,7 @@ export class OdooEditor extends EventTarget {
         row[beforeOrAfter](newRow);
     }
     _removeColumn() {
-        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding td.
+        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding td.
         const cell = getInSelection(this.document, 'td');
         if (!cell) return;
         const table = closestElement(cell, 'table');
@@ -2030,7 +2032,7 @@ export class OdooEditor extends EventTarget {
         siblingCell ? setCursor(...startPos(siblingCell)) : this._deleteTable(table);
     }
     _removeRow() {
-        getDeepRange(this.dom, { select: true }); // Ensure deep range for finding tr.
+        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding tr.
         const row = getInSelection(this.document, 'tr');
         if (!row) return;
         const table = closestElement(row, 'table');
@@ -2075,7 +2077,7 @@ export class OdooEditor extends EventTarget {
         const selection = this.document.defaultView.getSelection();
         if (
             selection.isCollapsed ||
-            (selection.anchorNode && !ancestors(selection.anchorNode).includes(this.dom))
+            (selection.anchorNode && !ancestors(selection.anchorNode).includes(this.editable))
         )
             return;
         let shouldUpdateSelection = false;

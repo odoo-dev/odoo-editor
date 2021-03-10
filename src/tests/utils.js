@@ -234,7 +234,7 @@ export async function testEditor(Editor = OdooEditor, spec, useVDom = false) {
     }
 
     // we have to sanitize after having put the cursor
-    sanitize(editor.dom);
+    sanitize(editor.editable);
 
     let firefoxExecCommandError = false;
     if (spec.stepFunction) {
