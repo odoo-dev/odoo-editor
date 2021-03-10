@@ -134,7 +134,6 @@ export class OdooEditor extends EventTarget {
         this.document.onselectionchange = this._onSelectionChange.bind(this);
 
         this._currentMouseState = 'mouseup';
-        this._selectionChanged = true;
         this.addDomListener(this.dom, 'mousedown', this._updateMouseState);
         this.addDomListener(this.dom, 'mouseup', this._updateMouseState);
 
@@ -1640,10 +1639,7 @@ export class OdooEditor extends EventTarget {
         const selection = this.document.defaultView.getSelection();
         this._updateToolbar(!selection.isCollapsed);
 
-        if (this._currentMouseState === 'mousedown') {
-            // _fixFontAwesomeSelection will be called when the mouseup event is triggered.
-            this._selectionChanged = true;
-        } else {
+        if (this._currentMouseState === 'mouseup') {
             this._fixFontAwesomeSelection();
         }
 
@@ -1680,7 +1676,7 @@ export class OdooEditor extends EventTarget {
 
     _updateMouseState(ev) {
         this._currentMouseState = ev.type;
-        if (ev.type === 'mouseup' && this._selectionChanged) {
+        if (ev.type === 'mouseup') {
             this._fixFontAwesomeSelection();
         }
     }
