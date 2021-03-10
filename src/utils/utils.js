@@ -330,6 +330,12 @@ export function getAdjacentNextSiblings(node, predicat = n => n) {
     return list;
 }
 
+export function getAdjacents(node, predicat = n => n, includeSelf = true) {
+    const previous = getAdjacentPreviousSiblings(node, predicat);
+    const next = getAdjacentNextSiblings(node, predicat);
+    return includeSelf ? [...previous, node, ...next] : [...previous, ...next];
+}
+
 //------------------------------------------------------------------------------
 // Cursor management
 //------------------------------------------------------------------------------
@@ -982,6 +988,19 @@ export function createList(mode) {
         node.classList.add('o_checklist');
     }
     return node;
+}
+
+export function insertListAfter(afterNode, mode, content = []) {
+    const list = createList(mode);
+    afterNode.after(list);
+    list.append(
+        ...content.map(c => {
+            const li = document.createElement('LI');
+            li.append(...[].concat(c));
+            return li;
+        }),
+    );
+    return list;
 }
 
 export function toggleClass(node, className) {

@@ -1,13 +1,12 @@
 import {
     childNodeIndex,
-    createList,
     getListMode,
     isBlock,
     preserveCursor,
     setTagName,
     toggleClass,
-    getAdjacentNextSiblings,
-    getAdjacentPreviousSiblings,
+    insertListAfter,
+    getAdjacents,
 } from '../utils/utils.js';
 
 Text.prototype.oToggleList = function (offset, mode) {
@@ -22,43 +21,25 @@ HTMLElement.prototype.oToggleList = function (offset, mode = 'UL') {
     if (inLI) {
         return inLI.oToggleList(0, mode);
     }
-
-    let main = createList(mode);
-    let li = document.createElement('LI');
-    main.append(li);
     const restoreCursor = preserveCursor(this.ownerDocument);
-
     // if `this` is the root editable
     if (this.oid === 1) {
         const callingNode = this.childNodes[offset];
-        const group = [
-            ...getAdjacentPreviousSiblings(callingNode, n => !isBlock(n)),
-            callingNode,
-            ...getAdjacentNextSiblings(callingNode, n => !isBlock(n)),
-        ];
-        callingNode.after(main);
-        li.append(...group);
+        const group = getAdjacents(callingNode, n => !isBlock(n));
+        insertListAfter(callingNode, mode, [group]);
         restoreCursor();
     } else {
-        this.after(main);
-        li.append(this);
-        restoreCursor(new Map([[this, li]]));
+        const list = insertListAfter(this, mode, [this]);
+        restoreCursor(new Map([[this, list.firstElementChild]]));
     }
 };
 
 HTMLParagraphElement.prototype.oToggleList = function (offset, mode = 'UL') {
-    let main = createList(mode);
-    let li = document.createElement('LI');
-    main.append(li);
-
     const restoreCursor = preserveCursor(this.ownerDocument);
-    while (this.firstChild) {
-        li.append(this.firstChild);
-    }
-    this.after(main);
+    const list = insertListAfter(this, mode, [[...this.childNodes]]);
     this.remove();
 
-    restoreCursor(new Map([[this, li]]));
+    restoreCursor(new Map([[this, list.firstChild]]));
     return true;
 };
 
@@ -94,4 +75,12 @@ HTMLLIElement.prototype.oToggleList = function (offset, mode) {
     }
     restoreCursor();
     return false;
+};
+
+HTMLTableCellElement.prototype.oToggleList = function (offset, mode) {
+    const restoreCursor = preserveCursor(this.ownerDocument);
+    const callingNode = this.childNodes[offset];
+    const group = getAdjacents(callingNode, n => !isBlock(n));
+    insertListAfter(callingNode, mode, [group]);
+    restoreCursor();
 };
