@@ -95,6 +95,10 @@ export class OdooEditor extends EventTarget {
             options,
         );
 
+        // --------------
+        // Set properties
+        // --------------
+
         this.document = options.document || document;
 
         // Keyboard type detection, happens only at the first keydown event.
@@ -106,15 +110,34 @@ export class OdooEditor extends EventTarget {
         // All dom listeners currently active.
         this._domListeners = [];
 
+        this.resetHistory();
+
+        // Set of labels that which prevent the automatic step mechanism if
+        // it contains at least one element.
+        this._observerTimeoutUnactive = new Set();
+
+        // The state of the dom.
+        this._currentMouseState = 'mouseup';
+
+        this._onKeyupResetContenteditableNodes = [];
+
+        this._collaborate = false;
+        this._collaborate_last = null;
+
+        // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
+        this._torollback = false;
+
+        // -------------------
+        // Alter the editable
+        // -------------------
+
         if (dom.innerHTML.trim() === '') {
             dom.innerHTML = '<p><br></p>';
         }
 
-        dom.oid = 1; // convention: root node is ID 1
+        // Convention: root node is ID 1.
+        dom.oid = 1;
         this.dom = this.options.toSanitize ? sanitize(dom) : dom;
-        this.resetHistory();
-        this._undos = new Map();
-        this._observerTimeoutUnactive = new Set();
 
         // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
@@ -122,6 +145,10 @@ export class OdooEditor extends EventTarget {
         this.vdom = dom.cloneNode(true);
         this.vdom.removeAttribute('contenteditable');
         this.idSet(dom, this.vdom);
+
+        // -----------
+        // Bind events
+        // -----------
 
         this.observerActive();
 
@@ -133,12 +160,12 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.dom, 'drop', this._onDrop);
 
         this.addDomListener(this.document, 'selectionchange', this._onSelectionChange);
-
-        this._currentMouseState = 'mouseup';
-
-        this._onKeyupResetContenteditableNodes = [];
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
         this.addDomListener(this.document, 'keyup', this._onDocumentKeyup);
+
+        // -------
+        // Toolbar
+        // -------
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -170,12 +197,6 @@ export class OdooEditor extends EventTarget {
                 });
             }
         }
-
-        this._collaborate = false;
-        this._collaborate_last = null;
-
-        // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
-        this._torollback = false;
     }
     /**
      * Releases anything that was initialized.
@@ -413,6 +434,7 @@ export class OdooEditor extends EventTarget {
                 id: undefined,
             },
         ];
+        this._undos = new Map();
     }
     //
     // History
