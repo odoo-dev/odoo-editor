@@ -1675,8 +1675,8 @@ export class OdooEditor extends EventTarget {
         // that to the command execution or the 'input' event handler.
         this._computeHistoryCursor();
 
-        const sel = this.document.defaultView.getSelection();
-        this._updateToolbar(!sel.isCollapsed);
+        const selection = this.document.defaultView.getSelection();
+        this._updateToolbar(!selection.isCollapsed);
 
         if (this._currentMouseState === 'mousedown') {
             // _fixFontAwesomeSelection will be called when the mouseup event is triggered.
@@ -1689,14 +1689,15 @@ export class OdooEditor extends EventTarget {
         // contenteditable=false, it breaks the edition upon keystroke. Move the
         // selection so that it remain in an editable area. An example of this
         // case happend when the selection goes into a fontawesome node.
-        const startContainer = sel.rangeCount && closestElement(sel.getRangeAt(0).startContainer);
+        const startContainer =
+            selection.rangeCount && closestElement(selection.getRangeAt(0).startContainer);
         const contenteditableFalseNode =
             startContainer &&
             !startContainer.isContentEditable &&
             ancestors(startContainer).includes(this.dom) &&
             startContainer.closest('[contenteditable=false]');
         if (contenteditableFalseNode) {
-            sel.removeAllRanges();
+            selection.removeAllRanges();
             const range = new Range();
             if (contenteditableFalseNode.previousSibling) {
                 range.setStart(
@@ -1711,7 +1712,7 @@ export class OdooEditor extends EventTarget {
                 range.setStart(contenteditableFalseNode.parentElement, 0);
                 range.setEnd(contenteditableFalseNode.parentElement, 0);
             }
-            sel.addRange(range);
+            selection.addRange(range);
         }
     }
 
