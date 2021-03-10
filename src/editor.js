@@ -151,44 +151,8 @@ export class OdooEditor extends EventTarget {
         this.dom.addEventListener('mouseup', this._updateMouseState.bind(this));
 
         this._onKeyupResetContenteditableNodes = [];
-        this.document.addEventListener('keydown', ev => {
-            const canUndoRedo = !['INPUT', 'TEXTAREA'].includes(
-                this.document.activeElement.tagName,
-            );
-
-            if (this.options.controlHistoryFromDocument && canUndoRedo) {
-                if (isUndo(ev) && canUndoRedo) {
-                    ev.preventDefault();
-                    this.historyUndo();
-                } else if (isRedo(ev) && canUndoRedo) {
-                    ev.preventDefault();
-                    this.historyRedo();
-                }
-            } else {
-                if (isRedo(ev) || isUndo(ev)) {
-                    this._onKeyupResetContenteditableNodes.push(
-                        ...this.dom.querySelectorAll('[contenteditable=true]'),
-                    );
-                    if (this.dom.getAttribute('contenteditable') === 'true') {
-                        this._onKeyupResetContenteditableNodes.push(this.dom);
-                    }
-
-                    for (const node of this._onKeyupResetContenteditableNodes) {
-                        this.automaticStepSkipStack();
-                        node.setAttribute('contenteditable', false);
-                    }
-                }
-            }
-        });
-        this.document.addEventListener('keyup', ev => {
-            if (this._onKeyupResetContenteditableNodes.length) {
-                for (const node of this._onKeyupResetContenteditableNodes) {
-                    this.automaticStepSkipStack();
-                    node.setAttribute('contenteditable', true);
-                }
-                this._onKeyupResetContenteditableNodes = [];
-            }
-        });
+        this.document.addEventListener('keydown', this._onDocumentKeydown.bind(this));
+        this.document.addEventListener('keyup', this._onDocumentKeyup.bind(this));
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
@@ -1726,6 +1690,44 @@ export class OdooEditor extends EventTarget {
                 toggleClass(node, 'o_checked');
                 ev.preventDefault();
             }
+        }
+    }
+
+    _onDocumentKeydown(ev) {
+        const canUndoRedo = !['INPUT', 'TEXTAREA'].includes(this.document.activeElement.tagName);
+
+        if (this.options.controlHistoryFromDocument && canUndoRedo) {
+            if (isUndo(ev) && canUndoRedo) {
+                ev.preventDefault();
+                this.historyUndo();
+            } else if (isRedo(ev) && canUndoRedo) {
+                ev.preventDefault();
+                this.historyRedo();
+            }
+        } else {
+            if (isRedo(ev) || isUndo(ev)) {
+                this._onKeyupResetContenteditableNodes.push(
+                    ...this.dom.querySelectorAll('[contenteditable=true]'),
+                );
+                if (this.dom.getAttribute('contenteditable') === 'true') {
+                    this._onKeyupResetContenteditableNodes.push(this.dom);
+                }
+
+                for (const node of this._onKeyupResetContenteditableNodes) {
+                    this.automaticStepSkipStack();
+                    node.setAttribute('contenteditable', false);
+                }
+            }
+        }
+    }
+
+    _onDocumentKeyup() {
+        if (this._onKeyupResetContenteditableNodes.length) {
+            for (const node of this._onKeyupResetContenteditableNodes) {
+                this.automaticStepSkipStack();
+                node.setAttribute('contenteditable', true);
+            }
+            this._onKeyupResetContenteditableNodes = [];
         }
     }
 
