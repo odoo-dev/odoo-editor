@@ -428,7 +428,7 @@ export class OdooEditor extends EventTarget {
                 id: undefined,
             },
         ];
-        this._undos = new Map();
+        this._historyStepsStates = new Map();
     }
     //
     // History
@@ -602,7 +602,7 @@ export class OdooEditor extends EventTarget {
     /**
      * Undo a step of the history.
      *
-     * this.undos is a map from it's location (index) in this.history to a state.
+     * this._historyStepsState is a map from it's location (index) in this.history to a state.
      * The state can be on of:
      * undefined: the position has never been undo or redo.
      * 0: The position is considered as a redo of another.
@@ -615,10 +615,10 @@ export class OdooEditor extends EventTarget {
         const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
-            this._undos.set(pos, 2);
+            this._historyStepsStates.set(pos, 2);
             this.historyRevert(this._historySteps[pos]);
             // Consider the last position of the history as an undo.
-            this._undos.set(this._historySteps.length - 1, 1);
+            this._historyStepsStates.set(this._historySteps.length - 1, 1);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyUndo'));
         }
@@ -632,9 +632,9 @@ export class OdooEditor extends EventTarget {
     historyRedo() {
         const pos = this._getNextRedoIndex();
         if (pos >= 0) {
-            this._undos.set(pos, 2);
+            this._historyStepsStates.set(pos, 2);
             this.historyRevert(this._historySteps[pos]);
-            this._undos.set(this._historySteps.length - 1, 0);
+            this._historyStepsStates.set(this._historySteps.length - 1, 0);
             this.historySetCursor(this._historySteps[pos]);
             this.historyStep(true);
             this.dispatchEvent(new Event('historyRedo'));
@@ -1378,7 +1378,7 @@ export class OdooEditor extends EventTarget {
     _getNextUndoIndex() {
         let index = this._historySteps.length - 2;
         // go back to first step that can be undoed (0 or undefined)
-        while (this._undos.get(index)) {
+        while (this._historyStepsStates.get(index)) {
             index--;
         }
         return index;
@@ -1392,12 +1392,12 @@ export class OdooEditor extends EventTarget {
         // We cannot redo more than what is consumed.
         // Check if we have no more 2 than 0 until we get to a 1
         let totalConsumed = 0;
-        while (this._undos.has(pos) && this._undos.get(pos) !== 1) {
-            // here this.undos.get(pos) can only be 2 (consumed) or 0 (undoed).
-            totalConsumed += this._undos.get(pos) === 2 ? 1 : -1;
+        while (this._historyStepsStates.has(pos) && this._historyStepsStates.get(pos) !== 1) {
+            // here ._historyStepsState.get(pos) can only be 2 (consumed) or 0 (undoed).
+            totalConsumed += this._historyStepsStates.get(pos) === 2 ? 1 : -1;
             pos--;
         }
-        const canRedo = this._undos.get(pos) === 1 && totalConsumed <= 0;
+        const canRedo = this._historyStepsStates.get(pos) === 1 && totalConsumed <= 0;
         return canRedo ? pos : -1;
     }
 
