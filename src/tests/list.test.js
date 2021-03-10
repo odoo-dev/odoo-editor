@@ -1046,7 +1046,7 @@ describe('List', () => {
                         <li>1</li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1065,7 +1065,7 @@ describe('List', () => {
                         <li>1</li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1084,7 +1084,7 @@ describe('List', () => {
                         <li class="o_checked">1</li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1103,7 +1103,7 @@ describe('List', () => {
                         <li><br></li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1122,7 +1122,7 @@ describe('List', () => {
                         <li><br></li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1147,7 +1147,7 @@ describe('List', () => {
                     </li>
                 </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[2];
@@ -1178,7 +1178,7 @@ describe('List', () => {
                     </li>
                 </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[2];
@@ -1214,7 +1214,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[3];
@@ -1255,7 +1255,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[3];
@@ -1303,7 +1303,7 @@ describe('List', () => {
                             </li>
                         </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1354,7 +1354,7 @@ describe('List', () => {
                             </li>
                         </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[0];
@@ -1398,7 +1398,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[1];
@@ -1439,7 +1439,7 @@ describe('List', () => {
                         </li>
                     </ul>`),
                 stepFunction: async editor => {
-                    const lis = editor.dom.querySelectorAll(
+                    const lis = editor.editable.querySelectorAll(
                         '.o_checklist > li:not([class^="oe-nested"])',
                     );
                     const li = lis[1];
@@ -5347,7 +5347,7 @@ describe('List', () => {
                                         <li>c[]</li>
                                     </ol>`),
                                 stepFunction: async editor => {
-                                    const ol = editor.dom.querySelector('ol');
+                                    const ol = editor.editable.querySelector('ol');
                                     const li = document.createElement('li');
                                     const br = document.createElement('br');
                                     li.append(br);
