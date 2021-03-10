@@ -116,21 +116,6 @@ export class OdooEditor extends EventTarget {
         // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
 
-        // When selecting all the text within a link then triggering delete or
-        // inserting a character, the cursor and insertion is outside the link.
-        // To avoid this problem, we make all editable zone become uneditable
-        // except the link. Then when cliking outside the link, reset the
-        // editable zones.
-        this.dom.addEventListener('mousedown', e => {
-            this.automaticStepSkipStack();
-            const link = closestElement(e.target, 'a');
-            if (link) {
-                this._stopContenteditable();
-                link.setAttribute('contenteditable', 'true');
-            } else {
-                this._activateContenteditable();
-            }
-        });
         this.vdom = dom.cloneNode(true);
         this.vdom.removeAttribute('contenteditable');
         this.idSet(dom, this.vdom);
@@ -1689,6 +1674,20 @@ export class OdooEditor extends EventTarget {
     }
 
     _onMouseDown(ev) {
+        // When selecting all the text within a link then triggering delete or
+        // inserting a character, the cursor and insertion is outside the link.
+        // To avoid this problem, we make all editable zone become uneditable
+        // except the link. Then when cliking outside the link, reset the
+        // editable zones.
+        this.automaticStepSkipStack();
+        const link = closestElement(ev.target, 'a');
+        if (link) {
+            this._stopContenteditable();
+            link.setAttribute('contenteditable', 'true');
+        } else {
+            this._activateContenteditable();
+        }
+
         let node = ev.target;
         // handle checkbox lists
         if (node.tagName == 'LI' && getListMode(node.parentElement) == 'CL') {
