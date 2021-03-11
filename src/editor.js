@@ -656,37 +656,40 @@ export class OdooEditor extends EventTarget {
     historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
         for (let i = step.mutations.length - 1; i >= until; i--) {
-            const action = step.mutations[i];
-            if (!action) {
+            const mutation = step.mutations[i];
+            if (!mutation) {
                 break;
             }
-            switch (action.type) {
+            switch (mutation.type) {
                 case 'characterData': {
-                    this.idFind(this.editable, action.id).textContent = action.oldValue;
+                    this.idFind(this.editable, mutation.id).textContent = mutation.oldValue;
                     break;
                 }
                 case 'attributes': {
-                    this.idFind(this.editable, action.id).setAttribute(
-                        action.attributeName,
-                        action.oldValue,
+                    this.idFind(this.editable, mutation.id).setAttribute(
+                        mutation.attributeName,
+                        mutation.oldValue,
                     );
                     break;
                 }
                 case 'remove': {
-                    const node = this.unserialize(action.node);
-                    if (action.nextId && this.idFind(this.editable, action.nextId)) {
-                        this.idFind(this.editable, action.nextId).before(node);
-                    } else if (action.previousId && this.idFind(this.editable, action.previousId)) {
-                        this.idFind(this.editable, action.previousId).after(node);
+                    const node = this.unserialize(mutation.node);
+                    if (mutation.nextId && this.idFind(this.editable, mutation.nextId)) {
+                        this.idFind(this.editable, mutation.nextId).before(node);
+                    } else if (
+                        mutation.previousId &&
+                        this.idFind(this.editable, mutation.previousId)
+                    ) {
+                        this.idFind(this.editable, mutation.previousId).after(node);
                     } else {
-                        this.idFind(this.editable, action.parentId).append(node);
+                        this.idFind(this.editable, mutation.parentId).append(node);
                     }
                     break;
                 }
                 case 'add': {
-                    const el = this.idFind(this.editable, action.id);
-                    if (el) {
-                        el.remove();
+                    const node = this.idFind(this.editable, mutation.id);
+                    if (node) {
+                        node.remove();
                     }
                 }
             }
