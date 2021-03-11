@@ -992,7 +992,7 @@ export class OdooEditor extends EventTarget {
      * Applies a css or class color (fore- or background-) to an element.
      * Replace the color that was already there if any.
      *
-     * @param {Node} element
+     * @param {Element} element
      * @param {string} color hexadecimal or bg-name/text-name class
      * @param {string} mode 'color' or 'backgroundColor'
      */
@@ -1013,7 +1013,7 @@ export class OdooEditor extends EventTarget {
      * Returns true if the given element has a visible color (fore- or
      * -background depending on the given mode).
      *
-     * @param {Node} element
+     * @param {Element} element
      * @param {string} mode 'color' or 'backgroundColor'
      * @returns {boolean}
      */
