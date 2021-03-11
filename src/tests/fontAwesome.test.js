@@ -5,61 +5,61 @@ describe('FontAwesome', () => {
         it('should parse an old-school fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-star"></i></p>',
-                contentAfter: '<p><i class="fa fa-star" contenteditable="false">​</i></p>',
+                contentAfter: '<p><i class="fa fa-star" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a brand fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fab fa-opera"></i></p>',
-                contentAfter: '<p><i class="fab fa-opera" contenteditable="false">​</i></p>',
+                contentAfter: '<p><i class="fab fa-opera" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a duotone fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fad fa-bus-alt"></i></p>',
-                contentAfter: '<p><i class="fad fa-bus-alt" contenteditable="false">​</i></p>',
+                contentAfter: '<p><i class="fad fa-bus-alt" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a light fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fab fa-accessible-icon"></i></p>',
                 contentAfter:
-                    '<p><i class="fab fa-accessible-icon" contenteditable="false">​</i></p>',
+                    '<p><i class="fab fa-accessible-icon" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a regular fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="far fa-money-bill-alt"></i></p>',
                 contentAfter:
-                    '<p><i class="far fa-money-bill-alt" contenteditable="false">​</i></p>',
+                    '<p><i class="far fa-money-bill-alt" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a solid fontawesome', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i></span></p>',
                 contentAfter:
-                    '<p><i class="fa fa-pastafarianism" contenteditable="false">​</i></p>',
+                    '<p><i class="fa fa-pastafarianism" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a fontawesome in a <span>', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><span class="fa fa-pastafarianism"></span></p>',
                 contentAfter:
-                    '<p><span class="fa fa-pastafarianism" contenteditable="false">​</span></p>',
+                    '<p><span class="fa fa-pastafarianism" contenteditable="false">\u200b</span></p>',
             });
         });
         it('should parse a fontawesome in a <i>', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i></i></p>',
                 contentAfter:
-                    '<p><i class="fa fa-pastafarianism" contenteditable="false">​</i></p>',
+                    '<p><i class="fa fa-pastafarianism" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a fontawesome with more classes', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="red fa bordered fa-pastafarianism big"></i></p>',
                 contentAfter:
-                    '<p><i class="red fa bordered fa-pastafarianism big" contenteditable="false">​</i></p>',
+                    '<p><i class="red fa bordered fa-pastafarianism big" contenteditable="false">\u200b</i></p>',
             });
         });
         it('should parse a fontawesome with multi-line classes', async () => {
@@ -67,7 +67,7 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="fa
                                 fa-pastafarianism"></i></p>`,
                 contentAfter: `<p><i class="fa
-                                fa-pastafarianism" contenteditable="false">​</i></p>`,
+                                fa-pastafarianism" contenteditable="false">\u200b</i></p>`,
             });
         });
         it('should parse a fontawesome with more multi-line classes', async () => {
@@ -75,28 +75,28 @@ describe('FontAwesome', () => {
                 contentBefore: `<p><i class="red fa bordered
                                 big fa-pastafarianism scary"></i></p>`,
                 contentAfter: `<p><i class="red fa bordered
-                                big fa-pastafarianism scary" contenteditable="false">​</i></p>`,
+                                big fa-pastafarianism scary" contenteditable="false">\u200b</i></p>`,
             });
         });
         it('should parse a fontawesome at the beginning of a paragraph', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p><i class="fa fa-pastafarianism"></i>a[b]c</p>',
                 contentAfter:
-                    '<p><i class="fa fa-pastafarianism" contenteditable="false">​</i>a[b]c</p>',
+                    '<p><i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>a[b]c</p>',
             });
         });
         it('should parse a fontawesome in the middle of a paragraph', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>a[b]c<i class="fa fa-pastafarianism"></i>def</p>',
                 contentAfter:
-                    '<p>a[b]c<i class="fa fa-pastafarianism" contenteditable="false">​</i>def</p>',
+                    '<p>a[b]c<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>def</p>',
             });
         });
         it('should parse a fontawesome at the end of a paragraph', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>a[b]c<i class="fa fa-pastafarianism"></i></p>',
                 contentAfter:
-                    '<p>a[b]c<i class="fa fa-pastafarianism" contenteditable="false">​</i></p>',
+                    '<p>a[b]c<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i></p>',
             });
         });
         /** not sure this is necessary, keep for now in case it is
@@ -194,7 +194,7 @@ describe('FontAwesome', () => {
                         contentBefore: '<p>ab<i class="fa fa-pastafarianism"></i>[]cd</p>',
                         stepFunction: deleteForward,
                         contentAfter:
-                            '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i>[]d</p>',
+                            '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>[]d</p>',
                     });
                 });
                 it('should not delete a fontawesome after multiple deleteForward', async () => {
@@ -206,7 +206,7 @@ describe('FontAwesome', () => {
                             await deleteForward(editor);
                         },
                         contentAfter:
-                            '<p>ab[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>fghij</p>',
+                            '<p>ab[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>fghij</p>',
                     });
                 });
                 it('should not delete a fontawesome after one deleteForward with spaces', async () => {
@@ -216,7 +216,7 @@ describe('FontAwesome', () => {
                             await deleteForward(editor);
                         },
                         contentAfter:
-                            '<p>ab[]<i class="fa fa-pastafarianism" contenteditable="false">​</i> cd</p>',
+                            '<p>ab[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i> cd</p>',
                     });
                 });
                 it('should not delete a fontawesome after multiple deleteForward with spaces', async () => {
@@ -227,7 +227,7 @@ describe('FontAwesome', () => {
                             await deleteForward(editor);
                         },
                         contentAfter:
-                            '<p>a[]<i class="fa fa-pastafarianism" contenteditable="false">​</i> cd</p>',
+                            '<p>a[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i> cd</p>',
                     });
                 });
                 it('should not delete a fontawesome after multiple deleteForward with spaces inside a <span>', async () => {
@@ -239,7 +239,7 @@ describe('FontAwesome', () => {
                             await deleteForward(editor);
                         },
                         contentAfter:
-                            '<div><span>ab[]</span><i class="fa fa-star" contenteditable="false">​</i> def</div>',
+                            '<div><span>ab[]</span><i class="fa fa-star" contenteditable="false">\u200b</i> def</div>',
                     });
                 });
             });
@@ -287,7 +287,7 @@ describe('FontAwesome', () => {
                             '<p>ab<i class="fa fa-pastafarianism"></i><span>c[]d</span></p>',
                         stepFunction: deleteBackward,
                         contentAfter:
-                            '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i><span>[]d</span></p>',
+                            '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i><span>[]d</span></p>',
                     });
                 });
                 it('should not delete a fontawesome', async () => {
@@ -295,7 +295,7 @@ describe('FontAwesome', () => {
                         contentBefore: '<p>ab[]<i class="fa fa-pastafarianism"></i>cd</p>',
                         stepFunction: deleteBackward,
                         contentAfter:
-                            '<p>a[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>cd</p>',
+                            '<p>a[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>cd</p>',
                     });
                 });
                 it('should not delete a fontawesome after multiple deleteBackward', async () => {
@@ -307,7 +307,7 @@ describe('FontAwesome', () => {
                             await deleteBackward(editor);
                         },
                         contentAfter:
-                            '<p>abcde<i class="fa fa-pastafarianism" contenteditable="false">​</i>[]ij</p>',
+                            '<p>abcde<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>[]ij</p>',
                     });
                 });
                 it('should not delete a fontawesome after multiple deleteBackward with spaces', async () => {
@@ -319,7 +319,7 @@ describe('FontAwesome', () => {
                             await deleteBackward(editor);
                         },
                         contentAfter:
-                            '<p>abcde <i class="fa fa-pastafarianism" contenteditable="false">​</i>[]hij</p>',
+                            '<p>abcde <i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>[]hij</p>',
                     });
                 });
             });
@@ -350,7 +350,8 @@ describe('FontAwesome', () => {
                 stepFunction: async editor => {
                     editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
-                contentAfter: '<p>ab<i class="fa fa-star" contenteditable="false">​</i>[]cd</p>',
+                contentAfter:
+                    '<p>ab<i class="fa fa-star" contenteditable="false">\u200b</i>[]cd</p>',
             });
         });
         it('should insert a fontAwesome after', async () => {
@@ -360,7 +361,7 @@ describe('FontAwesome', () => {
                     editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter:
-                    '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i>c<i class="fa fa-star" contenteditable="false">​</i>[]d</p>',
+                    '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>c<i class="fa fa-star" contenteditable="false">\u200b</i>[]d</p>',
             });
         });
         it('should insert a fontAwesome before', async () => {
@@ -370,7 +371,7 @@ describe('FontAwesome', () => {
                     editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
                 contentAfter:
-                    '<p>ab<i class="fa fa-star" contenteditable="false">​</i>[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>cd</p>',
+                    '<p>ab<i class="fa fa-star" contenteditable="false">\u200b</i>[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>cd</p>',
             });
         });
         it.skip('should insert a fontAwesome and replace the icon', async () => {
@@ -379,7 +380,8 @@ describe('FontAwesome', () => {
                 stepFunction: async editor => {
                     editor.execCommand('insertFontAwesome', 'fa fa-star');
                 },
-                contentAfter: '<p>abs<i class="fa fa-star" contenteditable="false">​</i>[]cd</p>',
+                contentAfter:
+                    '<p>abs<i class="fa fa-star" contenteditable="false">\u200b</i>[]cd</p>',
             });
         });
     });
@@ -391,7 +393,7 @@ describe('FontAwesome', () => {
                     await insertText(editor, 's');
                 },
                 contentAfter:
-                    '<p>abs[]<i class="fa fa-pastafarianism" contenteditable="false">​</i>cd</p>',
+                    '<p>abs[]<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>cd</p>',
             });
         });
         it('should insert a character after', async () => {
@@ -401,7 +403,7 @@ describe('FontAwesome', () => {
                     await insertText(editor, 's');
                 },
                 contentAfter:
-                    '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">​</i>s[]cd</p>',
+                    '<p>ab<i class="fa fa-pastafarianism" contenteditable="false">\u200b</i>s[]cd</p>',
             });
         });
         it.skip('should insert a character and replace the icon', async () => {

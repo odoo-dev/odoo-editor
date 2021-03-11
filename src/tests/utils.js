@@ -1,6 +1,6 @@
 import { OdooEditor } from '../editor.js';
 import { sanitize } from '../utils/sanitize.js';
-import { setCursor, insertText as insertTextSel } from '../utils/utils.js';
+import { insertText as insertTextSel } from '../utils/utils.js';
 
 const Direction = {
     BACKWARD: 'BACKWARD',
@@ -358,7 +358,7 @@ export async function toggleCheckList(editor) {
     editor.execCommand('toggleList', 'CL');
 }
 
-export async function toggleBold(editor) {
+export async function toggleBold() {
     document.execCommand('bold');
     // Wait for the timeout in the MutationObserver to happen.
     return new Promise(resolve => setTimeout(() => resolve(), 200));

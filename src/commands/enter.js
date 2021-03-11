@@ -101,7 +101,7 @@ HTMLQuoteElement.prototype.oEnter = HTMLHeadingElement.prototype.oEnter;
 /**
  * Specific behavior for list items: deletion and unindentation in some cases.
  */
-HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
+HTMLLIElement.prototype.oEnter = function () {
     // If not last list item or not empty last item, regular block split
     if (this.nextElementSibling || this.textContent) {
         const node = HTMLElement.prototype.oEnter.call(this, ...arguments);
@@ -115,7 +115,7 @@ HTMLLIElement.prototype.oEnter = function (offset, firstSplit = true) {
 /**
  * Specific behavior for pre: insert newline (\n) in text or insert p at end.
  */
-HTMLPreElement.prototype.oEnter = function (offset, firstSplit = true) {
+HTMLPreElement.prototype.oEnter = function (offset) {
     if (offset < this.childNodes.length) {
         const lineBreak = document.createElement('br');
         this.insertBefore(lineBreak, this.childNodes[offset]);

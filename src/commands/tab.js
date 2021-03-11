@@ -1,6 +1,6 @@
 import { createList, getListMode, isBlock, preserveCursor, toggleClass } from '../utils/utils.js';
 
-Text.prototype.oTab = function (offset) {
+Text.prototype.oTab = function () {
     return this.parentElement.oTab(0);
 };
 
@@ -11,7 +11,7 @@ HTMLElement.prototype.oTab = function (offset) {
     return false;
 };
 
-HTMLLIElement.prototype.oTab = function (offset) {
+HTMLLIElement.prototype.oTab = function () {
     const lip = document.createElement('li');
     const destul =
         (this.previousElementSibling && this.previousElementSibling.querySelector('ol, ul')) ||

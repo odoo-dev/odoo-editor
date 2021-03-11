@@ -1,6 +1,6 @@
 import { isUnbreakable, preserveCursor, toggleClass, isBlock, isVisible } from '../utils/utils.js';
 
-Text.prototype.oShiftTab = function (offset) {
+Text.prototype.oShiftTab = function () {
     return this.parentElement.oShiftTab(0);
 };
 
@@ -12,7 +12,7 @@ HTMLElement.prototype.oShiftTab = function (offset = undefined) {
 };
 
 // returns: is still in a <LI> nested list
-HTMLLIElement.prototype.oShiftTab = function (offset) {
+HTMLLIElement.prototype.oShiftTab = function () {
     const li = this;
     if (li.nextElementSibling) {
         const ul = li.parentElement.cloneNode(false);
