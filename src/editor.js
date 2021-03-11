@@ -1609,13 +1609,13 @@ export class OdooEditor extends EventTarget {
                 this.deleteRange(selection);
             }
         }
-        if (ev.keyCode === 13) {
+        if (ev.key === 'Enter') {
             // Enter
             ev.preventDefault();
             if (ev.shiftKey || this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
                 this._applyCommand('oShiftEnter');
             }
-        } else if (ev.keyCode === 8 && !ev.ctrlKey && !ev.metaKey) {
+        } else if (ev.key === 'Backspace' && !ev.ctrlKey && !ev.metaKey) {
             // backspace
             // We need to hijack it because firefox doesn't trigger a
             // deleteBackward input event with a collapsed cursor in front of a
@@ -1625,7 +1625,7 @@ export class OdooEditor extends EventTarget {
                 ev.preventDefault();
                 this._applyCommand('oDeleteBackward');
             }
-        } else if (ev.keyCode === 9) {
+        } else if (ev.key === 'Tab') {
             // Tab
             const sel = this.document.getSelection();
             const closestTag = (closestElement(sel.anchorNode, 'li, table') || {}).tagName;
