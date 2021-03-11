@@ -188,8 +188,8 @@ export class OdooEditor extends EventTarget {
         this._collaborate = false;
         this._collaborate_last = null;
 
-        // used to check if we have to rollback an operation as an unbreakable is
-        this._torollback = false; // unbreakable removed or added
+        // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
+        this._torollback = false;
     }
     /**
      * Releases anything that was initialized.
