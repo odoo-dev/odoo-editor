@@ -642,7 +642,7 @@ export function getDeepestPosition(node, offset) {
         offset = 0;
         didMove = true;
     }
-    return didMove ? getDeepestPosition(node, offset) : [node, offset];
+    return didMove && isVisible(node) ? getDeepestPosition(node, offset) : [node, offset];
 }
 
 export function getCursors(document) {
