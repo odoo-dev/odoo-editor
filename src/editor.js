@@ -125,7 +125,7 @@ export class OdooEditor extends EventTarget {
         this._collaborativeLastSynchronisedId = null;
 
         // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
-        this._torollback = false;
+        this._toRollback = false;
 
         // -------------------
         // Alter the editable
@@ -242,8 +242,8 @@ export class OdooEditor extends EventTarget {
         node.ouid = node.ouid || getOuid(node, true);
         if (testunbreak) {
             const ouid = getOuid(node);
-            if (!this._torollback && ouid && ouid !== node.ouid) {
-                this._torollback = UNBREAKABLE_ROLLBACK_CODE;
+            if (!this._toRollback && ouid && ouid !== node.ouid) {
+                this._toRollback = UNBREAKABLE_ROLLBACK_CODE;
             }
         }
 
@@ -344,8 +344,8 @@ export class OdooEditor extends EventTarget {
                 }
                 case 'childList': {
                     record.addedNodes.forEach(added => {
-                        this._torollback =
-                            this._torollback ||
+                        this._toRollback =
+                            this._toRollback ||
                             (containsUnremovable(added) && UNREMOVABLE_ROLLBACK_CODE);
                         const mutation = {
                             'type': 'add',
@@ -367,8 +367,8 @@ export class OdooEditor extends EventTarget {
                         this._historySteps[this._historySteps.length - 1].mutations.push(mutation);
                     });
                     record.removedNodes.forEach(removed => {
-                        if (!this._torollback && containsUnremovable(removed)) {
-                            this._torollback = UNREMOVABLE_ROLLBACK_CODE;
+                        if (!this._toRollback && containsUnremovable(removed)) {
+                            this._toRollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
                         this._historySteps[this._historySteps.length - 1].mutations.push({
                             'type': 'remove',
@@ -438,9 +438,9 @@ export class OdooEditor extends EventTarget {
     historyStep(skipRollback = false) {
         this.observerFlush();
         // check that not two unBreakables modified
-        if (this._torollback) {
+        if (this._toRollback) {
             if (!skipRollback) this.historyRollback();
-            this._torollback = false;
+            this._toRollback = false;
         }
 
         // push history
@@ -596,7 +596,7 @@ export class OdooEditor extends EventTarget {
         this.historyRevert(step, until);
         this.observerFlush();
         step.mutations = step.mutations.slice(0, until);
-        this._torollback = false;
+        this._toRollback = false;
     }
 
     /**
@@ -718,8 +718,8 @@ export class OdooEditor extends EventTarget {
         }
     }
     unbreakableStepUnactive() {
-        this._torollback =
-            this._torollback === UNBREAKABLE_ROLLBACK_CODE ? false : this._torollback;
+        this._toRollback =
+            this._toRollback === UNBREAKABLE_ROLLBACK_CODE ? false : this._toRollback;
         this._checkStepUnbreakable = false;
     }
 
@@ -797,7 +797,7 @@ export class OdooEditor extends EventTarget {
             td.textContent = '';
         });
         this.observerFlush();
-        this._torollback = false; // Errors caught with observerFlush were already handled.
+        this._toRollback = false; // Errors caught with observerFlush were already handled.
         // If the end container was fully selected, extractContents may have
         // emptied it without removing it. Ensure it's gone.
         while (
@@ -839,7 +839,7 @@ export class OdooEditor extends EventTarget {
             const res = this._protect(() => {
                 next.oDeleteBackward();
                 if (!this.editable.contains(joinWith)) {
-                    this._torollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
+                    this._toRollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
                 } else {
                     next = firstChild(next);
                 }
@@ -1308,8 +1308,8 @@ export class OdooEditor extends EventTarget {
         try {
             const result = callback.call(this);
             this.observerFlush();
-            if (this._torollback) {
-                const torollbackCode = this._torollback;
+            if (this._toRollback) {
+                const torollbackCode = this._toRollback;
                 this.historyRollback(rollbackCounter);
                 return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
             } else {
