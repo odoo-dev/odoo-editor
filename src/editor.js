@@ -831,7 +831,12 @@ export class OdooEditor extends EventTarget {
             joinWith.textContent = oldText.replace(/ $/, '\u00A0');
         }
         // Rejoin blocks that extractContents may have split in two.
-        while (doJoin && next && !(next.previousSibling && next.previousSibling === joinWith)) {
+        while (
+            doJoin &&
+            next &&
+            !(next.previousSibling && next.previousSibling === joinWith) &&
+            this.dom.contains(next)
+        ) {
             const restore = preserveCursor(this.document);
             this.observerFlush();
             const res = this._protect(() => {
