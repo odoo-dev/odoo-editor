@@ -591,11 +591,11 @@ export class OdooEditor extends EventTarget {
     }
 
     historyRollback(until = 0) {
-        const hist = this._historySteps[this._historySteps.length - 1];
+        const step = this._historySteps[this._historySteps.length - 1];
         this.observerFlush();
-        this.historyRevert(hist, until);
+        this.historyRevert(step, until);
         this.observerFlush();
-        hist.mutations = hist.mutations.slice(0, until);
+        step.mutations = step.mutations.slice(0, until);
         this._torollback = false;
     }
 
