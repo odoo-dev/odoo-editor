@@ -1,7 +1,6 @@
 import {
     BasicEditor,
     click,
-    nextTickFrame,
     deleteBackward,
     deleteForward,
     insertLineBreak,

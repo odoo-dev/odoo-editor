@@ -10,7 +10,6 @@ import {
     insertText,
     redo,
     testEditor,
-    toggleBold,
     undo,
     unformat,
 } from './utils.js';

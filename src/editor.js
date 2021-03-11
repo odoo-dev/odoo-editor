@@ -366,7 +366,7 @@ export class OdooEditor extends EventTarget {
                         mutation.node = this.serialize(added);
                         this._historySteps[this._historySteps.length - 1].mutations.push(mutation);
                     });
-                    record.removedNodes.forEach((removed, index) => {
+                    record.removedNodes.forEach(removed => {
                         if (!this._torollback && containsUnremovable(removed)) {
                             this._torollback = UNREMOVABLE_ROLLBACK_CODE;
                         }
@@ -569,7 +569,7 @@ export class OdooEditor extends EventTarget {
                 this.observerActive();
                 this.historyFetch();
             })
-            .catch(err => {
+            .catch(() => {
                 // TODO: change that. currently: if error on fetch, fault back to non collaborative mode.
                 this._isCollaborativeActive = false;
             });
@@ -734,9 +734,9 @@ export class OdooEditor extends EventTarget {
      * @param {string} method
      * @returns {?}
      */
-    execCommand(method) {
+    execCommand(...args) {
         this._computeHistoryCursor();
-        return this._applyCommand(...arguments);
+        return this._applyCommand(...args);
     }
 
     //--------------------------------------------------------------------------
@@ -1049,7 +1049,7 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    _unlink(offset, content) {
+    _unlink() {
         const sel = this.document.defaultView.getSelection();
         // we need to remove the contentEditable isolation of links
         // before we apply the unlink, otherwise the command is not performed
@@ -1288,9 +1288,9 @@ export class OdooEditor extends EventTarget {
      * @param {string} method
      * @returns {?}
      */
-    _applyCommand(method) {
+    _applyCommand(...args) {
         this._recordHistoryCursor(true);
-        const result = this._protect(() => this._applyRawCommand(...arguments));
+        const result = this._protect(() => this._applyRawCommand(...args));
         this.sanitize();
         this.historyStep();
         return result;

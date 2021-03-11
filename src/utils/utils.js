@@ -131,7 +131,14 @@ export const rightDeepOnlyInlineInScopePath = createDOMPathGenerator(
     true,
 );
 
-export function findNode(domPath, findCallback = node => true, stopCallback = node => false) {
+/**
+ * Find a node.
+ * @param {findCallback} findCallback - This callback check if this function
+ *      should return `node`.
+ * @param {findCallback} stopCallback - This callback check if this function
+ *      should stop when it receive `node`.
+ */
+export function findNode(domPath, findCallback = () => true, stopCallback = () => false) {
     for (const node of domPath) {
         if (findCallback(node)) {
             return node;
@@ -142,6 +149,17 @@ export function findNode(domPath, findCallback = node => true, stopCallback = no
     }
     return null;
 }
+/**
+ * This callback check if findNode should return `node`.
+ * @callback findCallback
+ * @param {Node} node
+ * @return {Boolean}
+ */
+/**
+ * This callback check if findNode should stop when it receive `node`.
+ * @callback stopCallback
+ * @param {Node} node
+ */
 
 /**
  * Returns the closest HTMLElement of the provided Node
@@ -1265,11 +1283,12 @@ export function moveNodes(
  *     that case, the positions should be given in the document node order.
  * @returns {function}
  */
-export function prepareUpdate(el, offset, ...args) {
-    const positions = [...arguments];
+export function prepareUpdate(...args) {
+    const positions = [...args];
 
     // Check the state in each direction starting from each position.
     const restoreData = [];
+    let el, offset;
     while (positions.length) {
         // Note: important to get the positions in reverse order to restore
         // right side before left side.
