@@ -856,11 +856,11 @@ export class OdooEditor extends EventTarget {
      *
      * @param {string} color hexadecimal or bg-name/text-name class
      * @param {string} mode 'color' or 'backgroundColor'
-     * @param {Node} [target]
+     * @param {Element} [element]
      */
-    applyColor(color, mode, target) {
-        if (target) {
-            this._colorElement(target, color, mode);
+    applyColor(color, mode, element) {
+        if (element) {
+            this._colorElement(element, color, mode);
             return;
         }
         const range = getDeepRange(this.editable, { splitText: true, select: true });
