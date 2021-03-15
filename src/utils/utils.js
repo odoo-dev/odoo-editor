@@ -220,10 +220,15 @@ export function previousLeaf(node, editable, skipInvisible = false) {
         ancestor = ancestor.parentElement;
     }
     if (ancestor && ancestor !== editable) {
-        if (skipInvisible && ancestor.previousSibling && !isVisible(ancestor.previousSibling)) {
-            return previousLeaf(ancestor.previousSibling);
+        if (skipInvisible && !isVisible(ancestor.previousSibling)) {
+            return previousLeaf(ancestor.previousSibling, editable, skipInvisible);
         } else {
-            return lastLeaf(ancestor.previousSibling);
+            const last = lastLeaf(ancestor.previousSibling);
+            if (skipInvisible && !isVisible(last)) {
+                return previousLeaf(last, editable, skipInvisible);
+            } else {
+                return last;
+            }
         }
     }
 }
@@ -234,9 +239,14 @@ export function nextLeaf(node, editable, skipInvisible = false) {
     }
     if (ancestor && ancestor !== editable) {
         if (skipInvisible && ancestor.nextSibling && !isVisible(ancestor.nextSibling)) {
-            return nextLeaf(ancestor.nextSibling);
+            return nextLeaf(ancestor.nextSibling, editable, skipInvisible);
         } else {
-            return firstLeaf(ancestor.nextSibling);
+            const first = firstLeaf(ancestor.nextSibling);
+            if (skipInvisible && !isVisible(first)) {
+                return nextLeaf(first, editable, skipInvisible);
+            } else {
+                return first;
+            }
         }
     }
 }
