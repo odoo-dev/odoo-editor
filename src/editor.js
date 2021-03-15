@@ -1680,7 +1680,7 @@ export class OdooEditor extends EventTarget {
         const contenteditableFalseNode =
             startContainer &&
             !startContainer.isContentEditable &&
-            ancestors(startContainer).includes(this.editable) &&
+            ancestors(startContainer, this.editable).includes(this.editable) &&
             startContainer.closest('[contenteditable=false]');
         if (contenteditableFalseNode) {
             selection.removeAllRanges();
@@ -2081,7 +2081,8 @@ export class OdooEditor extends EventTarget {
         const selection = this.document.defaultView.getSelection();
         if (
             selection.isCollapsed ||
-            (selection.anchorNode && !ancestors(selection.anchorNode).includes(this.editable))
+            (selection.anchorNode &&
+                !ancestors(selection.anchorNode, this.editable).includes(this.editable))
         )
             return;
         let shouldUpdateSelection = false;

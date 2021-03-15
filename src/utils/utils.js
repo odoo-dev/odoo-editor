@@ -180,9 +180,9 @@ export function closestElement(node, selector) {
  * @param {Node} node
  * @returns {HTMLElement[]}
  */
-export function ancestors(node) {
-    if (!node) return [];
-    return [node.parentElement, ...ancestors(node.parentElement)];
+export function ancestors(node, editable) {
+    if (!node || !node.parentElement || node === editable) return [];
+    return [node.parentElement, ...ancestors(node.parentElement, editable)];
 }
 
 export function closestBlock(node) {
