@@ -668,8 +668,11 @@ export function getDeepRange(editable, { range, sel, splitText, select, correctT
 
 export function getDeepestPosition(node, offset) {
     while (node.hasChildNodes()) {
-        const newNode = node.childNodes[offset - 1] || node.firstChild;
-        if (isEmptyBlock(newNode)) break;
+        let newNode = node.childNodes[offset - 1] || node.firstChild;
+        while (newNode && !isVisible(newNode)) {
+            newNode = newNode.nextSibling;
+        }
+        if (!newNode || isEmptyBlock(newNode)) break;
         node = newNode;
         offset = offset === 0 ? 0 : nodeSize(node);
     }
@@ -1068,6 +1071,9 @@ export function isFakeLineBreak(brEl) {
  * @returns {boolean}
  */
 export function isEmptyBlock(blockEl) {
+    if (blockEl.nodeType !== Node.ELEMENT_NODE) {
+        return false;
+    }
     if (isVisibleStr(blockEl.textContent)) {
         return false;
     }
