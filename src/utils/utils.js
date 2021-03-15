@@ -99,7 +99,7 @@ export function nodeSize(node) {
 }
 
 //------------------------------------------------------------------------------
-// DOM Path and node research functions
+// DOM Path and node search functions
 //------------------------------------------------------------------------------
 
 export const closestPath = function* (node) {
@@ -130,6 +130,81 @@ export const rightDeepOnlyInlineInScopePath = createDOMPathGenerator(
     true,
     true,
 );
+/**
+ * Values which can be returned while browsing the DOM which gives information
+ * to why the path ended.
+ */
+const PATH_END_REASONS = {
+    NO_NODE: 0,
+    BLOCK_OUT: 1,
+    BLOCK_HIT: 2,
+    OUT_OF_SCOPE: 3,
+};
+/**
+ * Creates a generator function according to the given parameters. Pre-made
+ * generators to traverse the DOM are made using this function:
+ *
+ * @see leftDeepFirstPath
+ * @see leftDeepOnlyPath
+ * @see leftDeepFirstInlinePath
+ * @see leftDeepOnlyInlinePath
+ *
+ * @see rightDeepFirstPath
+ * @see rightDeepOnlyPath
+ * @see rightDeepFirstInlinePath
+ * @see rightDeepOnlyInlinePath
+ *
+ * @param {number} direction
+ * @param {boolean} deepOnly
+ * @param {boolean} inline
+ */
+export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
+    const nextDeepest =
+        direction === DIRECTIONS.LEFT
+            ? node => lastLeaf(node.previousSibling, inline)
+            : node => firstLeaf(node.nextSibling, inline);
+
+    const firstNode =
+        direction === DIRECTIONS.LEFT
+            ? (node, offset) => lastLeaf(node.childNodes[offset - 1], inline)
+            : (node, offset) => firstLeaf(node.childNodes[offset], inline);
+
+    // Note "reasons" is a way for the caller to be able to know why the
+    // generator ended yielding values.
+    return function* (node, offset, reasons = []) {
+        let movedUp = false;
+
+        let currentNode = firstNode(node, offset);
+        if (!currentNode) {
+            movedUp = true;
+            currentNode = node;
+        }
+
+        while (currentNode) {
+            if (inline && isBlock(currentNode)) {
+                reasons.push(movedUp ? PATH_END_REASONS.BLOCK_OUT : PATH_END_REASONS.BLOCK_HIT);
+                break;
+            }
+            if (inScope && currentNode === node) {
+                reasons.push(PATH_END_REASONS.OUT_OF_SCOPE);
+                break;
+            }
+            if (!deepOnly || !movedUp) {
+                yield currentNode;
+            }
+
+            movedUp = false;
+            let nextNode = nextDeepest(currentNode);
+            if (!nextNode) {
+                movedUp = true;
+                nextNode = currentNode.parentNode;
+            }
+            currentNode = nextNode;
+        }
+
+        reasons.push(PATH_END_REASONS.NO_NODE);
+    };
+}
 
 /**
  * Find a node.
@@ -249,81 +324,6 @@ export function nextLeaf(node, editable, skipInvisible = false) {
             }
         }
     }
-}
-/**
- * Values which can be returned while browsing the DOM which gives information
- * to why the path ended.
- */
-const PATH_END_REASONS = {
-    NO_NODE: 0,
-    BLOCK_OUT: 1,
-    BLOCK_HIT: 2,
-    OUT_OF_SCOPE: 3,
-};
-/**
- * Creates a generator function according to the given parameters. Pre-made
- * generators to traverse the DOM are made using this function:
- *
- * @see leftDeepFirstPath
- * @see leftDeepOnlyPath
- * @see leftDeepFirstInlinePath
- * @see leftDeepOnlyInlinePath
- *
- * @see rightDeepFirstPath
- * @see rightDeepOnlyPath
- * @see rightDeepFirstInlinePath
- * @see rightDeepOnlyInlinePath
- *
- * @param {number} direction
- * @param {boolean} deepOnly
- * @param {boolean} inline
- */
-export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
-    const nextDeepest =
-        direction === DIRECTIONS.LEFT
-            ? node => lastLeaf(node.previousSibling, inline)
-            : node => firstLeaf(node.nextSibling, inline);
-
-    const firstNode =
-        direction === DIRECTIONS.LEFT
-            ? (node, offset) => lastLeaf(node.childNodes[offset - 1], inline)
-            : (node, offset) => firstLeaf(node.childNodes[offset], inline);
-
-    // Note "reasons" is a way for the caller to be able to know why the
-    // generator ended yielding values.
-    return function* (node, offset, reasons = []) {
-        let movedUp = false;
-
-        let currentNode = firstNode(node, offset);
-        if (!currentNode) {
-            movedUp = true;
-            currentNode = node;
-        }
-
-        while (currentNode) {
-            if (inline && isBlock(currentNode)) {
-                reasons.push(movedUp ? PATH_END_REASONS.BLOCK_OUT : PATH_END_REASONS.BLOCK_HIT);
-                break;
-            }
-            if (inScope && currentNode === node) {
-                reasons.push(PATH_END_REASONS.OUT_OF_SCOPE);
-                break;
-            }
-            if (!deepOnly || !movedUp) {
-                yield currentNode;
-            }
-
-            movedUp = false;
-            let nextNode = nextDeepest(currentNode);
-            if (!nextNode) {
-                movedUp = true;
-                nextNode = currentNode.parentNode;
-            }
-            currentNode = nextNode;
-        }
-
-        reasons.push(PATH_END_REASONS.NO_NODE);
-    };
 }
 /**
  * Returns all the previous siblings of the given node until the first
