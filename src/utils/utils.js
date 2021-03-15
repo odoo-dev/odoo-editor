@@ -326,42 +326,51 @@ export function createDOMPathGenerator(direction, deepOnly, inline, inScope = fa
     };
 }
 /**
- * Returns all the previous siblings of the first parameter until the first
- * sibling that does not satisfy the predicat.
+ * Returns all the previous siblings of the given node until the first
+ * sibling that does not satisfy the predicate, in lookup order.
+ *
  * @param {Node} node
- * @param {Function} predicat A function that receives a node as parameter and
- * returns true or false
+ * @param {Function} [predicate] (node: Node) => boolean
  */
-export function getAdjacentPreviousSiblings(node, predicat = n => n) {
+export function getAdjacentPreviousSiblings(node, predicate = n => !!n) {
     let previous = node.previousSibling;
     const list = [];
-    while (previous && predicat(previous)) {
+    while (previous && predicate(previous)) {
         list.push(previous);
         previous = previous.previousSibling;
     }
     return list;
 }
 /**
- * Returns all the next siblings of the first parameter until the first
- * sibling that does not satisfy the predicat.
+ * Returns all the next siblings of the given node until the first
+ * sibling that does not satisfy the predicate, in lookup order.
+ *
  * @param {Node} node
- * @param {Function} predicat A function that receives a node as parameter and
- * returns true or false
+ * @param {Function} [predicate] (node: Node) => boolean
  */
-export function getAdjacentNextSiblings(node, predicat = n => n) {
+export function getAdjacentNextSiblings(node, predicate = n => !!n) {
     let next = node.nextSibling;
     const list = [];
-    while (next && predicat(next)) {
+    while (next && predicate(next)) {
         list.push(next);
         next = next.nextSibling;
     }
     return list;
 }
-
-export function getAdjacents(node, predicat = n => n, includeSelf = true) {
-    const previous = getAdjacentPreviousSiblings(node, predicat);
-    const next = getAdjacentNextSiblings(node, predicat);
-    return includeSelf ? [...previous, node, ...next] : [...previous, ...next];
+/**
+ * Returns all the adjacent siblings of the given node until the first sibling
+ * (in both directions) that does not satisfy the predicate, in index order.
+ *
+ * @param {Node} node
+ * @param {Function} [predicate] (node: Node) => boolean
+ * @param {boolean} [includeSelf] default true
+ */
+export function getAdjacents(node, predicate = n => !!n, includeSelf = true) {
+    const previous = getAdjacentPreviousSiblings(node, predicate);
+    const next = getAdjacentNextSiblings(node, predicate);
+    return includeSelf && predicate(node)
+        ? [...previous.reverse(), node, ...next]
+        : [...previous.reverse(), ...next];
 }
 
 //------------------------------------------------------------------------------
