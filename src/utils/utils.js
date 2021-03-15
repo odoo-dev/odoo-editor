@@ -192,11 +192,11 @@ export function closestBlock(node) {
  * Returns the deepest child in last position.
  *
  * @param {Node} node
- * @param {boolean} [inline=false]
+ * @param {boolean} [stopAtBlock=false]
  * @returns {Node}
  */
-export function lastLeaf(node, inline = false) {
-    while (node && node.lastChild && (!inline || !isBlock(node))) {
+export function lastLeaf(node, stopAtBlock = false) {
+    while (node && node.lastChild && !(stopAtBlock && isBlock(node))) {
         node = node.lastChild;
     }
     return node;
@@ -205,11 +205,11 @@ export function lastLeaf(node, inline = false) {
  * Returns the deepest child in first position.
  *
  * @param {Node} node
- * @param {boolean} [inline=false]
+ * @param {boolean} [stopAtBlock=false]
  * @returns {Node}
  */
-export function firstLeaf(node, inline = false) {
-    while (node && node.firstChild && (!inline || !isBlock(node))) {
+export function firstLeaf(node, stopAtBlock = false) {
+    while (node && node.firstChild && !(stopAtBlock && isBlock(node))) {
         node = node.firstChild;
     }
     return node;
