@@ -195,7 +195,7 @@ export function closestBlock(node) {
  * @param {boolean} [inline=false]
  * @returns {Node}
  */
-export function latestChild(node, inline = false) {
+export function lastLeaf(node, inline = false) {
     while (node && node.lastChild && (!inline || !isBlock(node))) {
         node = node.lastChild;
     }
@@ -208,7 +208,7 @@ export function latestChild(node, inline = false) {
  * @param {boolean} [inline=false]
  * @returns {Node}
  */
-export function firstChild(node, inline = false) {
+export function firstLeaf(node, inline = false) {
     while (node && node.firstChild && (!inline || !isBlock(node))) {
         node = node.firstChild;
     }
@@ -223,7 +223,7 @@ export function previousLeaf(node, editable, skipInvisible = false) {
         if (skipInvisible && ancestor.previousSibling && !isVisible(ancestor.previousSibling)) {
             return previousLeaf(ancestor.previousSibling);
         } else {
-            return latestChild(ancestor.previousSibling);
+            return lastLeaf(ancestor.previousSibling);
         }
     }
 }
@@ -236,7 +236,7 @@ export function nextLeaf(node, editable, skipInvisible = false) {
         if (skipInvisible && ancestor.nextSibling && !isVisible(ancestor.nextSibling)) {
             return nextLeaf(ancestor.nextSibling);
         } else {
-            return firstChild(ancestor.nextSibling);
+            return firstLeaf(ancestor.nextSibling);
         }
     }
 }
@@ -271,13 +271,13 @@ const PATH_END_REASONS = {
 export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
     const nextDeepest =
         direction === DIRECTIONS.LEFT
-            ? node => latestChild(node.previousSibling, inline)
-            : node => firstChild(node.nextSibling, inline);
+            ? node => lastLeaf(node.previousSibling, inline)
+            : node => firstLeaf(node.nextSibling, inline);
 
     const firstNode =
         direction === DIRECTIONS.LEFT
-            ? (node, offset) => latestChild(node.childNodes[offset - 1], inline)
-            : (node, offset) => firstChild(node.childNodes[offset], inline);
+            ? (node, offset) => lastLeaf(node.childNodes[offset - 1], inline)
+            : (node, offset) => firstLeaf(node.childNodes[offset], inline);
 
     // Note "reasons" is a way for the caller to be able to know why the
     // generator ended yielding values.
