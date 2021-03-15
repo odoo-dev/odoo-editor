@@ -48,7 +48,7 @@ import {
     getDeepRange,
     splitElement,
     ancestors,
-    firstChild,
+    firstLeaf,
     nextLeaf,
     isUnremovable,
     fillEmpty,
@@ -841,7 +841,7 @@ export class OdooEditor extends EventTarget {
                 if (!this.editable.contains(joinWith)) {
                     this._toRollback = UNREMOVABLE_ROLLBACK_CODE; // tried to delete too far -> roll it back.
                 } else {
-                    next = firstChild(next);
+                    next = firstLeaf(next);
                 }
             }, this._historySteps[this._historySteps.length - 1].mutations.length);
             if ([UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE].includes(res)) {
