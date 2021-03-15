@@ -49,13 +49,13 @@ npm run build -- --watch
 
 Then, copy bundles:
 ```bash
-cp <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
-cp <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.css
+cp <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/lib/odoo-editor/odoo-editor.js
+cp <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/lib/odoo-editor/odoo-editor.css
 ```
 Or link them (when developing):
 ```bash
-ln -s <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.js
-ln -s <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/src/js/editor/odoo-editor.css
+ln -s <editor_absolute_path>/build/odoo-editor-bundle.js <odoo_absolute_path>/addons/web_editor/static/lib/odoo-editor/odoo-editor.js
+ln -s <editor_absolute_path>/build/odoo-editor-bundle.css <odoo_absolute_path>/addons/web_editor/static/lib/odoo-editor/odoo-editor.css
 ```
 
 To Improve
