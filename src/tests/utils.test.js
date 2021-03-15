@@ -1,11 +1,22 @@
 import {
+    ancestors,
     boundariesIn,
     boundariesOut,
     childNodeIndex,
+    closestBlock,
+    closestElement,
     endPos,
+    firstLeaf,
+    getAdjacentPreviousSiblings,
+    getAdjacentNextSiblings,
+    getAdjacents,
     isVisible,
+    isVisibleStr,
+    lastLeaf,
     leftPos,
+    nextLeaf,
     nodeSize,
+    previousLeaf,
     rightPos,
     startPos,
 } from '../utils/utils.js';
@@ -17,7 +28,11 @@ const insertTestHtml = innerHtml => {
     return container.childNodes;
 };
 
-describe.only('Utils', () => {
+describe('Utils', () => {
+    //------------------------------------------------------------------------------
+    // Position and sizes
+    //------------------------------------------------------------------------------
+
     describe('leftPos', () => {
         it('should return the left position of a lonely text node', () => {
             const [p] = insertTestHtml('<p>a</p>');
@@ -277,7 +292,406 @@ describe.only('Utils', () => {
             window.chai.expect(result).to.equal(5);
         });
     });
-    // TODO: test path functions.
+
+    //------------------------------------------------------------------------------
+    // DOM Path and node search functions
+    //------------------------------------------------------------------------------
+
+    // TODO: test path functions:
+    // - closestPath
+    // - leftDeepFirstPath
+    // - leftDeepOnlyPath
+    // - leftDeepFirstInlinePath
+    // - leftDeepOnlyInlinePath
+    // - leftDeepOnlyInlineInScopePath
+    // - rightDeepFirstPath
+    // - rightDeepOnlyPath
+    // - rightDeepFirstInlinePath
+    // - rightDeepOnlyInlinePath
+    // - rightDeepOnlyInlineInScopePath
+    // - findNode
+    // - createDOMPathGenerator
+    describe('closestElement', () => {
+        it('should find the closest element to a text node', () => {
+            const [div] = insertTestHtml('<div><p>abc</p></div>');
+            const p = div.firstChild;
+            const abc = p.firstChild;
+            const result = closestElement(abc);
+            window.chai.expect(result).to.equal(p);
+        });
+        it('should find that the closest element to an element is itself', () => {
+            const [p] = insertTestHtml('<p>abc</p>');
+            const result = closestElement(p);
+            window.chai.expect(result).to.equal(p);
+        });
+    });
+    describe('ancestors', () => {
+        it('should find all the ancestors of a text node', () => {
+            const [div] = insertTestHtml(
+                '<div><div><div><p>abc</p><div><p>def</p></div></div></div></div>',
+            );
+            const editable = div.parentElement;
+            const abcAncestors = [
+                editable,
+                div,
+                div.firstChild,
+                div.firstChild.firstChild,
+                div.firstChild.firstChild.firstChild,
+            ].reverse();
+            const abc = abcAncestors[0].firstChild;
+            const result = ancestors(abc, editable);
+            window.chai.expect(result).to.eql(abcAncestors);
+        });
+        it('should find only the editable', () => {
+            const [p] = insertTestHtml('<p>abc</p>');
+            const editable = p.parentElement;
+            const result = ancestors(p, editable);
+            window.chai.expect(result).to.eql([editable]);
+        });
+    });
+    describe('closestBlock', () => {
+        it('should find the closest block of a deeply nested text node', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p>ab<b><i><u>cd</u></i></b>ef</p></div></div>',
+            );
+            const p = div.firstChild.firstChild;
+            const cd = p.childNodes[1].firstChild.firstChild.firstChild;
+            const result = closestBlock(cd);
+            window.chai.expect(result).to.equal(p);
+        });
+        it('should find that the closest block to a block is itself', () => {
+            const [div] = insertTestHtml('<div><div><p>ab</p></div></div>');
+            const p = div.firstChild.firstChild;
+            const result = closestBlock(p);
+            window.chai.expect(result).to.equal(p);
+        });
+    });
+    describe('lastLeaf', () => {
+        it('should find the last leaf of a child-rich block', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p>ab<span>cd</span><b><i><u>ef</u></i></b></p></div></div>',
+            );
+            const p = div.firstChild.firstChild;
+            const ef = p.childNodes[2].firstChild.firstChild.firstChild;
+            const result = lastLeaf(div);
+            window.chai.expect(result).to.equal(ef);
+        });
+        it('should find that the last closest block descendant of a child-rich block is itself', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p>ab<span>cd</span><b><i><u>ef</u></i></b></p></div></div>',
+            );
+            const result = lastLeaf(div, true);
+            window.chai.expect(result).to.equal(div);
+        });
+        it('should find no last closest block descendant of a child-rich inline and return its last leaf instead', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p>ab<span>cd</span><b><i><u>ef</u></i></b></p></div></div>',
+            );
+            const b = div.firstChild.firstChild.childNodes[2];
+            const ef = b.firstChild.firstChild.firstChild;
+            const result = lastLeaf(b, true);
+            window.chai.expect(result).to.equal(ef);
+        });
+    });
+    describe('firstLeaf', () => {
+        it('should find the first leaf of a child-rich block', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b><i><u>ab</u></i></b><span>cd</span>ef</p></div></div>',
+            );
+            const p = div.firstChild.firstChild;
+            const ab = p.firstChild.firstChild.firstChild.firstChild;
+            const result = firstLeaf(div);
+            window.chai.expect(result).to.equal(ab);
+        });
+        it('should find that the first closest block descendant of a child-rich block is itself', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p>ab<span>cd</span><b><i><u>ef</u></i></b></p></div></div>',
+            );
+            const result = firstLeaf(div, true);
+            window.chai.expect(result).to.equal(div);
+        });
+        it('should find no first closest block descendant of a child-rich inline and return its first leaf instead', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b><i><u>ab</u></i></b><span>cd</span>ef</p></div></div>',
+            );
+            const b = div.firstChild.firstChild.firstChild;
+            const ab = b.firstChild.firstChild.firstChild;
+            const result = firstLeaf(b, true);
+            window.chai.expect(result).to.equal(ab);
+        });
+    });
+    describe('previousLeaf', () => {
+        it('should find the previous leaf of a deeply nested node', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b>ab<i>cd<u>ef</u>gh</i></b><span>ij</span>kl</p></div></div>',
+            );
+            const editable = div.parentElement;
+            const p = div.firstChild.firstChild;
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const ij = p.childNodes[1].firstChild;
+            const result = previousLeaf(ij, editable);
+            window.chai.expect(result).to.equal(gh);
+        });
+        it('should find no previous leaf and return undefined', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b>ab<i>cd<u>ef</u>gh</i></b><span>ij</span>kl</p></div></div>',
+            );
+            const editable = div.parentElement;
+            const p = div.firstChild.firstChild;
+            const ab = p.firstChild.firstChild;
+            const result = previousLeaf(ab, editable);
+            window.chai.expect(result).to.equal(undefined);
+        });
+        it('should find the previous leaf of a deeply nested node, skipping invisible nodes', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p1 = div.childNodes[1].childNodes[1];
+            const gh = p1.childNodes[1].childNodes[1].childNodes[2];
+            const p2 = div.childNodes[1].childNodes[3];
+            const ij = p2.childNodes[1].firstChild;
+            const result = previousLeaf(ij, editable, true);
+            window.chai.expect(result).to.equal(gh);
+        });
+        it('should find no previous leaf, skipping invisible nodes, and return undefined', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p1 = div.childNodes[1].childNodes[1];
+            const ab = p1.childNodes[1].firstChild;
+            const result = previousLeaf(ab, editable, true);
+            window.chai.expect(result).to.equal(undefined);
+        });
+        it('should find the previous leaf of a deeply nested node to be whitespace', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p2 = div.childNodes[1].childNodes[3];
+            const whitespace = p2.firstChild;
+            const ij = p2.childNodes[1].firstChild;
+            const result = previousLeaf(ij, editable);
+            window.chai.expect(result).to.equal(whitespace);
+            window.chai.expect(isVisibleStr(whitespace)).to.equal(false);
+        });
+    });
+    describe('nextLeaf', () => {
+        it('should find the next leaf of a deeply nested node', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b>ab<i>cd<u>ef</u>gh</i></b><span>ij</span>kl</p></div></div>',
+            );
+            const editable = div.parentElement;
+            const p = div.firstChild.firstChild;
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const ij = p.childNodes[1].firstChild;
+            const result = nextLeaf(gh, editable);
+            window.chai.expect(result).to.equal(ij);
+        });
+        it('should find no next leaf and return undefined', () => {
+            const [div] = insertTestHtml(
+                '<div><div><p><b>ab<i>cd<u>ef</u>gh</i></b><span>ij</span>kl</p></div></div>',
+            );
+            const editable = div.parentElement;
+            const p = div.firstChild.firstChild;
+            const kl = p.childNodes[2];
+            const result = nextLeaf(kl, editable);
+            window.chai.expect(result).to.equal(undefined);
+        });
+        it('should find the next leaf of a deeply nested node, skipping invisible nodes', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p1 = div.childNodes[1].childNodes[1];
+            const gh = p1.childNodes[1].childNodes[1].childNodes[2];
+            const p2 = div.childNodes[1].childNodes[3];
+            const ij = p2.childNodes[1].firstChild;
+            const result = nextLeaf(gh, editable, true);
+            window.chai.expect(result).to.equal(ij);
+        });
+        it('should find no next leaf, skipping invisible nodes, and return undefined', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p2 = div.childNodes[1].childNodes[3];
+            const kl = p2.childNodes[2];
+            const result = nextLeaf(kl, editable, true);
+            window.chai.expect(result).to.equal(undefined);
+        });
+        it('should find the next leaf of a deeply nested node to be whitespace', () => {
+            const [div] = insertTestHtml(
+                `<div>
+                    <div>
+                        <p>
+                            <b>ab<i>cd<u>ef</u>gh</i></b>
+                        </p>
+                        <p>
+                            <span>ij</span>kl
+                        </p>
+                    </div>
+                </div>`,
+            );
+            const editable = div.parentElement;
+            const p2 = div.childNodes[1].childNodes[3];
+            const kl = p2.childNodes[2];
+            const whitespace = div.childNodes[1].childNodes[4];
+            const result = nextLeaf(kl, editable);
+            window.chai.expect(result).to.equal(whitespace);
+            window.chai.expect(isVisibleStr(whitespace)).to.equal(false);
+        });
+    });
+    describe('getAdjacentPreviousSiblings', () => {
+        it('should find the adjacent previous siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const u = gh.previousSibling;
+            const cd = u.previousSibling;
+            const result = getAdjacentPreviousSiblings(gh);
+            window.chai.expect(result).to.eql([u, cd]);
+        });
+        it('should find no adjacent previous siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const ij = p.firstChild.childNodes[1].childNodes[3].firstChild;
+            const result = getAdjacentPreviousSiblings(ij);
+            window.chai.expect(result).to.eql([]);
+        });
+        it('should find only the adjacent previous siblings of a deeply nested node that are elements', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const u = gh.previousSibling;
+            const result = getAdjacentPreviousSiblings(
+                gh,
+                node => node.nodeType === Node.ELEMENT_NODE,
+            );
+            window.chai.expect(result).to.eql([u]);
+        });
+        it('should find only the adjacent previous siblings of a deeply nested node that are text nodes (none)', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const result = getAdjacentPreviousSiblings(
+                gh,
+                node => node.nodeType === Node.TEXT_NODE,
+            );
+            window.chai.expect(result).to.eql([]);
+        });
+    });
+    describe('getAdjacentNextSiblings', () => {
+        it('should find the adjacent next siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const span = gh.nextSibling;
+            const kl = span.nextSibling;
+            const result = getAdjacentNextSiblings(gh);
+            window.chai.expect(result).to.eql([span, kl]);
+        });
+        it('should find no adjacent next siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const ij = p.firstChild.childNodes[1].childNodes[3].firstChild;
+            const result = getAdjacentNextSiblings(ij);
+            window.chai.expect(result).to.eql([]);
+        });
+        it('should find only the adjacent next siblings of a deeply nested node that are elements', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const span = gh.nextSibling;
+            const result = getAdjacentNextSiblings(gh, node => node.nodeType === Node.ELEMENT_NODE);
+            window.chai.expect(result).to.eql([span]);
+        });
+        it('should find only the adjacent next siblings of a deeply nested node that are text nodes (none)', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const result = getAdjacentNextSiblings(gh, node => node.nodeType === Node.TEXT_NODE);
+            window.chai.expect(result).to.eql([]);
+        });
+    });
+    describe('getAdjacents', () => {
+        it('should find the adjacent siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const u = gh.previousSibling;
+            const cd = u.previousSibling;
+            const span = gh.nextSibling;
+            const kl = span.nextSibling;
+            const result = getAdjacents(gh);
+            window.chai.expect(result).to.eql([cd, u, gh, span, kl]);
+        });
+        it('should find no adjacent siblings of a deeply nested node', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const ij = p.firstChild.childNodes[1].childNodes[3].firstChild;
+            const result = getAdjacents(ij);
+            window.chai.expect(result).to.eql([ij]);
+        });
+        it('should find only the adjacent siblings of a deeply nested node that are elements', () => {
+            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+            const gh = p.firstChild.childNodes[1].childNodes[2];
+            const u = gh.previousSibling;
+            const span = gh.nextSibling;
+            const result = getAdjacents(gh, node => node.nodeType === Node.ELEMENT_NODE);
+            window.chai.expect(result).to.eql([u, span]);
+        });
+        it('should find only the adjacent siblings of a deeply nested node that are text nodes', () => {
+            const [p] = insertTestHtml(
+                '<p><b>ab<i>cd<u>ef</u><a>gh</a>ij<span>kl</span>mn</i>op</b>qr</p>',
+            );
+            const a = p.firstChild.childNodes[1].childNodes[2];
+            const ij = a.nextSibling;
+            const result = getAdjacents(a, node => node.nodeType === Node.TEXT_NODE);
+            window.chai.expect(result).to.eql([ij]);
+        });
+    });
+
+    //------------------------------------------------------------------------------
+    // DOM Info utils
+    //------------------------------------------------------------------------------
+
     describe('isVisible', () => {
         describe('textNode', () => {
             it('should identify an invisible textnode at the beginning of a paragraph before an inline node', () => {
