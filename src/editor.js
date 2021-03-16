@@ -1719,7 +1719,7 @@ export class OdooEditor extends EventTarget {
         // editable zones.
         this.automaticStepSkipStack();
         const link = closestElement(ev.target, 'a');
-        if (link) {
+        if (link && !link.querySelector('div')) {
             this._stopContenteditable();
             link.setAttribute('contenteditable', 'true');
         } else {
