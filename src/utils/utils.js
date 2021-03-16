@@ -359,18 +359,16 @@ export function getAdjacentNextSiblings(node, predicate = n => !!n) {
 }
 /**
  * Returns all the adjacent siblings of the given node until the first sibling
- * (in both directions) that does not satisfy the predicate, in index order.
+ * (in both directions) that does not satisfy the predicate, in index order. If
+ * the given node does not satisfy the predicate, an empty array is returned.
  *
  * @param {Node} node
  * @param {Function} [predicate] (node: Node) => boolean
- * @param {boolean} [includeSelf] default true
  */
-export function getAdjacents(node, predicate = n => !!n, includeSelf = true) {
+export function getAdjacents(node, predicate = n => !!n) {
     const previous = getAdjacentPreviousSiblings(node, predicate);
     const next = getAdjacentNextSiblings(node, predicate);
-    return includeSelf && predicate(node)
-        ? [...previous.reverse(), node, ...next]
-        : [...previous.reverse(), ...next];
+    return predicate(node) ? [...previous.reverse(), node, ...next] : [];
 }
 
 //------------------------------------------------------------------------------

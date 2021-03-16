@@ -669,22 +669,23 @@ describe('Utils', () => {
             const result = getAdjacents(ij);
             window.chai.expect(result).to.eql([ij]);
         });
-        it('should find only the adjacent siblings of a deeply nested node that are elements', () => {
-            const [p] = insertTestHtml('<p><b>ab<i>cd<u>ef</u>gh<span>ij</span>kl</i>mn</b>op</p>');
+        it('should find the adjacent siblings of a deeply nested node that are elements', () => {
+            const [p] = insertTestHtml(
+                '<p><b>ab<i>cd<u>ef</u><span>gh</span><span>ij</span>kl</i>mn</b>op</p>',
+            );
             const gh = p.firstChild.childNodes[1].childNodes[2];
             const u = gh.previousSibling;
             const span = gh.nextSibling;
             const result = getAdjacents(gh, node => node.nodeType === Node.ELEMENT_NODE);
-            window.chai.expect(result).to.eql([u, span]);
+            window.chai.expect(result).to.eql([u, gh, span]);
         });
-        it('should find only the adjacent siblings of a deeply nested node that are text nodes', () => {
+        it('should return an empty array if the given node is not satisfying the given predicate', () => {
             const [p] = insertTestHtml(
                 '<p><b>ab<i>cd<u>ef</u><a>gh</a>ij<span>kl</span>mn</i>op</b>qr</p>',
             );
-            const a = p.firstChild.childNodes[1].childNodes[2];
-            const ij = a.nextSibling;
+            const a = p.querySelector('a');
             const result = getAdjacents(a, node => node.nodeType === Node.TEXT_NODE);
-            window.chai.expect(result).to.eql([ij]);
+            window.chai.expect(result).to.eql([]);
         });
     });
 
