@@ -653,6 +653,9 @@ export class OdooEditor extends EventTarget {
     historyCanRedo() {
         return this._getNextRedoIndex() >= 0;
     }
+    historySize() {
+        return this._historySteps.length;
+    }
 
     historyRevert(step, until = 0) {
         // apply dom changes by reverting history steps
