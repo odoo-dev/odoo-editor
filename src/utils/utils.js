@@ -1014,7 +1014,8 @@ export function commonParentGet(node1, node2, root = undefined) {
         n1p.shift();
         n2p.shift();
     }
-    return n1p[0];
+    // Check  in case at least one of them is not in the DOM.
+    return n1p[0] === n2p[0] ? n1p[0] : null;
 }
 
 export function getListMode(pnode) {
