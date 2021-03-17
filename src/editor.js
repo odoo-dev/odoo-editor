@@ -127,6 +127,9 @@ export class OdooEditor extends EventTarget {
         // Track if we need to rollback mutations in case unbreakable or unremovable are being added or removed.
         this._toRollback = false;
 
+        // Map that from an node id to the dom node.
+        this._idToNodeMap = new Map();
+
         // -------------------
         // Alter the editable
         // -------------------
@@ -137,6 +140,7 @@ export class OdooEditor extends EventTarget {
 
         // Convention: root node is ID 1.
         editable.oid = 1;
+        this._idToNodeMap.set(1, editable);
         this.editable = this.options.toSanitize ? sanitize(editable) : editable;
 
         // Set contenteditable before clone as FF updates the content at this point.
@@ -213,7 +217,7 @@ export class OdooEditor extends EventTarget {
         const step = this._historySteps[this._historySteps.length - 1];
         let commonAncestor, record;
         for (record of step.mutations) {
-            const node = this.idFind(this.editable, record.parentId || record.id) || this.editable;
+            const node = this.idFind(record.parentId || record.id) || this.editable;
             commonAncestor = commonAncestor
                 ? commonParentGet(commonAncestor, node, this.editable)
                 : node;
@@ -236,6 +240,7 @@ export class OdooEditor extends EventTarget {
     idSet(node, testunbreak = false) {
         if (!node.oid) {
             node.oid = (Math.random() * 2 ** 31) | 0; // TODO: uuid4 or higher number
+            this._idToNodeMap.set(node.oid, node);
         }
         // Rollback if node.ouid changed. This ensures that nodes never change
         // unbreakable ancestors.
@@ -254,19 +259,8 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    // TODO: improve to avoid traversing the whole DOM just to find a node of an ID
-    idFind(node, id, parentId) {
-        if (node.oid === id && (!parentId || node.parentNode.oid === parentId)) {
-            return node;
-        }
-        let childNode = node.firstChild;
-        while (childNode) {
-            const result = this.idFind(childNode, id, parentId);
-            if (result) {
-                return result;
-            }
-            childNode = childNode.nextSibling;
-        }
+    idFind(id) {
+        return this._idToNodeMap.get(id);
     }
 
     // Observer that syncs doms
@@ -466,17 +460,17 @@ export class OdooEditor extends EventTarget {
     historyApply(records) {
         for (const record of records) {
             if (record.type === 'characterData') {
-                const node = this.idFind(this.editable, record.id);
+                const node = this.idFind(record.id);
                 if (node) {
                     node.textContent = record.text;
                 }
             } else if (record.type === 'attributes') {
-                const node = this.idFind(this.editable, record.id);
+                const node = this.idFind(record.id);
                 if (node) {
                     node.setAttribute(record.attributeName, record.value);
                 }
             } else if (record.type === 'remove') {
-                const toremove = this.idFind(this.editable, record.id, record.parentId);
+                const toremove = this.idFind(record.id);
                 if (toremove) {
                     toremove.remove();
                 }
@@ -486,17 +480,17 @@ export class OdooEditor extends EventTarget {
                 // preserve oid after the clone
                 this.idSet(node, newnode);
 
-                const destnode = this.idFind(this.editable, record.node.oid);
+                const destnode = this.idFind(record.node.oid);
                 if (destnode && record.node.parentNode.oid === destnode.parentNode.oid) {
                     // TODO: optimization: remove record from the history to reduce collaboration bandwidth
                     continue;
                 }
-                if (record.append && this.idFind(this.editable, record.append)) {
-                    this.idFind(this.editable, record.append).append(newnode);
-                } else if (record.before && this.idFind(this.editable, record.before)) {
-                    this.idFind(this.editable, record.before).before(newnode);
-                } else if (record.after && this.idFind(this.editable, record.after)) {
-                    this.idFind(this.editable, record.after).after(newnode);
+                if (record.append && this.idFind(record.append)) {
+                    this.idFind(record.append).append(newnode);
+                } else if (record.before && this.idFind(record.before)) {
+                    this.idFind(record.before).before(newnode);
+                } else if (record.after && this.idFind(record.after)) {
+                    this.idFind(record.after).after(newnode);
                 } else {
                     continue;
                 }
@@ -667,11 +661,11 @@ export class OdooEditor extends EventTarget {
             }
             switch (mutation.type) {
                 case 'characterData': {
-                    this.idFind(this.editable, mutation.id).textContent = mutation.oldValue;
+                    this.idFind(mutation.id).textContent = mutation.oldValue;
                     break;
                 }
                 case 'attributes': {
-                    this.idFind(this.editable, mutation.id).setAttribute(
+                    this.idFind(mutation.id).setAttribute(
                         mutation.attributeName,
                         mutation.oldValue,
                     );
@@ -679,20 +673,17 @@ export class OdooEditor extends EventTarget {
                 }
                 case 'remove': {
                     const node = this.unserialize(mutation.node);
-                    if (mutation.nextId && this.idFind(this.editable, mutation.nextId)) {
-                        this.idFind(this.editable, mutation.nextId).before(node);
-                    } else if (
-                        mutation.previousId &&
-                        this.idFind(this.editable, mutation.previousId)
-                    ) {
-                        this.idFind(this.editable, mutation.previousId).after(node);
+                    if (mutation.nextId && this.idFind(mutation.nextId)) {
+                        this.idFind(mutation.nextId).before(node);
+                    } else if (mutation.previousId && this.idFind(mutation.previousId)) {
+                        this.idFind(mutation.previousId).after(node);
                     } else {
-                        this.idFind(this.editable, mutation.parentId).append(node);
+                        this.idFind(mutation.parentId).append(node);
                     }
                     break;
                 }
                 case 'add': {
-                    const node = this.idFind(this.editable, mutation.id);
+                    const node = this.idFind(mutation.id);
                     if (node) {
                         node.remove();
                     }
@@ -705,9 +696,9 @@ export class OdooEditor extends EventTarget {
 
     historySetCursor(step) {
         if (step.cursor && step.cursor.anchorNode) {
-            const anchorNode = this.idFind(this.editable, step.cursor.anchorNode);
+            const anchorNode = this.idFind(step.cursor.anchorNode);
             const focusNode = step.cursor.focusNode
-                ? this.idFind(this.editable, step.cursor.focusNode)
+                ? this.idFind(step.cursor.focusNode)
                 : anchorNode;
             if (anchorNode) {
                 setCursor(
