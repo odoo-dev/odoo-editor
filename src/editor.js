@@ -300,6 +300,8 @@ export class OdooEditor extends EventTarget {
     observerActive() {
         if (!this.observer) {
             this.observer = new MutationObserver(records => {
+                records = this.filterMutationRecords(records);
+                if (!records.length) return;
                 clearTimeout(this.observerTimeout);
                 if (this._observerTimeoutUnactive.size === 0) {
                     this.observerTimeout = setTimeout(() => {
@@ -320,7 +322,6 @@ export class OdooEditor extends EventTarget {
     }
 
     observerApply(records) {
-        records = this.filterMutationRecords(records);
         for (const record of records) {
             switch (record.type) {
                 case 'characterData': {
