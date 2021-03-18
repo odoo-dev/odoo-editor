@@ -1813,6 +1813,7 @@ export class OdooEditor extends EventTarget {
     }
 
     _onToolbarClick(ev) {
+        if (ev.target.tagName === 'INPUT') return;
         ev.preventDefault();
         const buttonEl = ev.target.closest(
             'div.btn:not(.editor-ignore),a.dropdown-item:not(.editor-ignore)',
