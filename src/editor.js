@@ -800,14 +800,15 @@ export class OdooEditor extends EventTarget {
             end &&
             end !== this.editable &&
             !end.contains(range.endContainer) &&
-            !isVisible(end, false)
+            !isVisible(end, false) &&
+            end.nodeName !== 'A'
         ) {
             const parent = end.parentNode;
             end.remove();
             end = parent;
         }
         // Same with the start container
-        while (start && start !== this.editable && !isVisible(start)) {
+        while (start && start !== this.editable && !isVisible(start) && start.nodeName !== 'A') {
             const parent = start.parentNode;
             start.remove();
             start = parent;
