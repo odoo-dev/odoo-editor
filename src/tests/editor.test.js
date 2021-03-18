@@ -1492,6 +1492,11 @@ describe('Editor', () => {
                         stepFunction: deleteBackward,
                         contentAfter: '<p>ab []&nbsp;de</p>',
                     });
+                    await testEditor(BasicEditor, {
+                        contentBefore: '<p>ab [c] de</p>',
+                        stepFunction: deleteBackward,
+                        contentAfter: '<p>ab&nbsp;[] de</p>',
+                    });
                 });
                 it('should delete an empty paragraph in a table cell', () =>
                     testEditor(BasicEditor, {
