@@ -820,8 +820,9 @@ export class OdooEditor extends EventTarget {
         // Ensure trailing space remains visible.
         const joinWith = range.endContainer;
         const oldText = joinWith.textContent;
-        if (doJoin && oldText.endsWith(' ')) {
+        if (joinWith && oldText.endsWith(' ')) {
             joinWith.textContent = oldText.replace(/ $/, '\u00A0');
+            setCursor(joinWith, nodeSize(joinWith));
         }
         // Rejoin blocks that extractContents may have split in two.
         while (
@@ -845,8 +846,13 @@ export class OdooEditor extends EventTarget {
                 break;
             }
         }
-        // Restore the text we modified in order to preserve trailing space.
-        if (doJoin && oldText.endsWith(' ')) {
+        next = joinWith && joinWith.nextSibling;
+        if (
+            joinWith &&
+            oldText.endsWith(' ') &&
+            !(next && next.nodeType === Node.TEXT_NODE && next.textContent.startsWith(' '))
+        ) {
+            // Restore the text we modified in order to preserve trailing space.
             joinWith.textContent = oldText;
             setCursor(joinWith, nodeSize(joinWith));
         }
