@@ -1146,7 +1146,8 @@ export class OdooEditor extends EventTarget {
     _bold() {
         const selection = this.document.getSelection();
         if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
-        const isAlreadyBold = !getTraversedNodes(this.editable)
+        getDeepRange(this.editable, { splitText: true, select: true, correctTripleClick: true });
+        const isAlreadyBold = !getSelectedNodes(this.editable)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
             .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
         this._applyInlineStyle(el => {
