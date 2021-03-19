@@ -10,6 +10,10 @@ import {
     getAdjacentPreviousSiblings,
     getAdjacentNextSiblings,
     getAdjacents,
+    getDeepRange,
+    getNormalizedCursorPosition,
+    getSelectedNodes,
+    getTraversedNodes,
     isVisible,
     isVisibleStr,
     lastLeaf,
@@ -19,10 +23,17 @@ import {
     previousLeaf,
     rightPos,
     startPos,
+    setCursor,
+    setCursorStart,
+    setCursorEnd,
+    getCursorDirection,
+    DIRECTIONS,
 } from '../utils/utils.js';
+import { BasicEditor, testEditor } from './utils.js';
 
 const insertTestHtml = innerHtml => {
     const container = document.createElement('DIV');
+    container.setAttribute('contenteditable', true);
     container.innerHTML = innerHtml;
     document.body.appendChild(container);
     return container.childNodes;
@@ -688,6 +699,667 @@ describe('Utils', () => {
             window.chai.expect(result).to.eql([]);
         });
     });
+
+    //------------------------------------------------------------------------------
+    // Cursor management
+    //------------------------------------------------------------------------------
+
+    describe('getNormalizedCursorPosition', () => {
+        // TODO: test more.
+        it('should move the cursor from after a <b> to within it', () => {
+            const [p] = insertTestHtml('<p><b>abc</b>def</p>');
+            const result = getNormalizedCursorPosition(p.lastChild, 0);
+            window.chai.expect(result).to.eql([p.firstChild.firstChild, 3]);
+        });
+    });
+    describe('setCursor', () => {
+        describe('collapsed', () => {
+            it('should collapse the cursor at the beginning of an element', () => {
+                const [p] = insertTestHtml('<p>abc</p>');
+                const result = setCursor(p.firstChild, 0);
+                window.chai.expect(result).to.eql([p.firstChild, 0, p.firstChild, 0]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p.firstChild, 0, p.firstChild, 0]);
+            });
+            it('should collapse the cursor within an element', () => {
+                const [p] = insertTestHtml('<p>abcd</p>');
+                const result = setCursor(p.firstChild, 2);
+                window.chai.expect(result).to.eql([p.firstChild, 2, p.firstChild, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p.firstChild, 2, p.firstChild, 2]);
+            });
+            it('should collapse the cursor at the end of an element', () => {
+                const [p] = insertTestHtml('<p>abc</p>');
+                const result = setCursor(p.firstChild, 3);
+                window.chai.expect(result).to.eql([p.firstChild, 3, p.firstChild, 3]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p.firstChild, 3, p.firstChild, 3]);
+            });
+            it('should collapse the cursor before a nested inline element', () => {
+                const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+                const cd = p.childNodes[1].firstChild;
+                const result = setCursor(cd, 2);
+                window.chai.expect(result).to.eql([cd, 2, cd, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([cd, 2, cd, 2]);
+            });
+            it('should collapse the cursor at the beginning of a nested inline element', () => {
+                const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+                const ef = p.childNodes[1].childNodes[1].firstChild;
+                const result = setCursor(ef, 0);
+                window.chai.expect(result).to.eql([ef, 0, ef, 0]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([ef, 0, ef, 0]);
+            });
+            it('should collapse the cursor within a nested inline element', () => {
+                const [p] = insertTestHtml('<p>ab<span>cd<b>efgh</b>ij</span>kl</p>');
+                const efgh = p.childNodes[1].childNodes[1].firstChild;
+                const result = setCursor(efgh, 2);
+                window.chai.expect(result).to.eql([efgh, 2, efgh, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([efgh, 2, efgh, 2]);
+            });
+            it('should collapse the cursor at the end of a nested inline element', () => {
+                const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+                const ef = p.childNodes[1].childNodes[1].firstChild;
+                const result = setCursor(ef, 2);
+                window.chai.expect(result).to.eql([ef, 2, ef, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([ef, 2, ef, 2]);
+            });
+            it('should collapse the cursor after a nested inline element', () => {
+                const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+                const ef = p.childNodes[1].childNodes[1].firstChild;
+                const gh = p.childNodes[1].lastChild;
+                const result = setCursor(gh, 0);
+                window.chai.expect(result).to.eql([ef, 2, ef, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([ef, 2, ef, 2]);
+
+                const nonNormalizedResult = setCursor(gh, 0, gh, 0, false);
+                window.chai.expect(nonNormalizedResult).to.eql([gh, 0, gh, 0]);
+                const sel = document.getSelection();
+                window.chai
+                    .expect([sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset])
+                    .to.eql([gh, 0, gh, 0]);
+            });
+        });
+        describe('forward', () => {
+            it('should select the contents of an element', () => {
+                const [p] = insertTestHtml('<p>abc</p>');
+                const result = setCursor(p.firstChild, 0, p.firstChild, 3);
+                window.chai.expect(result).to.eql([p.firstChild, 0, p.firstChild, 3]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p.firstChild, 0, p.firstChild, 3]);
+            });
+            it('should make a complex selection', () => {
+                const [p1, p2] = insertTestHtml(
+                    '<p>ab<span>cd<b>ef</b>gh</span>ij</p><p>kl<span>mn<b>op</b>qr</span>st</p>',
+                );
+                const ef = p1.childNodes[1].childNodes[1].firstChild;
+                const qr = p2.childNodes[1].childNodes[2];
+                const st = p2.childNodes[2];
+                const result = setCursor(ef, 1, st, 0);
+                window.chai.expect(result).to.eql([ef, 1, qr, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([ef, 1, qr, 2]);
+
+                const nonNormalizedResult = setCursor(ef, 1, st, 0, false);
+                window.chai.expect(nonNormalizedResult).to.eql([ef, 1, st, 0]);
+                const sel = document.getSelection();
+                window.chai
+                    .expect([sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset])
+                    .to.eql([ef, 1, st, 0]);
+            });
+        });
+        describe('backward', () => {
+            it('should select the contents of an element', () => {
+                const [p] = insertTestHtml('<p>abc</p>');
+                const result = setCursor(p.firstChild, 3, p.firstChild, 0);
+                window.chai.expect(result).to.eql([p.firstChild, 3, p.firstChild, 0]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p.firstChild, 3, p.firstChild, 0]);
+            });
+            it('should make a complex selection', () => {
+                const [p1, p2] = insertTestHtml(
+                    '<p>ab<span>cd<b>ef</b>gh</span>ij</p><p>kl<span>mn<b>op</b>qr</span>st</p>',
+                );
+                const ef = p1.childNodes[1].childNodes[1].firstChild;
+                const qr = p2.childNodes[1].childNodes[2];
+                const st = p2.childNodes[2];
+                const result = setCursor(st, 0, ef, 1);
+                window.chai.expect(result).to.eql([qr, 2, ef, 1]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([qr, 2, ef, 1]);
+
+                const nonNormalizedResult = setCursor(st, 0, ef, 1, false);
+                window.chai.expect(nonNormalizedResult).to.eql([st, 0, ef, 1]);
+                const sel = document.getSelection();
+                window.chai
+                    .expect([sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset])
+                    .to.eql([st, 0, ef, 1]);
+            });
+        });
+    });
+    describe('setCursorStart', () => {
+        it('should collapse the cursor at the beginning of an element', () => {
+            const [p] = insertTestHtml('<p>abc</p>');
+            const result = setCursorStart(p);
+            window.chai.expect(result).to.eql([p.firstChild, 0, p.firstChild, 0]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([p.firstChild, 0, p.firstChild, 0]);
+        });
+        it('should collapse the cursor at the beginning of a nested inline element', () => {
+            const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+            const b = p.childNodes[1].childNodes[1];
+            const ef = b.firstChild;
+            const result = setCursorStart(b);
+            window.chai.expect(result).to.eql([ef, 0, ef, 0]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([ef, 0, ef, 0]);
+        });
+        it('should collapse the cursor after a nested inline element', () => {
+            const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+            const ef = p.childNodes[1].childNodes[1].firstChild;
+            const gh = p.childNodes[1].lastChild;
+            const result = setCursorStart(gh);
+            window.chai.expect(result).to.eql([ef, 2, ef, 2]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([ef, 2, ef, 2]);
+
+            const nonNormalizedResult = setCursorStart(gh, false);
+            window.chai.expect(nonNormalizedResult).to.eql([gh, 0, gh, 0]);
+            const sel = document.getSelection();
+            window.chai
+                .expect([sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset])
+                .to.eql([gh, 0, gh, 0]);
+        });
+    });
+    describe('setCursorEnd', () => {
+        it('should collapse the cursor at the end of an element', () => {
+            const [p] = insertTestHtml('<p>abc</p>');
+            const result = setCursorEnd(p);
+            window.chai.expect(result).to.eql([p.firstChild, 3, p.firstChild, 3]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([p.firstChild, 3, p.firstChild, 3]);
+        });
+        it('should collapse the cursor before a nested inline element', () => {
+            const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+            const cd = p.childNodes[1].firstChild;
+            const result = setCursorEnd(cd);
+            window.chai.expect(result).to.eql([cd, 2, cd, 2]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([cd, 2, cd, 2]);
+        });
+        it('should collapse the cursor at the end of a nested inline element', () => {
+            const [p] = insertTestHtml('<p>ab<span>cd<b>ef</b>gh</span>ij</p>');
+            const b = p.childNodes[1].childNodes[1];
+            const ef = b.firstChild;
+            const result = setCursorEnd(b);
+            window.chai.expect(result).to.eql([ef, 2, ef, 2]);
+            const { anchorNode, anchorOffset, focusNode, focusOffset } = document.getSelection();
+            window.chai
+                .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                .to.eql([ef, 2, ef, 2]);
+        });
+    });
+    describe('getCursorDirection', () => {
+        it('should identify a forward selection', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>a[bc]d</p>',
+                stepFunction: editor => {
+                    const {
+                        anchorNode,
+                        anchorOffset,
+                        focusNode,
+                        focusOffset,
+                    } = editor.document.getSelection();
+                    window.chai
+                        .expect(
+                            getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset),
+                        )
+                        .to.equal(DIRECTIONS.RIGHT);
+                },
+            });
+        });
+        it('should identify a backward selection', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>a]bc[d</p>',
+                stepFunction: editor => {
+                    const {
+                        anchorNode,
+                        anchorOffset,
+                        focusNode,
+                        focusOffset,
+                    } = editor.document.getSelection();
+                    window.chai
+                        .expect(
+                            getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset),
+                        )
+                        .to.equal(DIRECTIONS.LEFT);
+                },
+            });
+        });
+        it('should identify a collapsed selection', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[]cd</p>',
+                stepFunction: editor => {
+                    const {
+                        anchorNode,
+                        anchorOffset,
+                        focusNode,
+                        focusOffset,
+                    } = editor.document.getSelection();
+                    window.chai
+                        .expect(
+                            getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset),
+                        )
+                        .to.equal(false);
+                },
+            });
+        });
+    });
+    describe('getTraversedNodes', () => {
+        it('should return the text node in which the range is collapsed', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[]cd</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const abcd = editable.firstChild.firstChild;
+                    const result = getTraversedNodes(editable);
+                    window.chai.expect(result).to.eql([abcd]);
+                },
+            });
+        });
+        it('should find that a the range traverses the next paragraph as well', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[cd</p><p>ef]gh</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const abcd = editable.firstChild.firstChild;
+                    const p2 = editable.childNodes[1];
+                    const efgh = p2.firstChild;
+                    const result = getTraversedNodes(editable);
+                    window.chai.expect(result).to.eql([abcd, p2, efgh]);
+                },
+            });
+        });
+        it('should find all traversed nodes in nested range', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore:
+                    '<p><span>ab[</span>cd</p><div><p><span><b>e</b><i>f]g</i>h</span></p></div>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const ab = editable.firstChild.firstChild.firstChild;
+                    const cd = editable.firstChild.lastChild;
+                    const div = editable.lastChild;
+                    const p2 = div.firstChild;
+                    const span2 = p2.firstChild;
+                    const b = span2.firstChild;
+                    const e = b.firstChild;
+                    const i = b.nextSibling;
+                    const fg = i.firstChild;
+                    const result = getTraversedNodes(editable);
+                    window.chai.expect(result).to.eql([ab, cd, div, p2, span2, b, e, i, fg]);
+                },
+            });
+        });
+    });
+    describe('getSelectedNodes', () => {
+        it('should return nothing if the range is collapsed', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[]cd</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const result = getSelectedNodes(editable);
+                    window.chai.expect(result).to.eql([]);
+                },
+                contentAfter: '<p>ab[]cd</p>',
+            });
+        });
+        it('should find that no node is fully selected', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[c]d</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const result = getSelectedNodes(editable);
+                    window.chai.expect(result).to.eql([]);
+                },
+            });
+        });
+        it('should find that no node is fully selected, across blocks', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>ab[cd</p><p>ef]gh</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const result = getSelectedNodes(editable);
+                    window.chai.expect(result).to.eql([]);
+                },
+            });
+        });
+        it('should find that a text node is fully selected', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p><span>ab</span>[cd]</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const result = getSelectedNodes(editable);
+                    const cd = editable.firstChild.lastChild;
+                    window.chai.expect(result).to.eql([cd]);
+                },
+            });
+        });
+        it('should find that a block is fully selected', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>[ab</p><p>cd</p><p>ef]gh</p>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const result = getSelectedNodes(editable);
+                    const ab = editable.firstChild.firstChild;
+                    const p2 = editable.childNodes[1];
+                    const cd = p2.firstChild;
+                    window.chai.expect(result).to.eql([ab, p2, cd]);
+                },
+            });
+        });
+        it('should find all selected nodes in nested range', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore:
+                    '<p><span>ab[</span>cd</p><div><p><span><b>e</b><i>f]g</i>h</span></p></div>',
+                stepFunction: editor => {
+                    const editable = editor.editable;
+                    const cd = editable.firstChild.lastChild;
+                    const b = editable.lastChild.firstChild.firstChild.firstChild;
+                    const e = b.firstChild;
+                    const result = getSelectedNodes(editable);
+                    window.chai.expect(result).to.eql([cd, b, e]);
+                },
+            });
+        });
+    });
+    describe('getDeepRange', () => {
+        describe('collapsed', () => {
+            it('should collapse the cursor at the beginning of an element', () => {
+                const [p] = insertTestHtml(
+                    `<p>
+                        <span><b><i><u>abc</u></i></b></span>
+                    </p>`,
+                );
+                const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
+                const range = document.createRange();
+                range.setStart(p, 0);
+                range.setEnd(p, 0);
+                const result = getDeepRange(p.parentElement, { range, select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([abc, 0, abc, 0]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([abc, 0, abc, 0]);
+            });
+            it('should collapse the cursor at the end of a nested inline element', () => {
+                const [p] = insertTestHtml(
+                    `<p>
+                        <span><b><i><u>abc</u></i></b></span>
+                    </p>`,
+                );
+                const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
+                const range = document.createRange();
+                range.setStart(p, 1);
+                range.setEnd(p, 1);
+                const result = getDeepRange(p.parentElement, { range, select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([abc, 3, abc, 3]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([abc, 3, abc, 3]);
+            });
+        });
+        describe('forward', () => {
+            it('should select the contents of an element', () => {
+                const [p] = insertTestHtml(
+                    `<p>
+                        <span><b><i><u>abc</u></i></b></span>
+                    </p>`,
+                );
+                const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
+                const range = document.createRange();
+                range.setStart(p, 0);
+                range.setEnd(p, 1);
+                const result = getDeepRange(p.parentElement, { range, select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([abc, 0, abc, 3]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([abc, 0, abc, 3]);
+            });
+            it('should make a complex selection', () => {
+                const [p1, p2] = insertTestHtml(
+                    `<p>
+                        ab<span>cd<b>ef</b>gh</span>ij
+                    </p><p>
+                        kl<span>mn<b>op</b>qr</span>st
+                    </p>`,
+                );
+                const span1 = p1.childNodes[1];
+                const cd = span1.firstChild;
+                const qr = p2.childNodes[1].lastChild;
+                const range = document.createRange();
+                range.setStart(span1, 1);
+                range.setEnd(p2, 2);
+                const result = getDeepRange(p1.parentElement, { range, select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([cd, 2, qr, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([cd, 2, qr, 2]);
+            });
+            it('should correct a triple click', () => {
+                const [p1, p2] = insertTestHtml('<p>abc def ghi</p><p>jkl mno pqr</p>');
+                const range = document.createRange();
+                range.setStart(p1, 0);
+                range.setEnd(p2, 0);
+                const result = getDeepRange(p1.parentElement, {
+                    range,
+                    select: true,
+                    correctTripleClick: true,
+                });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([p1.firstChild, 0, p1.firstChild, 11]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([p1.firstChild, 0, p1.firstChild, 11]);
+            });
+        });
+        describe('backward', () => {
+            it('should select the contents of an element', () => {
+                const [p] = insertTestHtml(
+                    `<p>
+                        <span><b><i><u>abc</u></i></b></span>
+                    </p>`,
+                );
+                const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
+                setCursor(p, 1, p, 0, false);
+                const result = getDeepRange(p.parentElement, { select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([abc, 0, abc, 3]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([abc, 3, abc, 0]);
+            });
+            it('should make a complex selection', () => {
+                const [p1, p2] = insertTestHtml(
+                    `<p>
+                        ab<span>cd<b>ef</b>gh</span>ij
+                    </p><p>
+                        kl<span>mn<b>op</b>qr</span>st
+                    </p>`,
+                );
+                const span1 = p1.childNodes[1];
+                const cd = span1.firstChild;
+                const qr = p2.childNodes[1].lastChild;
+                setCursor(p2, 2, span1, 1, false);
+                const result = getDeepRange(p1.parentElement, { select: true });
+                const { startContainer, startOffset, endContainer, endOffset } = result;
+                window.chai
+                    .expect([startContainer, startOffset, endContainer, endOffset])
+                    .to.eql([cd, 2, qr, 2]);
+                const {
+                    anchorNode,
+                    anchorOffset,
+                    focusNode,
+                    focusOffset,
+                } = document.getSelection();
+                window.chai
+                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
+                    .to.eql([qr, 2, cd, 2]);
+            });
+        });
+    });
+    // TODO:
+    // - getDeepestPosition
+    // - getCursors
+    // - preserveCursor
 
     //------------------------------------------------------------------------------
     // DOM Info utils
