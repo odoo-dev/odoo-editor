@@ -13,6 +13,7 @@ import {
     getDeepRange,
 } from './utils.js';
 
+const NOT_A_NUMBER = /[^\d]/g;
 export function areSimilarElements(node, node2) {
     if (
         !node ||
@@ -55,10 +56,19 @@ export function areSimilarElements(node, node2) {
             getListMode(node.lastElementChild) == getListMode(node2.firstElementChild)
         );
     }
+    if (['UL', 'OL'].includes(node.tagName)) {
+        return !isVisibleEmpty(node) && !isVisibleEmpty(node2);
+    }
+    if (isBlock(node) || isVisibleEmpty(node) || isVisibleEmpty(node2)) {
+        return false;
+    }
+    const nodeStyle = getComputedStyle(node);
+    const node2Style = getComputedStyle(node2);
     return (
-        (['UL', 'OL'].includes(node.tagName) || !isBlock(node)) &&
-        !isVisibleEmpty(node) &&
-        !isVisibleEmpty(node2)
+        !+nodeStyle.padding.replace(NOT_A_NUMBER, '') &&
+        !+node2Style.padding.replace(NOT_A_NUMBER, '') &&
+        !+nodeStyle.margin.replace(NOT_A_NUMBER, '') &&
+        !+node2Style.margin.replace(NOT_A_NUMBER, '')
     );
 }
 
