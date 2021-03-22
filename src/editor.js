@@ -1602,6 +1602,8 @@ export class OdooEditor extends EventTarget {
                     this._applyCommand('oShiftEnter');
                 }
             } else if (ev.inputType === 'insertLineBreak') {
+                this.historyRollback();
+                ev.preventDefault();
                 this._applyCommand('oShiftEnter');
             } else {
                 this.sanitize();
