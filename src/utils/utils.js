@@ -780,6 +780,15 @@ export function isBlock(node) {
     if (tagName.startsWith('JW-') || tagName === 'T') {
         return true;
     }
+    if (tagName === 'BR') {
+        // A <br> is always inline but getComputedStyle(br).display mistakenly
+        // returns 'block' if its parent is display:flex (at least on Chrome and
+        // Firefox (Linux)). Browsers normally support setting a <br>'s display
+        // property to 'none' but any other change is not supported. Therefore
+        // it is safe to simply declare that a <br> is never supposed to be a
+        // block.
+        return false;
+    }
     // The node might not be in the DOM, in which case it has no CSS values.
     if (window.document !== node.ownerDocument) {
         return blockTagNames.includes(tagName);
