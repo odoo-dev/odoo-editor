@@ -63,8 +63,8 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 const TABLEPICKER_ROW_COUNT = 3;
 const TABLEPICKER_COL_COUNT = 3;
 
-const TEXT_CLASSES_REGEX = /\btext-.*\b/g;
-const BG_CLASSES_REGEX = /\bbg-.*\b/g;
+const TEXT_CLASSES_REGEX = /\btext-[^\s]*\b/g;
+const BG_CLASSES_REGEX = /\bbg-[^\s]*\b/g;
 
 const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
 
