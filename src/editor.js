@@ -956,8 +956,10 @@ export class OdooEditor extends EventTarget {
         const selection = this.document.defaultView.getSelection();
         const range = selection.getRangeAt(0);
         let startNode;
+        let insertBefore = false;
         if (selection.isCollapsed) {
             if (range.startContainer.nodeType === Node.TEXT_NODE) {
+                insertBefore = !range.startOffset;
                 splitTextNode(range.startContainer, range.startOffset, DIRECTIONS.LEFT);
                 startNode = range.startContainer;
             }
@@ -979,7 +981,12 @@ export class OdooEditor extends EventTarget {
         let nodeToInsert;
         const insertedNodes = [...fakeEl.childNodes];
         while ((nodeToInsert = fakeEl.childNodes[0])) {
-            startNode.after(nodeToInsert);
+            if (insertBefore) {
+                startNode.before(nodeToInsert);
+                insertBefore = false;
+            } else {
+                startNode.after(nodeToInsert);
+            }
             startNode = nodeToInsert;
         }
 

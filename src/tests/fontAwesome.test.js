@@ -344,7 +344,17 @@ describe('FontAwesome', () => {
         });
     });
     describe('FontAwesome insertion', () => {
-        it('should insert a fontAwesome', async () => {
+        it('should insert a fontAwesome at the start of an element', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>[]abc</p>',
+                stepFunction: async editor => {
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
+                },
+                contentAfter:
+                    '<p><i class="fa fa-star" contenteditable="false">\u200b</i>[]abc</p>',
+            });
+        });
+        it('should insert a fontAwesome within an element', async () => {
             await testEditor(BasicEditor, {
                 contentBefore: '<p>ab[]cd</p>',
                 stepFunction: async editor => {
@@ -352,6 +362,16 @@ describe('FontAwesome', () => {
                 },
                 contentAfter:
                     '<p>ab<i class="fa fa-star" contenteditable="false">\u200b</i>[]cd</p>',
+            });
+        });
+        it('should insert a fontAwesome at the end of an element', async () => {
+            await testEditor(BasicEditor, {
+                contentBefore: '<p>abc[]</p>',
+                stepFunction: async editor => {
+                    editor.execCommand('insertFontAwesome', 'fa fa-star');
+                },
+                contentAfter:
+                    '<p>abc<i class="fa fa-star" contenteditable="false">\u200b</i>[]</p>',
             });
         });
         it('should insert a fontAwesome after', async () => {
