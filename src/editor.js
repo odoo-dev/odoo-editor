@@ -796,19 +796,15 @@ export class OdooEditor extends EventTarget {
         this._toRollback = false; // Errors caught with observerFlush were already handled.
         // If the end container was fully selected, extractContents may have
         // emptied it without removing it. Ensure it's gone.
-        while (
-            end &&
-            end !== this.editable &&
-            !end.contains(range.endContainer) &&
-            !isVisible(end, false) &&
-            end.nodeName !== 'A'
-        ) {
+        const isRemovableInvisible = (node, noBlocks = true) =>
+            !isVisible(node, noBlocks) && !isUnremovable(node) && node.nodeName !== 'A';
+        while (end && isRemovableInvisible(end, false) && !end.contains(range.endContainer)) {
             const parent = end.parentNode;
             end.remove();
             end = parent;
         }
         // Same with the start container
-        while (start && start !== this.editable && !isVisible(start) && start.nodeName !== 'A') {
+        while (start && isRemovableInvisible(start)) {
             const parent = start.parentNode;
             start.remove();
             start = parent;
