@@ -1721,8 +1721,9 @@ export class OdooEditor extends EventTarget {
         this.automaticStepSkipStack();
         const link = closestElement(ev.target, 'a');
         if (link && !link.querySelector('div')) {
+            const editableChildren = link.querySelectorAll('[contenteditable=true]');
             this._stopContenteditable();
-            link.setAttribute('contenteditable', 'true');
+            [...editableChildren, link].forEach(node => node.setAttribute('contenteditable', true));
         } else {
             this._activateContenteditable();
         }
