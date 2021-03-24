@@ -1153,11 +1153,11 @@ export class OdooEditor extends EventTarget {
         const selection = this.document.getSelection();
         if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
         getDeepRange(this.editable, { splitText: true, select: true, correctTripleClick: true });
-        const isAlreadyBold = !getSelectedNodes(this.editable)
+        const isAlreadyBold = getSelectedNodes(this.editable)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
-            .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) < 700);
+            .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) > 500);
         this._applyInlineStyle(el => {
-            el.style.fontWeight = isAlreadyBold ? 'normal' : 'bold';
+            el.style.fontWeight = isAlreadyBold ? 'normal' : 'bolder';
         });
     }
 
