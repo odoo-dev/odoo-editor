@@ -661,24 +661,26 @@ export class OdooEditor extends EventTarget {
             }
             switch (mutation.type) {
                 case 'characterData': {
-                    this.idFind(mutation.id).textContent = mutation.oldValue;
+                    const node = this.idFind(mutation.id);
+                    if (node) node.textContent = mutation.oldValue;
                     break;
                 }
                 case 'attributes': {
-                    this.idFind(mutation.id).setAttribute(
-                        mutation.attributeName,
-                        mutation.oldValue,
-                    );
+                    const node = this.idFind(mutation.id);
+                    if (node) node.setAttribute(mutation.attributeName, mutation.oldValue);
                     break;
                 }
                 case 'remove': {
-                    const node = this.unserialize(mutation.node);
+                    const nodeToRemove = this.unserialize(mutation.node);
                     if (mutation.nextId && this.idFind(mutation.nextId)) {
-                        this.idFind(mutation.nextId).before(node);
+                        const node = this.idFind(mutation.nextId);
+                        node && node.before(nodeToRemove);
                     } else if (mutation.previousId && this.idFind(mutation.previousId)) {
-                        this.idFind(mutation.previousId).after(node);
+                        const node = this.idFind(mutation.previousId);
+                        node && node.after(nodeToRemove);
                     } else {
-                        this.idFind(mutation.parentId).append(node);
+                        const node = this.idFind(mutation.parentId);
+                        node && node.append(nodeToRemove);
                     }
                     break;
                 }
