@@ -1439,7 +1439,6 @@ export class OdooEditor extends EventTarget {
         }
         const paragraphDropdownButton = this.toolbar.querySelector('#paragraphDropdownButton');
         for (const commandState of [
-            'bold',
             'italic',
             'underline',
             'strikeThrough',
@@ -1464,6 +1463,12 @@ export class OdooEditor extends EventTarget {
         if (sel.rangeCount) {
             const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
             const selectionStartStyle = getComputedStyle(closestsStartContainer);
+
+            // queryCommandState('bold') does not take stylesheets into account
+            const isBold = Number.parseInt(selectionStartStyle.fontWeight) > 500;
+            const button = this.toolbar.querySelector('#bold');
+            button.classList.toggle('active', isBold);
+
             const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
             if (fontSizeValue) {
                 fontSizeValue.innerHTML = /\d+/.exec(selectionStartStyle.fontSize).pop();
