@@ -694,6 +694,7 @@ export class OdooEditor extends EventTarget {
         }
         this._activateContenteditable();
         this.historySetCursor(step);
+        this.dispatchEvent(new Event('historyRevert'));
     }
 
     historySetCursor(step) {
