@@ -807,13 +807,18 @@ export class OdooEditor extends EventTarget {
         // emptied it without removing it. Ensure it's gone.
         const isRemovableInvisible = (node, noBlocks = true) =>
             !isVisible(node, noBlocks) && !isUnremovable(node) && node.nodeName !== 'A';
+        const endIsStart = end === start;
         while (end && isRemovableInvisible(end, false) && !end.contains(range.endContainer)) {
             const parent = end.parentNode;
             end.remove();
             end = parent;
         }
         // Same with the start container
-        while (start && isRemovableInvisible(start)) {
+        while (
+            start &&
+            isRemovableInvisible(start) &&
+            !(endIsStart && start.contains(range.startContainer))
+        ) {
             const parent = start.parentNode;
             start.remove();
             start = parent;
