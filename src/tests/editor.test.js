@@ -673,6 +673,14 @@ describe('Editor', () => {
                     contentAfter: '<p>ab[]ef</p>',
                 });
             });
+            it('should not delete styling nodes if not selected', async () => {
+                // Forward selection
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1><font>[abcdef]</font></h1>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<h1><font>[]</font><br></h1>',
+                });
+            });
             it('should delete across two paragraphs', async () => {
                 // Forward selection
                 await testEditor(BasicEditor, {
