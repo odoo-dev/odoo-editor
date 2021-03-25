@@ -607,7 +607,13 @@ export class OdooEditor extends EventTarget {
      */
     historyUndo() {
         // The last step is considered an uncommited draft so always revert it.
-        this.historyRevert(this._historySteps[this._historySteps.length - 1]);
+        const lastStep = this._historySteps[this._historySteps.length - 1];
+        this.historyRevert(lastStep);
+        // Clean the last step otherwise if no other step is created after, the
+        // mutations of the revert itself will be added to the same step and
+        // grow exponentially at each undo.
+        lastStep.mutations = [];
+
         const pos = this._getNextUndoIndex();
         if (pos >= 0) {
             // Consider the position consumed.
