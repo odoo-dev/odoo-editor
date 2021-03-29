@@ -575,15 +575,11 @@ export class OdooEditor extends EventTarget {
         if (!this._isCollaborativeActive) {
             return;
         }
-        window
-            .fetch('/history-push', {
-                body: JSON.stringify(item),
-                headers: { 'Content-Type': 'application/json;charset=utf-8' },
-                method: 'POST',
-            })
-            .then(response => {
-                console.log(response);
-            });
+        window.fetch('/history-push', {
+            body: JSON.stringify(item),
+            headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            method: 'POST',
+        });
     }
 
     historyRollback(until = 0) {
