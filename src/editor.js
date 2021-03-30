@@ -1484,7 +1484,7 @@ export class OdooEditor extends EventTarget {
 
             const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
             if (fontSizeValue) {
-                fontSizeValue.innerHTML = /\d+/.exec(selectionStartStyle.fontSize).pop();
+                fontSizeValue.textContent = /\d+/.exec(selectionStartStyle.fontSize).pop();
             }
             const table = getInSelection(this.document, 'table');
             this.toolbar.querySelector('.toolbar-edit-table').style.display = table
