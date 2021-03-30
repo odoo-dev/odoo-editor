@@ -669,7 +669,13 @@ export class OdooEditor extends EventTarget {
                 }
                 case 'attributes': {
                     const node = this.idFind(mutation.id);
-                    if (node) node.setAttribute(mutation.attributeName, mutation.oldValue);
+                    if (node) {
+                        if (mutation.oldValue) {
+                            node.setAttribute(mutation.attributeName, mutation.oldValue);
+                        } else {
+                            node.removeAttribute(mutation.attributeName);
+                        }
+                    }
                     break;
                 }
                 case 'remove': {
