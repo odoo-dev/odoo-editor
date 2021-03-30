@@ -1748,7 +1748,7 @@ export class OdooEditor extends EventTarget {
         // editable zones.
         this.automaticStepSkipStack();
         const link = closestElement(ev.target, 'a');
-        if (link && !link.querySelector('div')) {
+        if (link && !link.querySelector('div') && !closestElement(ev.target, '.o_not_editable')) {
             const editableChildren = link.querySelectorAll('[contenteditable=true]');
             this._stopContenteditable();
             [...editableChildren, link].forEach(node => node.setAttribute('contenteditable', true));
