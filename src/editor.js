@@ -347,11 +347,11 @@ export class OdooEditor extends EventTarget {
                         };
                         if (!record.nextSibling && record.target.oid) {
                             mutation.append = record.target.oid;
-                        } else if (record.nextSibling.oid) {
+                        } else if (record.nextSibling && record.nextSibling.oid) {
                             mutation.before = record.nextSibling.oid;
                         } else if (!record.previousSibling && record.target.oid) {
                             mutation.prepend = record.target.oid;
-                        } else if (record.previousSibling.oid) {
+                        } else if (record.previousSibling && record.previousSibling.oid) {
                             mutation.after = record.previousSibling.oid;
                         } else {
                             return false;
