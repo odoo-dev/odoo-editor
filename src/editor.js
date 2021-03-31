@@ -968,7 +968,7 @@ export class OdooEditor extends EventTarget {
         setCursor(...position, ...position, false);
     }
 
-    _insertHTML(html) {
+    _insert(data, isText = true) {
         const selection = this.document.defaultView.getSelection();
         const range = selection.getRangeAt(0);
         let startNode;
@@ -993,7 +993,11 @@ export class OdooEditor extends EventTarget {
         }
 
         const fakeEl = document.createElement('fake-element');
-        fakeEl.innerHTML = html;
+        if (isText) {
+            fakeEl.innerText = data;
+        } else {
+            fakeEl.innerHTML = data;
+        }
         let nodeToInsert;
         const insertedNodes = [...fakeEl.childNodes];
         while ((nodeToInsert = fakeEl.childNodes[0])) {
@@ -1013,6 +1017,14 @@ export class OdooEditor extends EventTarget {
         newRange.setEnd(lastPosition[0], lastPosition[1]);
         selection.addRange(newRange);
         return insertedNodes;
+    }
+
+    _insertHTML(data) {
+        this._insert(data, false);
+    }
+
+    _insertText(data) {
+        this._insert(data);
     }
 
     /**
@@ -1810,7 +1822,7 @@ export class OdooEditor extends EventTarget {
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        this._insertHTML(pastedText.replace(/\n+/g, '<br/>'));
+        this._insertText(pastedText.replace(/\n+/g, '<br/>'));
     }
 
     /**
