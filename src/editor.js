@@ -2138,8 +2138,13 @@ export class OdooEditor extends EventTarget {
                 selectionDirection === DIRECTIONS.RIGHT
                     ? closestAnchorNodeEl.previousSibling
                     : closestAnchorNodeEl.nextSibling;
-            fixedSelection.anchorOffset =
-                selectionDirection === DIRECTIONS.RIGHT ? fixedSelection.anchorNode.length : 0;
+            if (fixedSelection.anchorNode) {
+                fixedSelection.anchorOffset =
+                    selectionDirection === DIRECTIONS.RIGHT ? fixedSelection.anchorNode.length : 0;
+            } else {
+                fixedSelection.anchorNode = closestAnchorNodeEl.parentElement;
+                fixedSelection.anchorOffset = 0;
+            }
         }
         // check and fix focus node
         const closestFocusNodeEl = closestElement(selection.focusNode);
@@ -2149,8 +2154,13 @@ export class OdooEditor extends EventTarget {
                 selectionDirection === DIRECTIONS.RIGHT
                     ? closestFocusNodeEl.nextSibling
                     : closestFocusNodeEl.previousSibling;
-            fixedSelection.focusOffset =
-                selectionDirection === DIRECTIONS.RIGHT ? 0 : fixedSelection.focusNode.length;
+            if (fixedSelection.focusNode) {
+                fixedSelection.focusOffset =
+                    selectionDirection === DIRECTIONS.RIGHT ? 0 : fixedSelection.focusNode.length;
+            } else {
+                fixedSelection.focusNode = closestFocusNodeEl.parentElement;
+                fixedSelection.focusOffset = 0;
+            }
         }
         if (shouldUpdateSelection) {
             setCursor(
