@@ -101,6 +101,8 @@ export class OdooEditor extends EventTarget {
 
         this.document = options.document || document;
 
+        this.isMobile = matchMedia('(max-width: 767px)').matches;
+
         // Keyboard type detection, happens only at the first keydown event.
         this.keyboardType = KEYBOARD_TYPES.UNKNOWN;
 
@@ -197,6 +199,9 @@ export class OdooEditor extends EventTarget {
                     this.document.execCommand(ev.target.name, false, ev.target.value);
                     this.updateColorpickerLabels();
                 });
+            }
+            if (this.isMobile) {
+                this.editable.before(this.toolbar);
             }
         }
     }
@@ -1456,11 +1461,13 @@ export class OdooEditor extends EventTarget {
         if (!sel.anchorNode) {
             show = false;
         }
-        if (show !== undefined && this.options.autohideToolbar) {
-            this.toolbar.style.visibility = show ? 'visible' : 'hidden';
-        }
-        if (show === false && this.options.autohideToolbar) {
-            return;
+        if (this.options.autohideToolbar) {
+            if (show !== undefined && !this.isMobile) {
+                this.toolbar.style.visibility = show ? 'visible' : 'hidden';
+            }
+            if (show === false) {
+                return;
+            }
         }
         const paragraphDropdownButton = this.toolbar.querySelector('#paragraphDropdownButton');
         for (const commandState of [
@@ -1534,7 +1541,7 @@ export class OdooEditor extends EventTarget {
         undoButton && undoButton.classList.toggle('disabled', !this.historyCanUndo());
         const redoButton = this.toolbar.querySelector('#redo');
         redoButton && redoButton.classList.toggle('disabled', !this.historyCanRedo());
-        if (this.options.autohideToolbar) {
+        if (this.options.autohideToolbar && !this.isMobile) {
             this._positionToolbar();
         }
     }
