@@ -1025,11 +1025,11 @@ export class OdooEditor extends EventTarget {
     }
 
     _insertHTML(data) {
-        this._insert(data, false);
+        return this._insert(data, false);
     }
 
     _insertText(data) {
-        this._insert(data);
+        return this._insert(data);
     }
 
     /**
