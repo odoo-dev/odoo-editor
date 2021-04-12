@@ -156,7 +156,7 @@ export class OdooEditor extends EventTarget {
 
         if (this.options.toolbar) {
             this.toolbar = this.options.toolbar;
-            this.toolbar.addEventListener('mousedown', this._onToolbarClick.bind(this));
+            this._bindToolbar();
             // Ensure anchors in the toolbar don't trigger a hash change.
             const toolbarAnchors = this.toolbar.querySelectorAll('a');
             toolbarAnchors.forEach(a => a.addEventListener('click', e => e.preventDefault()));
@@ -1477,60 +1477,15 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    _onToolbarClick(ev) {
-        if (ev.target.tagName === 'INPUT') return;
-        ev.preventDefault();
-        const buttonEl = ev.target.closest(
-            'div.btn:not(.editor-ignore),a.dropdown-item:not(.editor-ignore)',
-        );
-        if (!buttonEl) {
-            return;
-        }
+    _bindToolbar() {
+        for (const buttonEl of this.toolbar.querySelectorAll('[data-call]')) {
+            buttonEl.addEventListener('mousedown', ev => {
+                this.execCommand(buttonEl.dataset.call, buttonEl.dataset.arg1);
 
-        const TAGS = {
-            'paragraph': 'P',
-            'pre': 'PRE',
-            'heading1': 'H1',
-            'heading2': 'H2',
-            'heading3': 'H3',
-            'heading4': 'H4',
-            'heading5': 'H5',
-            'heading6': 'H6',
-            'blockquote': 'BLOCKQUOTE',
-            'ordered': 'OL',
-            'unordered': 'UL',
-            'checklist': 'CL',
-        };
-        if (buttonEl.classList.contains('tablepicker-cell')) {
-            this.execCommand('insertTable', {
-                rowCount: +buttonEl.dataset.rowId,
-                colCount: +buttonEl.dataset.colId,
+                ev.preventDefault();
+                this._updateToolbar();
             });
-        } else if (['italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
-            this.execCommand(buttonEl.id);
-        } else if (buttonEl.dataset.fontSize) {
-            this.execCommand('setFontSize', buttonEl.dataset.fontSize);
-        } else if (['bold', 'createLink', 'unlink'].includes(buttonEl.id)) {
-            this.execCommand(buttonEl.id);
-        } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
-            this.execCommand('toggleList', TAGS[buttonEl.id]);
-        } else if (buttonEl.id.startsWith('justify')) {
-            this.execCommand(buttonEl.id);
-        } else if (buttonEl.id.startsWith('fontawesome')) {
-            this.execCommand('insertFontAwesome');
-        } else if (buttonEl.id.startsWith('table-')) {
-            // table-do-this -> doThis
-            this.execCommand(
-                buttonEl.id.substr(6).replace(/(-)(\w)/g, (m, d, w) => w.toUpperCase()),
-            );
-        } else if (buttonEl.id === 'undo') {
-            this.execCommand('undo');
-        } else if (buttonEl.id === 'redo') {
-            this.execCommand('redo');
-        } else {
-            this.execCommand('setTag', TAGS[buttonEl.id]);
         }
-        this._updateToolbar();
     }
     _initTablePicker() {
         for (const child of [...this.tablePicker.childNodes]) {
