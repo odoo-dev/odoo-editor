@@ -12,47 +12,33 @@ import {} from './commands/align.js';
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
 import {
-    childNodeIndex,
     closestBlock,
-    closestPath,
     commonParentGet,
     containsUnremovable,
     DIRECTIONS,
     endPos,
     getCursorDirection,
     getListMode,
-    getCursors,
     getOuid,
     insertText,
     nodeSize,
-    leftDeepFirstPath,
     preserveCursor,
-    rightPos,
     setCursor,
-    setTagName,
-    splitTextNode,
     startPos,
     toggleClass,
-    findNode,
     closestElement,
-    getTraversedNodes,
-    isBlock,
     isVisible,
-    isContentTextNode,
-    setCursorStart,
     rgbToHex,
     isFontAwesome,
     getInSelection,
-    isVisibleStr,
-    getSelectedNodes,
     getDeepRange,
-    splitElement,
     ancestors,
     firstLeaf,
     nextLeaf,
     isUnremovable,
     fillEmpty,
 } from './utils/utils.js';
+import { editorCommands } from './commands.js';
 
 export * from './utils/utils.js';
 export const UNBREAKABLE_ROLLBACK_CODE = 'UNBREAKABLE';
@@ -62,9 +48,6 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 
 const TABLEPICKER_ROW_COUNT = 3;
 const TABLEPICKER_COL_COUNT = 3;
-
-const TEXT_CLASSES_REGEX = /\btext-[^\s]*\b/g;
-const BG_CLASSES_REGEX = /\bbg-[^\s]*\b/g;
 
 const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
 
@@ -890,72 +873,6 @@ export class OdooEditor extends EventTarget {
         }
     }
 
-    /**
-     * Apply a css or class color on the current selection (wrapped in <font>).
-     *
-     * @param {string} color hexadecimal or bg-name/text-name class
-     * @param {string} mode 'color' or 'backgroundColor'
-     * @param {Element} [element]
-     */
-    applyColor(color, mode, element) {
-        if (element) {
-            this._colorElement(element, color, mode);
-            return;
-        }
-        const range = getDeepRange(this.editable, { splitText: true, select: true });
-        if (!range) return;
-        const restoreCursor = preserveCursor(this.document);
-        // Get the <font> nodes to color
-        const selectedNodes = getSelectedNodes(this.editable);
-        const fonts = selectedNodes.flatMap(node => {
-            let font = closestElement(node, 'font');
-            const children = font && [...font.childNodes];
-            if (font && font.nodeName === 'FONT') {
-                // Partially selected <font>: split it.
-                const selectedChildren = children.filter(child => selectedNodes.includes(child));
-                const after = selectedChildren[selectedChildren.length - 1].nextSibling;
-                font = after ? splitElement(font, childNodeIndex(after))[0] : font;
-                const before = selectedChildren[0].previousSibling;
-                font = before ? splitElement(font, childNodeIndex(before) + 1)[1] : font;
-            } else if (node.nodeType === Node.TEXT_NODE && isVisibleStr(node)) {
-                // Node is a visible text node: wrap it in a <font>.
-                const previous = node.previousSibling;
-                const classRegex = mode === 'color' ? BG_CLASSES_REGEX : TEXT_CLASSES_REGEX;
-                if (
-                    previous &&
-                    previous.nodeName === 'FONT' &&
-                    !previous.style[mode === 'color' ? 'backgroundColor' : 'color'] &&
-                    !classRegex.test(previous.className) &&
-                    selectedNodes.includes(previous.firstChild) &&
-                    selectedNodes.includes(previous.lastChild)
-                ) {
-                    // Directly follows a fully selected <font> that isn't
-                    // colored in the other mode: append to that.
-                    font = previous;
-                } else {
-                    // No <font> found: insert a new one.
-                    font = document.createElement('font');
-                    node.parentNode.insertBefore(font, node);
-                }
-                font.appendChild(node);
-            } else {
-                font = []; // Ignore non-text or invisible text nodes.
-            }
-            return font;
-        });
-        // Color the selected <font>s and remove uncolored fonts.
-        for (const font of new Set(fonts)) {
-            this._colorElement(font, color, mode);
-            if (!this._hasColor(font, mode) && !this._hasColor(font, mode)) {
-                for (const child of [...font.childNodes]) {
-                    font.parentNode.insertBefore(child, font);
-                }
-                font.parentNode.removeChild(font);
-            }
-        }
-        restoreCursor();
-    }
-
     updateColorpickerLabels(params = {}) {
         const foreColor = params.foreColor || rgbToHex(document.queryCommandValue('foreColor'));
         this.toolbar.style.setProperty('--fore-color', foreColor);
@@ -977,303 +894,6 @@ export class OdooEditor extends EventTarget {
         const hiliteColorInput = this.toolbar.querySelector('#hiliteColor input');
         if (hiliteColorInput) {
             hiliteColorInput.value = hiliteColor.length <= 7 ? hiliteColor : rgbToHex(hiliteColor);
-        }
-    }
-
-    _insertFontAwesome(faClass = 'fa fa-star') {
-        const insertedNode = this._insertHTML('<i></i>')[0];
-        insertedNode.className = faClass;
-        const position = rightPos(insertedNode);
-        setCursor(...position, ...position, false);
-    }
-
-    _insert(data, isText = true) {
-        const selection = this.document.defaultView.getSelection();
-        const range = selection.getRangeAt(0);
-        let startNode;
-        let insertBefore = false;
-        if (selection.isCollapsed) {
-            if (range.startContainer.nodeType === Node.TEXT_NODE) {
-                insertBefore = !range.startOffset;
-                splitTextNode(range.startContainer, range.startOffset, DIRECTIONS.LEFT);
-                startNode = range.startContainer;
-            }
-        } else {
-            this.deleteRange(selection);
-        }
-        startNode = startNode || this.document.defaultView.getSelection().anchorNode;
-        if (startNode.nodeType === Node.ELEMENT_NODE) {
-            if (selection.anchorOffset === 0) {
-                startNode.prepend(this.document.createTextNode(''));
-                startNode = startNode.firstChild;
-            } else {
-                startNode = startNode.childNodes[selection.anchorOffset - 1];
-            }
-        }
-
-        const fakeEl = document.createElement('fake-element');
-        if (isText) {
-            fakeEl.innerText = data;
-        } else {
-            fakeEl.innerHTML = data;
-        }
-        let nodeToInsert;
-        const insertedNodes = [...fakeEl.childNodes];
-        while ((nodeToInsert = fakeEl.childNodes[0])) {
-            if (insertBefore) {
-                startNode.before(nodeToInsert);
-                insertBefore = false;
-            } else {
-                startNode.after(nodeToInsert);
-            }
-            startNode = nodeToInsert;
-        }
-
-        selection.removeAllRanges();
-        const newRange = new Range();
-        const lastPosition = rightPos(startNode);
-        newRange.setStart(lastPosition[0], lastPosition[1]);
-        newRange.setEnd(lastPosition[0], lastPosition[1]);
-        selection.addRange(newRange);
-        return insertedNodes;
-    }
-
-    _insertHTML(data) {
-        return this._insert(data, false);
-    }
-
-    _insertText(data) {
-        return this._insert(data);
-    }
-
-    /**
-     * Applies a css or class color (fore- or background-) to an element.
-     * Replace the color that was already there if any.
-     *
-     * @param {Element} element
-     * @param {string} color hexadecimal or bg-name/text-name class
-     * @param {string} mode 'color' or 'backgroundColor'
-     */
-    _colorElement(element, color, mode) {
-        const newClassName = element.className
-            .replace(mode === 'color' ? TEXT_CLASSES_REGEX : BG_CLASSES_REGEX, '')
-            .replace(/\s+/, ' ');
-        element.className !== newClassName && (element.className = newClassName);
-        if (color.startsWith('text') || color.startsWith('bg-')) {
-            element.style[mode] = '';
-            element.className += ' ' + color;
-        } else {
-            element.style[mode] = color;
-        }
-    }
-
-    /**
-     * Returns true if the given element has a visible color (fore- or
-     * -background depending on the given mode).
-     *
-     * @param {Element} element
-     * @param {string} mode 'color' or 'backgroundColor'
-     * @returns {boolean}
-     */
-    _hasColor(element, mode) {
-        const style = element.style;
-        const parent = element.parentNode;
-        const classRegex = mode === 'color' ? TEXT_CLASSES_REGEX : BG_CLASSES_REGEX;
-        return (
-            (style[mode] && style[mode] !== 'inherit' && style[mode] !== parent.style[mode]) ||
-            (classRegex.test(element.className) &&
-                getComputedStyle(element)[mode] !== getComputedStyle(parent)[mode])
-        );
-    }
-
-    _createLink(link, content) {
-        const sel = this.document.defaultView.getSelection();
-        if (content && !sel.isCollapsed) {
-            this.deleteRange(sel);
-        }
-        if (sel.isCollapsed) {
-            insertText(sel, content || 'link');
-        }
-        const currentLink = closestElement(sel.focusNode, 'a');
-        link = link || prompt('URL or Email', (currentLink && currentLink.href) || 'http://');
-        const res = this.document.execCommand('createLink', false, link);
-        if (res) {
-            setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
-            const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
-            const pos = [node.parentElement, childNodeIndex(node) + 1];
-            setCursor(...pos, ...pos, false);
-        }
-    }
-
-    _unlink() {
-        const sel = this.document.defaultView.getSelection();
-        // we need to remove the contentEditable isolation of links
-        // before we apply the unlink, otherwise the command is not performed
-        // because the content editable root is the link
-        const closestEl = closestElement(sel.focusNode);
-        if (closestEl.tagName === 'A' && closestEl.getAttribute('contenteditable') === 'true') {
-            this._activateContenteditable();
-        }
-        if (sel.isCollapsed) {
-            const cr = preserveCursor(this.document);
-            const node = closestElement(sel.focusNode, 'a');
-            setCursor(node, 0, node, node.childNodes.length, false);
-            this.document.execCommand('unlink');
-            cr();
-        } else {
-            this.document.execCommand('unlink');
-            setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
-        }
-    }
-
-    _indentList(mode = 'indent') {
-        const [pos1, pos2] = getCursors(this.document);
-        const end = leftDeepFirstPath(...pos1).next().value;
-        const li = new Set();
-        for (const node of leftDeepFirstPath(...pos2)) {
-            const cli = closestBlock(node);
-            if (
-                cli &&
-                cli.tagName == 'LI' &&
-                !li.has(cli) &&
-                !cli.classList.contains('oe-nested')
-            ) {
-                li.add(cli);
-            }
-            if (node == end) break;
-        }
-        for (const node of li) {
-            if (mode == 'indent') {
-                node.oTab(0);
-            } else {
-                node.oShiftTab(0);
-            }
-        }
-        return true;
-    }
-
-    _toggleList(mode) {
-        const li = new Set();
-        const blocks = new Set();
-
-        for (const node of getTraversedNodes(this.editable)) {
-            const block = closestBlock(node);
-            if (!['OL', 'UL'].includes(block.tagName)) {
-                const ublock = block.closest('ol, ul');
-                ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
-            }
-        }
-
-        let target = [...(blocks.size ? blocks : li)];
-        while (target.length) {
-            const node = target.pop();
-            // only apply one li per ul
-            if (!node.oToggleList(0, mode)) {
-                target = target.filter(
-                    li => li.parentNode != node.parentNode || li.tagName != 'LI',
-                );
-            }
-        }
-    }
-
-    _align(mode) {
-        const sel = this.document.defaultView.getSelection();
-        const visitedBlocks = new Set();
-        const traversedNode = getTraversedNodes(this.editable);
-        for (const node of traversedNode) {
-            if (isContentTextNode(node) && isVisible(node)) {
-                const block = closestBlock(node);
-                if (!visitedBlocks.has(block)) {
-                    const hasModifier = getComputedStyle(block).textAlign === mode;
-                    if (!hasModifier && block.isContentEditable) {
-                        block.oAlign(sel.anchorOffset, mode);
-                    }
-                    visitedBlocks.add(block);
-                }
-            }
-        }
-    }
-    _bold() {
-        const selection = this.document.getSelection();
-        if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
-        getDeepRange(this.editable, { splitText: true, select: true, correctTripleClick: true });
-        const isAlreadyBold = getSelectedNodes(this.editable)
-            .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
-            .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) > 500);
-        this._applyInlineStyle(el => {
-            el.style.fontWeight = isAlreadyBold ? 'normal' : 'bolder';
-        });
-    }
-
-    /**
-     * @param {string} size A valid css size string
-     */
-    _setFontSize(size) {
-        const selection = this.document.getSelection();
-        if (!selection.rangeCount || selection.getRangeAt(0).collapsed) return;
-        this._applyInlineStyle(element => {
-            element.style.fontSize = size;
-        });
-    }
-
-    /**
-     * This function abstracts the difficulty of applying a inline style to a
-     * selection. TODO: This implementations potentially adds one span per text
-     * node, in an ideal world it would wrap all concerned nodes in one span
-     * whenever possible.
-     * @param {Element => void} applyStyle Callback that receives an element to
-     * which the wanted style should be applied
-     */
-    _applyInlineStyle(applyStyle) {
-        const sel = this.document.defaultView.getSelection();
-        const { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
-        const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
-        const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
-        const selectedTextNodes = getTraversedNodes(this.editable).filter(node =>
-            isContentTextNode(node),
-        );
-        for (const textNode of selectedTextNodes) {
-            const atLeastOneCharFromNodeInSelection = !(
-                (textNode === endContainer && endOffset === 0) ||
-                (textNode === startContainer && startOffset === textNode.textContent.length)
-            );
-            // If text node ends after the end of the selection, split it and
-            // keep the part that is inside.
-            if (endContainer === textNode && endOffset < textNode.textContent.length) {
-                // No reassignement needed, entirely dependent on the
-                // splitTextNode implementation.
-                splitTextNode(textNode, endOffset, DIRECTIONS.LEFT);
-            }
-            // If text node starts before the beginning of the selection, split it
-            // and keep the part that is inside as textNode.
-            if (startContainer === textNode && startOffset > 0) {
-                // No reassignement needed, entirely dependent on the
-                // splitTextNode implementation.
-                splitTextNode(textNode, startOffset, DIRECTIONS.RIGHT);
-            }
-            // If the parent is not inline or is not completely in the
-            // selection, wrap text node in inline node. Also skips <a> tags to
-            // work with native `removeFormat` command
-            if (
-                atLeastOneCharFromNodeInSelection &&
-                (isBlock(textNode.parentElement) ||
-                    (textNode === endContainer && textNode.nextSibling) ||
-                    (textNode === startContainer && textNode.previousSibling) ||
-                    textNode.parentElement.tagName === 'A')
-            ) {
-                const newParent = document.createElement('span');
-                textNode.after(newParent);
-                newParent.appendChild(textNode);
-            }
-            // Make sure there's at least one char selected in the text node
-            if (atLeastOneCharFromNodeInSelection) {
-                applyStyle(textNode.parentElement);
-            }
-        }
-        if (direction === DIRECTIONS.RIGHT) {
-            setCursor(startContainer, 0, endContainer, endOffset);
-        } else {
-            setCursor(endContainer, endOffset, startContainer, 0);
         }
     }
 
@@ -1301,34 +921,8 @@ export class OdooEditor extends EventTarget {
                 return true;
             }
         }
-        if (
-            // This is a whitelist of the commands that are implemented by the
-            // editor itself rather than the node prototypes. It might be
-            // possible to switch the conditions and test if the method exist on
-            // `sel.anchorNode` rather than relying on an expicit whitelist, but
-            // the behavior would change if a method name exists both on the
-            // editor and on the nodes. This is too risky to change in the
-            // absence of a strong test suite, so the whitelist stays for now.
-            [
-                'toggleList',
-                'createLink',
-                'unlink',
-                'indentList',
-                'setFontSize',
-                'insertFontAwesome',
-                'insertHTML',
-                'insertTable',
-                'bold',
-                'addColumnLeft',
-                'addColumnRight',
-                'addRowAbove',
-                'addRowBelow',
-                'removeColumn',
-                'removeRow',
-                'deleteTable',
-            ].includes(method)
-        ) {
-            return this['_' + method](...args);
+        if (editorCommands[method]) {
+            return editorCommands[method](this, ...args);
         }
         if (method.startsWith('justify')) {
             const mode = method.split('justify').join('').toLocaleLowerCase();
@@ -1878,7 +1472,7 @@ export class OdooEditor extends EventTarget {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                this._insertHTML(pastedText.replace(/\n+/g, '<br/>'));
+                editorCommands.insertHTML(this, pastedText.replace(/\n+/g, '<br/>'));
             });
         }
     }
@@ -1907,62 +1501,36 @@ export class OdooEditor extends EventTarget {
             'unordered': 'UL',
             'checklist': 'CL',
         };
-        this._protect(() => {
-            if (buttonEl.classList.contains('tablepicker-cell')) {
-                this.execCommand('insertTable', {
-                    rowCount: +buttonEl.dataset.rowId,
-                    colCount: +buttonEl.dataset.colId,
-                });
-            } else if (
-                ['italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)
-            ) {
-                this.document.execCommand(buttonEl.id);
-            } else if (buttonEl.dataset.fontSize) {
-                this.execCommand('setFontSize', buttonEl.dataset.fontSize);
-            } else if (['bold', 'createLink', 'unlink'].includes(buttonEl.id)) {
-                this.execCommand(buttonEl.id);
-            } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
-                this.execCommand('toggleList', TAGS[buttonEl.id]);
-            } else if (buttonEl.id.startsWith('justify')) {
-                this.execCommand(buttonEl.id);
-            } else if (buttonEl.id.startsWith('fontawesome')) {
-                this.execCommand('insertFontAwesome');
-            } else if (buttonEl.id.startsWith('table-')) {
-                // table-do-this -> doThis
-                this.execCommand(
-                    buttonEl.id.substr(6).replace(/(-)(\w)/g, (m, d, w) => w.toUpperCase()),
-                );
-            } else if (buttonEl.id === 'undo') {
-                this.historyUndo();
-            } else if (buttonEl.id === 'redo') {
-                this.historyRedo();
-            } else {
-                const restoreCursor = preserveCursor(this.document);
-                const selectedBlocks = [
-                    ...new Set(getTraversedNodes(this.editable).map(closestBlock)),
-                ];
-                for (const selectedBlock of selectedBlocks) {
-                    const block = closestBlock(selectedBlock);
-                    if (
-                        ['P', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(
-                            block.nodeName,
-                        )
-                    ) {
-                        setTagName(block, TAGS[buttonEl.id]);
-                    } else {
-                        // eg do not change a <div> into a h1: insert the h1
-                        // into it instead.
-                        const newBlock = this.document.createElement(TAGS[buttonEl.id]);
-                        const children = [...block.childNodes];
-                        block.insertBefore(newBlock, block.firstChild);
-                        children.forEach(child => newBlock.appendChild(child));
-                    }
-                }
-                restoreCursor();
-            }
-            this.historyStep();
-            this._updateToolbar();
-        });
+        if (buttonEl.classList.contains('tablepicker-cell')) {
+            this.execCommand('insertTable', {
+                rowCount: +buttonEl.dataset.rowId,
+                colCount: +buttonEl.dataset.colId,
+            });
+        } else if (['italic', 'underline', 'strikeThrough', 'removeFormat'].includes(buttonEl.id)) {
+            this.execCommand(buttonEl.id);
+        } else if (buttonEl.dataset.fontSize) {
+            this.execCommand('setFontSize', buttonEl.dataset.fontSize);
+        } else if (['bold', 'createLink', 'unlink'].includes(buttonEl.id)) {
+            this.execCommand(buttonEl.id);
+        } else if (['ordered', 'unordered', 'checklist'].includes(buttonEl.id)) {
+            this.execCommand('toggleList', TAGS[buttonEl.id]);
+        } else if (buttonEl.id.startsWith('justify')) {
+            this.execCommand(buttonEl.id);
+        } else if (buttonEl.id.startsWith('fontawesome')) {
+            this.execCommand('insertFontAwesome');
+        } else if (buttonEl.id.startsWith('table-')) {
+            // table-do-this -> doThis
+            this.execCommand(
+                buttonEl.id.substr(6).replace(/(-)(\w)/g, (m, d, w) => w.toUpperCase()),
+            );
+        } else if (buttonEl.id === 'undo') {
+            this.execCommand('undo');
+        } else if (buttonEl.id === 'redo') {
+            this.execCommand('redo');
+        } else {
+            this.execCommand('setTag', TAGS[buttonEl.id]);
+        }
+        this._updateToolbar();
     }
     _initTablePicker() {
         for (const child of [...this.tablePicker.childNodes]) {
@@ -2042,86 +1610,6 @@ export class OdooEditor extends EventTarget {
             }
             this.tablePicker.dataset.colCount = colCount - removedColIds.size;
         }
-    }
-    _insertTable({ rowCount = 2, colCount = 2 } = {}) {
-        const tdsHtml = new Array(colCount).fill('<td><br></td>').join('');
-        const trsHtml = new Array(rowCount).fill(`<tr>${tdsHtml}</tr>`).join('');
-        const tableHtml = `<table class="table table-bordered"><tbody>${trsHtml}</tbody></table>`;
-        const sel = this.document.defaultView.getSelection();
-        if (!sel.isCollapsed) {
-            this.deleteRange(sel);
-        }
-        while (!isBlock(sel.anchorNode)) {
-            const anchorNode = sel.anchorNode;
-            const isTextNode = anchorNode.nodeType === Node.TEXT_NODE;
-            const newAnchorNode = isTextNode
-                ? splitTextNode(anchorNode, sel.anchorOffset, DIRECTIONS.LEFT) + 1 && anchorNode
-                : splitElement(anchorNode, sel.anchorOffset).shift();
-            const newPosition = rightPos(newAnchorNode);
-            setCursor(...newPosition, ...newPosition, false);
-        }
-        const [table] = this._insertHTML(tableHtml);
-        setCursorStart(table.querySelector('td'));
-    }
-    _addColumnLeft() {
-        this._addColumn('before');
-    }
-    _addColumnRight() {
-        this._addColumn('after');
-    }
-    _addColumn(beforeOrAfter) {
-        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding td.
-        const c = getInSelection(this.document, 'td');
-        if (!c) return;
-        const i = [...closestElement(c, 'tr').querySelectorAll('th, td')].findIndex(td => td === c);
-        const column = closestElement(c, 'table').querySelectorAll(`tr td:nth-of-type(${i + 1})`);
-        column.forEach(row => row[beforeOrAfter](document.createElement('td')));
-    }
-    _addRowAbove() {
-        this._addRow('before');
-    }
-    _addRowBelow() {
-        this._addRow('after');
-    }
-    _addRow(beforeOrAfter) {
-        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding tr.
-        const row = getInSelection(this.document, 'tr');
-        if (!row) return;
-        const newRow = document.createElement('tr');
-        const cells = row.querySelectorAll('td');
-        newRow.append(...Array.from(Array(cells.length)).map(() => document.createElement('td')));
-        row[beforeOrAfter](newRow);
-    }
-    _removeColumn() {
-        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding td.
-        const cell = getInSelection(this.document, 'td');
-        if (!cell) return;
-        const table = closestElement(cell, 'table');
-        const cells = [...closestElement(cell, 'tr').querySelectorAll('th, td')];
-        const index = cells.findIndex(td => td === cell);
-        const siblingCell = cells[index - 1] || cells[index + 1];
-        table.querySelectorAll(`tr td:nth-of-type(${index + 1})`).forEach(td => td.remove());
-        siblingCell ? setCursor(...startPos(siblingCell)) : this._deleteTable(table);
-    }
-    _removeRow() {
-        getDeepRange(this.editable, { select: true }); // Ensure deep range for finding tr.
-        const row = getInSelection(this.document, 'tr');
-        if (!row) return;
-        const table = closestElement(row, 'table');
-        const rows = [...table.querySelectorAll('tr')];
-        const rowIndex = rows.findIndex(tr => tr === row);
-        const siblingRow = rows[rowIndex - 1] || rows[rowIndex + 1];
-        row.remove();
-        siblingRow ? setCursor(...startPos(siblingRow)) : this._deleteTable(table);
-    }
-    _deleteTable(table) {
-        table = table || getInSelection(this.document, 'table');
-        if (!table) return;
-        const p = document.createElement('p');
-        p.appendChild(document.createElement('br'));
-        table.before(p);
-        table.remove();
-        setCursor(p, 0);
     }
     _onTabulationInTable(ev) {
         const sel = this.document.getSelection();
