@@ -1520,9 +1520,12 @@ export class OdooEditor extends EventTarget {
                 fontSizeValue.textContent = /\d+/.exec(selectionStartStyle.fontSize).pop();
             }
             const table = getInSelection(this.document, 'table');
-            this.toolbar.querySelector('.toolbar-edit-table').style.display = table
-                ? 'block'
-                : 'none';
+            const toolbarButton = this.toolbar.querySelector('.toolbar-edit-table');
+            if (toolbarButton) {
+                this.toolbar.querySelector('.toolbar-edit-table').style.display = table
+                    ? 'block'
+                    : 'none';
+            }
         }
         this.updateColorpickerLabels();
         const block = closestBlock(sel.anchorNode);
