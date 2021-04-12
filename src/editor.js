@@ -1235,6 +1235,14 @@ export class OdooEditor extends EventTarget {
                 this.historyRollback();
                 ev.preventDefault();
                 this._applyCommand('oDeleteForward');
+            } else if (ev.inputType === 'insertParagraph' || (ev.inputType === 'insertText' && ev.data === null)) {
+                // Sometimes the browser wrongly triggers an insertText
+                // input event with null data on enter.
+                this.historyRollback();
+                ev.preventDefault();
+                if (this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
+                    this._applyCommand('oShiftEnter');
+                }
             } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
                 // insertCompositionText, courtesy of Samsung keyboard.
                 const selection = this.document.defaultView.getSelection();
@@ -1249,12 +1257,6 @@ export class OdooEditor extends EventTarget {
                 }
                 this.sanitize();
                 this.historyStep();
-            } else if (ev.inputType === 'insertParagraph') {
-                this.historyRollback();
-                ev.preventDefault();
-                if (this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
-                    this._applyCommand('oShiftEnter');
-                }
             } else if (ev.inputType === 'insertLineBreak') {
                 this.historyRollback();
                 ev.preventDefault();
