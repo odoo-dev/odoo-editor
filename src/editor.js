@@ -1441,6 +1441,7 @@ export class OdooEditor extends EventTarget {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
         this._insertText(pastedText.replace(/\n+/g, '<br/>'));
+        this.historyStep();
     }
 
     /**
@@ -1475,6 +1476,7 @@ export class OdooEditor extends EventTarget {
                 editorCommands.insertHTML(this, pastedText.replace(/\n+/g, '<br/>'));
             });
         }
+        this.historyStep();
     }
 
     _bindToolbar() {
