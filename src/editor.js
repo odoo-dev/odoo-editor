@@ -1476,7 +1476,7 @@ export class OdooEditor extends EventTarget {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                editorCommands.insertHTML(this, pastedText.replace(/\n+/g, '<br/>'));
+                this._insertText(pastedText);
             });
         }
         this.historyStep();
