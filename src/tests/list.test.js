@@ -5431,7 +5431,7 @@ describe('List', () => {
                                     '<ol><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ol>',
                             });
                         });
-                        it('should split blocks inside the li rather than create new list items', async () => {
+                        it('should create list items after one with a block in it', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ol><li class="a"><custom-block style="display: block;">abc[]</custom-block></li></ol>',
@@ -5441,10 +5441,10 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li class="a"><custom-block style="display: block;">abc</custom-block><custom-block style="display: block;">b</custom-block><custom-block style="display: block;">[]<br></custom-block></li></ol>',
+                                    '<ol><li class="a"><custom-block style="display: block;">abc</custom-block></li>' +
+                                    '<li class="a"><custom-block style="display: block;">b</custom-block></li>' +
+                                    '<li class="a"><custom-block style="display: block;">[]<br></custom-block></li></ol>',
                             });
-                        });
-                        it('should split blocks instead of creating new list items', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ol><li><custom-block class="a" style="display: block;">abc[]</custom-block></li></ol>',
@@ -5454,7 +5454,9 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ol><li><custom-block class="a" style="display: block;">abc</custom-block><custom-block class="a" style="display: block;">b</custom-block><custom-block class="a" style="display: block;">[]<br></custom-block></li></ol>',
+                                '<ol><li><custom-block class="a" style="display: block;">abc</custom-block></li>' +
+                                '<li><custom-block class="a" style="display: block;">b</custom-block></li>' +
+                                '<li><custom-block class="a" style="display: block;">[]<br></custom-block></li></ol>',
                             });
                         });
                         it('should add two list items with a font at the end of a list within a list', async () => {
@@ -5579,7 +5581,7 @@ describe('List', () => {
                                     '<ul><li class="a">abc</li><li class="a">b</li><li class="a">[]<br></li></ul>',
                             });
                         });
-                        it('should split blocks instead of creating new list items', async () => {
+                        it('should create list items after one with a block in it', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul><li class="a"><custom-block style="display: block;">abc[]</custom-block></li></ul>',
@@ -5589,10 +5591,10 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul><li class="a"><custom-block style="display: block;">abc</custom-block><custom-block style="display: block;">b</custom-block><custom-block style="display: block;">[]<br></custom-block></li></ul>',
+                                    '<ul><li class="a"><custom-block style="display: block;">abc</custom-block></li>' +
+                                    '<li class="a"><custom-block style="display: block;">b</custom-block></li>' +
+                                    '<li class="a"><custom-block style="display: block;">[]<br></custom-block></li></ul>',
                             });
-                        });
-                        it('should split the blocks rather than create new list items', async () => {
                             await testEditor(BasicEditor, {
                                 contentBefore:
                                     '<ul><li><custom-block class="a" style="display: block;">abc[]</custom-block></li></ul>',
@@ -5602,7 +5604,9 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                    '<ul><li><custom-block class="a" style="display: block;">abc</custom-block><custom-block class="a" style="display: block;">b</custom-block><custom-block class="a" style="display: block;">[]<br></custom-block></li></ul>',
+                                    '<ul><li><custom-block class="a" style="display: block;">abc</custom-block></li>' +
+                                    '<li><custom-block class="a" style="display: block;">b</custom-block></li>' +
+                                    '<li><custom-block class="a" style="display: block;">[]<br></custom-block></li></ul>',
                             });
                         });
                         it('should keep the list-style when add li', async () => {
@@ -5756,7 +5760,7 @@ describe('List', () => {
                                         '<ul class="o_checklist"><li class="a">abc</li><li class="a">d</li><li class="a">[]<br></li></ul>',
                                 });
                             });
-                            it('should split blocks rather than create new list items', async () => {
+                            it('should create list items after one with a block in it', async () => {
                                 await testEditor(BasicEditor, {
                                     contentBefore:
                                         '<ul class="o_checklist"><li class="a"><custom-block style="display: block;">abc[]</custom-block></li></ul>',
@@ -5766,10 +5770,10 @@ describe('List', () => {
                                         await insertParagraphBreak(editor);
                                     },
                                     contentAfter:
-                                        '<ul class="o_checklist"><li class="a"><custom-block style="display: block;">abc</custom-block><custom-block style="display: block;">d</custom-block><custom-block style="display: block;">[]<br></custom-block></li></ul>',
+                                        '<ul class="o_checklist"><li class="a"><custom-block style="display: block;">abc</custom-block></li>' +
+                                        '<li class="a"><custom-block style="display: block;">d</custom-block></li>' +
+                                        '<li class="a"><custom-block style="display: block;">[]<br></custom-block></li></ul>',
                                 });
-                            });
-                            it('should split blocks rather than create new list items', async () => {
                                 await testEditor(BasicEditor, {
                                     contentBefore:
                                         '<ul class="o_checklist"><li><custom-block class="a" style="display: block;">abc[]</custom-block></li></ul>',
@@ -5779,7 +5783,9 @@ describe('List', () => {
                                         await insertParagraphBreak(editor);
                                     },
                                     contentAfter:
-                                        '<ul class="o_checklist"><li><custom-block class="a" style="display: block;">abc</custom-block><custom-block class="a" style="display: block;">d</custom-block><custom-block class="a" style="display: block;">[]<br></custom-block></li></ul>',
+                                        '<ul class="o_checklist"><li><custom-block class="a" style="display: block;">abc</custom-block></li>' +
+                                        '<li><custom-block class="a" style="display: block;">d</custom-block></li>' +
+                                        '<li><custom-block class="a" style="display: block;">[]<br></custom-block></li></ul>',
                                 });
                             });
                             it('should add two list items with a font at the end of a checklist within a checklist', async () => {

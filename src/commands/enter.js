@@ -54,8 +54,9 @@ HTMLElement.prototype.oEnter = function (offset, firstSplit = true) {
         }
     }
 
-    // Propagate the split until reaching a block element
-    if (!isBlock(this)) {
+    // Propagate the split until reaching a block element (or continue to the
+    // closest list item element if there is one).
+    if (!isBlock(this) || (this.nodeName !== 'LI' && this.closest('LI'))) {
         if (this.parentElement) {
             this.parentElement.oEnter(childNodeIndex(this) + 1, !didSplit);
         } else {
