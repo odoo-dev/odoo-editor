@@ -664,15 +664,35 @@ export function getDeepRange(editable, { range, sel, splitText, select, correctT
     return range;
 }
 
+function getNextVisibleNode(node) {
+    while (node && !isVisible(node)) {
+        node = node.nextSibling;
+    }
+    return node;
+}
+
 export function getDeepestPosition(node, offset) {
+    let found = false;
     while (node.hasChildNodes()) {
-        let newNode = node.childNodes[offset - 1] || node.firstChild;
-        while (newNode && !isVisible(newNode)) {
-            newNode = newNode.nextSibling;
+        let newNode = node.childNodes[offset];
+        if (newNode) {
+            newNode = getNextVisibleNode(newNode);
+            if (!newNode || isEmptyBlock(newNode)) break;
+            found = true;
+            node = newNode;
+            offset = 0;
+        } else {
+            break;
         }
-        if (!newNode || isEmptyBlock(newNode)) break;
-        node = newNode;
-        offset = offset === 0 ? 0 : nodeSize(node);
+    }
+    if (!found) {
+        while (node.hasChildNodes()) {
+            let newNode = node.childNodes[offset - 1];
+            newNode = getNextVisibleNode(newNode);
+            if (!newNode || isEmptyBlock(newNode)) break;
+            node = newNode;
+            offset = nodeSize(node);
+        }
     }
     let didMove = false;
     let reversed = false;

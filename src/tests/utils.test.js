@@ -1205,8 +1205,8 @@ describe('Utils', () => {
                 );
                 const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
                 const range = document.createRange();
-                range.setStart(p, 1);
-                range.setEnd(p, 1);
+                range.setStart(p, 2);
+                range.setEnd(p, 2);
                 const result = getDeepRange(p.parentElement, { range, select: true });
                 const { startContainer, startOffset, endContainer, endOffset } = result;
                 window.chai
@@ -1233,7 +1233,7 @@ describe('Utils', () => {
                 const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
                 const range = document.createRange();
                 range.setStart(p, 0);
-                range.setEnd(p, 1);
+                range.setEnd(p, 2);
                 const result = getDeepRange(p.parentElement, { range, select: true });
                 const { startContainer, startOffset, endContainer, endOffset } = result;
                 window.chai
@@ -1258,25 +1258,16 @@ describe('Utils', () => {
                     </p>`,
                 );
                 const span1 = p1.childNodes[1];
-                const cd = span1.firstChild;
-                const qr = p2.childNodes[1].lastChild;
+                const ef = span1.querySelector('b').firstChild;
+                const st = p2.childNodes[2];
                 const range = document.createRange();
                 range.setStart(span1, 1);
                 range.setEnd(p2, 2);
                 const result = getDeepRange(p1.parentElement, { range, select: true });
                 const { startContainer, startOffset, endContainer, endOffset } = result;
-                window.chai
-                    .expect([startContainer, startOffset, endContainer, endOffset])
-                    .to.eql([cd, 2, qr, 2]);
-                const {
-                    anchorNode,
-                    anchorOffset,
-                    focusNode,
-                    focusOffset,
-                } = document.getSelection();
-                window.chai
-                    .expect([anchorNode, anchorOffset, focusNode, focusOffset])
-                    .to.eql([cd, 2, qr, 2]);
+                const expect = [startContainer, startOffset, endContainer, endOffset];
+                const eql = [ef, 0, st, 0];
+                window.chai.expect(expect).to.eql(eql);
             });
             it('should correct a triple click', () => {
                 const [p1, p2] = insertTestHtml('<p>abc def ghi</p><p>jkl mno pqr</p>');
@@ -1311,7 +1302,7 @@ describe('Utils', () => {
                     </p>`,
                 );
                 const abc = p.childNodes[1].firstChild.firstChild.firstChild.firstChild;
-                setCursor(p, 1, p, 0, false);
+                setCursor(p, 2, p, 0, false);
                 const result = getDeepRange(p.parentElement, { select: true });
                 const { startContainer, startOffset, endContainer, endOffset } = result;
                 window.chai
@@ -1336,14 +1327,14 @@ describe('Utils', () => {
                     </p>`,
                 );
                 const span1 = p1.childNodes[1];
-                const cd = span1.firstChild;
-                const qr = p2.childNodes[1].lastChild;
+                const ef = span1.childNodes[1].firstChild;
+                const st = p2.childNodes[2];
                 setCursor(p2, 2, span1, 1, false);
                 const result = getDeepRange(p1.parentElement, { select: true });
                 const { startContainer, startOffset, endContainer, endOffset } = result;
                 window.chai
                     .expect([startContainer, startOffset, endContainer, endOffset])
-                    .to.eql([cd, 2, qr, 2]);
+                    .to.eql([ef, 0, st, 0]);
                 const {
                     anchorNode,
                     anchorOffset,
@@ -1352,7 +1343,7 @@ describe('Utils', () => {
                 } = document.getSelection();
                 window.chai
                     .expect([anchorNode, anchorOffset, focusNode, focusOffset])
-                    .to.eql([qr, 2, cd, 2]);
+                    .to.eql([st, 0, ef, 0]);
             });
         });
     });
