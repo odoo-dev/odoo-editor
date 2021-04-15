@@ -1325,7 +1325,10 @@ export class OdooEditor extends EventTarget {
         this._computeHistoryCursor();
 
         const selection = this.document.defaultView.getSelection();
-        this._updateToolbar(!selection.isCollapsed);
+        const isSelectionInEditable = !selection.isCollapsed &&
+            this.editable.contains(selection.anchorNode) &&
+            this.editable.contains(selection.focusNode);
+        this._updateToolbar(isSelectionInEditable);
 
         if (this._currentMouseState === 'mouseup') {
             this._fixFontAwesomeSelection();
