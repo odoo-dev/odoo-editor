@@ -16,3 +16,5 @@ Thumbs.db
 dev/*
 !lib
 !dev/index.html
+# python
+venv
