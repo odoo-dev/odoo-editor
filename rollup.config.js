@@ -12,7 +12,7 @@ export default [
             banner: "odoo.define('web_editor.odoo-editor', (function(require) {",
             footer: 'return exportVariable;\n}));',
         },
-        plugins: [nodeResolve, commonjs()],
+        plugins: [nodeResolve({ browser: true }), commonjs()],
     },
     {
         input: 'src/style.css',

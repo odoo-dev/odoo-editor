@@ -5,13 +5,48 @@ const localStorageKey = 'odoo-editor-localHtmlSaved';
 function startEditor(testHTML) {
     const editableContainer = document.getElementById('dom');
     editableContainer.innerHTML = testHTML;
-    const editor = new OdooEditor(editableContainer, {
+    new OdooEditor(editableContainer, {
         toolbar: document.querySelector('#toolbar'),
         autohideToolbar: true,
         defaultLinkAttributes: { target: '_blank', rel: 'ugc' },
     });
-    editor.historyFetch();
+    // local storage show / hide elements
+    document.getElementById('save-i-html-button').style.display = 'inline-block';
+    document.getElementById('save-c-html-button').style.display = 'inline-block';
+    document.getElementById('saved-html-list').remove();
+}
 
+function startCollabEditor(testHTML) {
+    const editableContainer = document.getElementById('dom');
+    editableContainer.innerHTML = testHTML;
+    const socket = window.io();
+    let editor;
+
+    socket.on('connect', () => {
+        editor = new OdooEditor(editableContainer, {
+            toolbar: document.querySelector('#toolbar'),
+            autohideToolbar: true,
+            collaborative: {
+                send: step => {
+                    socket.emit('step', step);
+                },
+                requestSynchronization: () => {
+                    socket.emit('requestSynchronization');
+                },
+                initServerHistory: history => {
+                    socket.emit('init', history);
+                },
+            },
+        });
+    });
+    // Create a first step containing all of the document
+
+    socket.on('step', data => {
+        editor.historyReceive(data);
+    });
+    socket.on('synchronize', data => {
+        editor.historySynchronise(data);
+    });
     // local storage show / hide elements
     document.getElementById('save-i-html-button').style.display = 'inline-block';
     document.getElementById('save-c-html-button').style.display = 'inline-block';
@@ -31,6 +66,14 @@ submitButtonEl.addEventListener('click', () => {
 const useSampleEl = document.getElementById('use-sample');
 useSampleEl.addEventListener('click', () => {
     setContent(document.getElementById('sample-dom').innerHTML);
+});
+const startCollaborationEl = document.getElementById('start-collaboration');
+startCollaborationEl.addEventListener('click', () => {
+    startCollaborationEl.disabled = true;
+    const testHTML = document.getElementById('sample-dom').innerHTML;
+    startCollabEditor(testHTML);
+
+    document.getElementById('control-panel').remove();
 });
 // url with custom text
 const customTextParam = location.search.slice(1);
