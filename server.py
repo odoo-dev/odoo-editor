@@ -35,12 +35,12 @@ history_patch = {1: {
 
 @app.route('/')
 def index():
-    return open('src/index.html').read()
+    return open('dev/index.html').read()
 
 
 @app.route('/<path:path>')
 def send_js(path):
-    return send_from_directory('src', path)
+    return send_from_directory('dev', path)
 
 
 @app.route('/history-push', methods=['POST'])
