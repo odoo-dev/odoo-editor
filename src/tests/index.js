@@ -1,3 +1,4 @@
+import './collab.test.js';
 import './align.test.js';
 import './autostep.test.js';
 import './editor.test.js';

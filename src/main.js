@@ -5,12 +5,40 @@ const localStorageKey = 'odoo-editor-localHtmlSaved';
 function startEditor(testHTML) {
     const editableContainer = document.getElementById('dom');
     editableContainer.innerHTML = testHTML;
-    const editor = new OdooEditor(editableContainer, {
+    new OdooEditor(editableContainer, {
         toolbar: document.querySelector('#toolbar'),
         autohideToolbar: true,
     });
-    editor.historyFetch();
+    // local storage show / hide elements
+    document.getElementById('save-i-html-button').style.display = 'inline-block';
+    document.getElementById('save-c-html-button').style.display = 'inline-block';
+    document.getElementById('saved-html-list').remove();
+}
 
+function startCollabEditor(testHTML) {
+    const editableContainer = document.getElementById('dom');
+    editableContainer.innerHTML = testHTML;
+    const socket = window.io();
+    const editor = new OdooEditor(editableContainer, {
+        toolbar: document.querySelector('#toolbar'),
+        autohideToolbar: true,
+        collaborative: {
+            send: step => socket.emit('step', step),
+            requestSynchronization: () => {
+                socket.emit('needSync');
+            },
+        },
+    });
+    // Create a first step containing all of the document
+    socket.on('connect', () => {
+        socket.emit('init', editor.getHistorySteps());
+    });
+    socket.on('step', data => {
+        editor.historyReceive(data);
+    });
+    socket.on('synchronize', data => {
+        editor.historySynchronise(data);
+    });
     // local storage show / hide elements
     document.getElementById('save-i-html-button').style.display = 'inline-block';
     document.getElementById('save-c-html-button').style.display = 'inline-block';
@@ -37,6 +65,14 @@ useSampleEl.addEventListener('click', () => {
     useSampleEl.disabled = true;
     const testHTML = document.getElementById('sample-dom').innerHTML;
     startEditor(testHTML);
+    document.getElementById('control-panel').remove();
+});
+const startCollaborationEl = document.getElementById('start-collaboration');
+startCollaborationEl.addEventListener('click', () => {
+    startCollaborationEl.disabled = true;
+    const testHTML = document.getElementById('sample-dom').innerHTML;
+    startCollabEditor(testHTML);
+
     document.getElementById('control-panel').remove();
 });
 // url with custom text
