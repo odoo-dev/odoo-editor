@@ -1445,7 +1445,7 @@ export class OdooEditor extends EventTarget {
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        this._insertText(pastedText);
+        insertText(pastedText);
         this.historyStep();
     }
 
@@ -1478,7 +1478,7 @@ export class OdooEditor extends EventTarget {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                this._insertText(pastedText);
+                insertText(pastedText);
             });
         }
         this.historyStep();
