@@ -1,3 +1,9 @@
+.oe-floating {
+    box-shadow: 0px 3px 18px rgb(0 0 0 / 23%);
+    border-radius: 4px;
+    position: absolute;
+}
+
 /* toolbar styling */
 
 .oe-toolbar {
@@ -57,27 +63,41 @@
 .oe-toolbar .btn.active {
     background: #555555;
 }
-.oe-toolbar .tablepicker {
+.oe-tablepicker-dropdown .oe-tablepicker {
     margin: -3px 2px -6px 2px;
+}
+.oe-tablepicker {
     width: max-content;
     width: -webkit-max-content;
 }
-.oe-toolbar .tablepicker .tablepicker-row .tablepicker-cell {
+.oe-tablepicker-wrapper.oe-floating {
+    padding: 3px;
+    z-index: 1051;
     background: white;
-    width: 5px;
-    height: 5px;
+}
+.oe-tablepicker-row {
+    line-height: 0;
+}
+.oe-tablepicker .oe-tablepicker-row .oe-tablepicker-cell {
+    display: inline-block;
+    background:  #EFEFEE;
+    width: 19px;
+    height: 19px;
+    padding: 0;
     margin-right: 3px;
     margin-bottom: 3px;
 }
-.oe-toolbar .tablepicker .tablepicker-row .tablepicker-cell:last-of-type {
+.oe-tablepicker .oe-tablepicker-row .oe-tablepicker-cell:last-of-type {
     margin-right: 0;
 }
-.oe-toolbar .tablepicker .tablepicker-row .tablepicker-cell.active {
-    background: #ddeafb;
-    border-color: #c3d9ff;
+.oe-tablepicker .oe-tablepicker-row .oe-tablepicker-cell.active {
+    background: #d3d1cb;
 }
-.oe-toolbar .tablepicker-size {
+.oe-tablepicker-size {
+    text-align: center;
     margin-top: 7px;
+}
+.oe-tablepicker-dropdown .oe-tablepicker-size {
     color: white;
 }
 .oe-toolbar .dropdown-toggle {
