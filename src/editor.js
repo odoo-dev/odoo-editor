@@ -39,6 +39,7 @@ import {
     fillEmpty,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
+import { CommandBar } from './commandbar.js';
 import { TablePicker } from './tablepicker.js';
 
 export * from './utils/utils.js';
@@ -75,6 +76,7 @@ export class OdooEditor extends EventTarget {
                 toSanitize: true,
                 isRootEditable: true,
                 getContentEditableAreas: () => [],
+                _t: string => string,
             },
             options,
         );
@@ -136,6 +138,8 @@ export class OdooEditor extends EventTarget {
         this._activateContenteditable();
 
         this.idSet(editable);
+
+        this._createCommandBar();
 
         this.toolbarTablePicker = new TablePicker({ document: this.document });
         this.toolbarTablePicker.addEventListener('cell-selected', ev => {
@@ -209,6 +213,8 @@ export class OdooEditor extends EventTarget {
     destroy() {
         this.observerUnactive();
         this._removeDomListener();
+        this.commandBar.destroy();
+        this.commandbarTablePicker.el.remove();
     }
 
     sanitize() {
@@ -1071,6 +1077,164 @@ export class OdooEditor extends EventTarget {
         }
         const canRedo = this._historyStepsStates.get(pos) === 1 && totalConsumed <= 0;
         return canRedo ? pos : -1;
+    }
+
+    // COMMAND BAR
+    // ===========
+
+    _createCommandBar() {
+        this.options.noScrollSelector = this.options.noScrollSelector || 'body';
+
+        const revertHistoryBeforeCommandbar = () => {
+            let stepIndex = this._historySteps.length - 1;
+            while (stepIndex >= this._beforeCommandbarStepIndex) {
+                const stepState = this._historyStepsStates.get(stepIndex);
+                if (stepState !== 2) {
+                    this.historyRevert(this._historySteps[stepIndex]);
+                }
+                this._historyStepsStates.set(stepIndex, 2);
+                stepIndex--;
+            }
+            this._historyStepsStates.set(this._historySteps.length - 1, 1);
+            this.historyStep(true);
+            setTimeout(() => {
+                this.editable.focus();
+                getDeepRange(this.editable, { select: true });
+            });
+        };
+
+        this.commandbarTablePicker = new TablePicker({
+            document: this.document,
+            floating: true,
+        });
+
+        document.body.appendChild(this.commandbarTablePicker.el);
+
+        this.commandbarTablePicker.addEventListener('cell-selected', ev => {
+            this.execCommand('insertTable', {
+                rowNumber: ev.detail.rowNumber,
+                colNumber: ev.detail.colNumber,
+            });
+        });
+
+        const mainCommands = [
+            {
+                groupName: 'Basic blocks',
+                title: 'Heading 1',
+                description: 'Big section heading.',
+                fontawesome: 'fa-header',
+                callback: () => {
+                    this.execCommand('setTag', 'H1');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Heading 2',
+                description: 'Medium section heading.',
+                fontawesome: 'fa-header',
+                callback: () => {
+                    this.execCommand('setTag', 'H2');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Heading 3',
+                description: 'Small section heading.',
+                fontawesome: 'fa-header',
+                callback: () => {
+                    this.execCommand('setTag', 'H3');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Text',
+                description: 'Paragraph block.',
+                fontawesome: 'fa-paragraph',
+                callback: () => {
+                    this.execCommand('setTag', 'P');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Bulleted list',
+                description: 'Create a simple bulleted list.',
+                fontawesome: 'fa-list-ul',
+                callback: () => {
+                    this.execCommand('toggleList', 'UL');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Numbered list',
+                description: 'Create a list with numbering.',
+                fontawesome: 'fa-list-ol',
+                callback: () => {
+                    this.execCommand('toggleList', 'OL');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Checklist',
+                description: 'Track tasks with a checklist.',
+                fontawesome: 'fa-tasks',
+                callback: () => {
+                    this.execCommand('toggleList', 'CL');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Horizontal rule',
+                description: 'Insert an horizantal rule.',
+                fontawesome: 'fa-minus',
+                callback: () => {
+                    this.execCommand('insertHorizontalRule');
+                },
+            },
+            {
+                groupName: 'Basic blocks',
+                title: 'Table',
+                description: 'Insert a table.',
+                fontawesome: 'fa-table',
+                callback: () => {
+                    this.commandbarTablePicker.show();
+                },
+            },
+        ];
+        // Translate the command title and description if a translate function
+        // is provided.
+        for (const command of mainCommands) {
+            command.title = this.options._t(command.title);
+            command.description = this.options._t(command.description);
+        }
+        this.commandBar = new CommandBar({
+            editable: this.editable,
+            _t: this.options._t,
+            onShow: () => {
+                this.commandbarTablePicker.hide();
+            },
+            onActivate: () => {
+                this._beforeCommandbarStepIndex = this._historySteps.length - 1;
+                this.observerUnactive();
+                for (const element of document.querySelectorAll(this.options.noScrollSelector)) {
+                    element.classList.add('oe-noscroll');
+                }
+                this.observerActive();
+            },
+            preValidate: () => {
+                revertHistoryBeforeCommandbar();
+            },
+            postValidate: () => {
+                this.historyStep(true);
+            },
+            onStop: () => {
+                this.observerUnactive();
+                for (const element of document.querySelectorAll('.oe-noscroll')) {
+                    element.classList.remove('oe-noscroll');
+                }
+                this.observerActive();
+            },
+            commands: [...mainCommands, ...(this.options.commands || [])],
+        });
     }
 
     // TOOLBAR
