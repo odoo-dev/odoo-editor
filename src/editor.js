@@ -1235,7 +1235,10 @@ export class OdooEditor extends EventTarget {
                 this.historyRollback();
                 ev.preventDefault();
                 this._applyCommand('oDeleteForward');
-            } else if (ev.inputType === 'insertParagraph' || (ev.inputType === 'insertText' && ev.data === null)) {
+            } else if (
+                ev.inputType === 'insertParagraph' ||
+                (ev.inputType === 'insertText' && ev.data === null)
+            ) {
                 // Sometimes the browser wrongly triggers an insertText
                 // input event with null data on enter.
                 this.historyRollback();
@@ -1327,7 +1330,8 @@ export class OdooEditor extends EventTarget {
         this._computeHistoryCursor();
 
         const selection = this.document.defaultView.getSelection();
-        const isSelectionInEditable = !selection.isCollapsed &&
+        const isSelectionInEditable =
+            !selection.isCollapsed &&
             this.editable.contains(selection.anchorNode) &&
             this.editable.contains(selection.focusNode);
         this._updateToolbar(isSelectionInEditable);
