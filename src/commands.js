@@ -1,4 +1,5 @@
 import {
+    ancestors,
     childNodeIndex,
     closestBlock,
     closestElement,
@@ -520,4 +521,16 @@ export const editorCommands = {
         siblingRow ? setCursor(...startPos(siblingRow)) : deleteTable(editor, table);
     },
     deleteTable: (editor, table) => deleteTable(editor, table),
+    insertHorizontalRule(editor) {
+        const selection = editor.document.getSelection();
+        const range = selection.getRangeAt(0);
+        const element = closestElement(
+            range.startContainer,
+            'P, PRE, H1, H2, H3, H4, H5, H6, BLOCKQUOTE',
+        );
+
+        if (element && ancestors(element).includes(editor.editable)) {
+            element.before(editor.document.createElement('hr'));
+        }
+    },
 };
