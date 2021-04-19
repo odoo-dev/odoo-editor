@@ -276,3 +276,18 @@ img.oe-commandbar-commandImg {
 .oe-commandbar-wrapper ::-webkit-scrollbar-track {
     background: #EDECE9;
 }
+
+/* Command hints */
+
+.oe-hint {
+    position: relative;
+    caret-color: rgb(55, 53, 47);
+}
+.oe-hint:before {
+    content: attr(placeholder);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    color: rgba(55, 53, 47, 0.4);
+}
