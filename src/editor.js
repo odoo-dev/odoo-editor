@@ -37,6 +37,7 @@ import {
     nextLeaf,
     isUnremovable,
     fillEmpty,
+    isEmptyBlock,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -163,6 +164,7 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.editable, 'drop', this._onDrop);
 
         this.addDomListener(this.document, 'selectionchange', this._onSelectionChange);
+        this.addDomListener(this.document, 'selectionchange', this._handleCommandHint);
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
         this.addDomListener(this.document, 'keyup', this._onDocumentKeyup);
 
@@ -1558,6 +1560,70 @@ export class OdooEditor extends EventTarget {
                 range.setEnd(contenteditableFalseNode.parentElement, 0);
             }
             selection.addRange(range);
+        }
+    }
+
+    clean() {
+        this.observerUnactive();
+        for (const hint of document.querySelectorAll('.oe-hint')) {
+            hint.classList.remove('oe-hint', 'oe-command-temporary-hint');
+            hint.removeAttribute('placeholder');
+        }
+        this.observerActive();
+    }
+    /**
+     * Handle the hint preview for the commandbar.
+     * @private
+     */
+    _handleCommandHint() {
+        const selectors = {
+            BLOCKQUOTE: 'Empty quote',
+            H1: 'Heading 1',
+            H2: 'Heading 2',
+            H3: 'Heading 3',
+            H4: 'Heading 4',
+            H5: 'Heading 5',
+            H6: 'Heading 6',
+            'UL LI': 'List',
+            'OL LI': 'List',
+            'CL LI': 'To-do',
+        };
+
+        for (const hint of document.querySelectorAll('.oe-hint')) {
+            if (hint.classList.contains('oe-command-temporary-hint') || !isEmptyBlock(hint)) {
+                this.observerUnactive();
+                hint.classList.remove('oe-hint', 'oe-command-temporary-hint');
+                hint.removeAttribute('placeholder');
+                this.observerActive();
+            }
+        }
+
+        for (const [selector, text] of Object.entries(selectors)) {
+            for (const el of this.editable.querySelectorAll(selector)) {
+                this._makeHint(el, text);
+            }
+        }
+
+        const selection = document.getSelection();
+        if (!selection.isCollapsed || !selection.rangeCount) return;
+
+        const block = closestElement(selection.anchorNode, 'P, DIV');
+        this._makeHint(block, 'Type "/" for commands', true);
+    }
+    _makeHint(block, text, temporary = false) {
+        const content = block && block.innerHTML.trim();
+        if (
+            block &&
+            (content === '' || content === '<br>') &&
+            ancestors(block, this.editable).includes(this.editable)
+        ) {
+            this.observerUnactive();
+            block.setAttribute('placeholder', text);
+            block.classList.add('oe-hint');
+            if (temporary) {
+                block.classList.add('oe-command-temporary-hint');
+            }
+            this.observerActive();
         }
     }
 
