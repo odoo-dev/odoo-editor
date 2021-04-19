@@ -1721,3 +1721,58 @@ export function rgbToHex(rgb = '') {
             .join('')
     );
 }
+
+export function getRangePosition(el, options = {}) {
+    const selection = document.getSelection();
+    if (!selection.isCollapsed || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+
+    const marginRight = options.marginRight || 20;
+    const marginBottom = options.marginBottom || 20;
+    const marginTop = options.marginTop || 10;
+    const marginLeft = options.marginLeft || 10;
+
+    let offset;
+    if (range.endOffset - 1 > 0) {
+        const clonedRange = range.cloneRange();
+        clonedRange.setStart(range.endContainer, range.endOffset - 1);
+        clonedRange.setEnd(range.endContainer, range.endOffset);
+        const rect = clonedRange.getBoundingClientRect();
+        offset = { height: rect.height, left: rect.left + rect.width, top: rect.top };
+        clonedRange.detach();
+    }
+
+    if (!offset || offset.heigh === 0) {
+        const clonedRange = range.cloneRange();
+        const shadowCaret = document.createTextNode('|');
+        clonedRange.insertNode(shadowCaret);
+        clonedRange.selectNode(shadowCaret);
+        const rect = clonedRange.getBoundingClientRect();
+        offset = { height: rect.height, left: rect.left, top: rect.top };
+        shadowCaret.remove();
+        clonedRange.detach();
+    }
+
+    const leftMove = Math.max(0, offset.left + el.offsetWidth + marginRight - window.innerWidth);
+    if (leftMove && offset.left - leftMove > marginLeft) {
+        offset.left -= leftMove;
+    } else if (offset.left - leftMove < marginLeft) {
+        offset.left = marginLeft;
+    }
+
+    if (
+        offset.top - marginTop + offset.height + el.offsetHeight > window.innerHeight &&
+        offset.top - el.offsetHeight - marginBottom > 0
+    ) {
+        offset.top -= el.offsetHeight;
+    } else {
+        offset.top += offset.height;
+    }
+
+    if (offset) {
+        offset.top += window.scrollY;
+        offset.left += window.scrollX;
+    }
+
+    return offset;
+}

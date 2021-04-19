@@ -465,9 +465,9 @@ export const editorCommands = {
         restoreCursor();
     },
     // Table
-    insertTable: (editor, { rowCount = 2, colCount = 2 } = {}) => {
-        const tdsHtml = new Array(colCount).fill('<td><br></td>').join('');
-        const trsHtml = new Array(rowCount).fill(`<tr>${tdsHtml}</tr>`).join('');
+    insertTable: (editor, { rowNumber = 2, colNumber = 2 } = {}) => {
+        const tdsHtml = new Array(colNumber).fill('<td><br></td>').join('');
+        const trsHtml = new Array(rowNumber).fill(`<tr>${tdsHtml}</tr>`).join('');
         const tableHtml = `<table class="table table-bordered"><tbody>${trsHtml}</tbody></table>`;
         const sel = editor.document.defaultView.getSelection();
         if (!sel.isCollapsed) {

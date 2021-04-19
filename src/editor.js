@@ -39,15 +39,13 @@ import {
     fillEmpty,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
+import { TablePicker } from './tablepicker.js';
 
 export * from './utils/utils.js';
 export const UNBREAKABLE_ROLLBACK_CODE = 'UNBREAKABLE';
 export const UNREMOVABLE_ROLLBACK_CODE = 'UNREMOVABLE';
 export const BACKSPACE_ONLY_COMMANDS = ['oDeleteBackward', 'oDeleteForward'];
 export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter', 'oShiftEnter']);
-
-const TABLEPICKER_ROW_COUNT = 3;
-const TABLEPICKER_COL_COUNT = 3;
 
 const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
 
@@ -136,6 +134,14 @@ export class OdooEditor extends EventTarget {
 
         this.idSet(editable);
 
+        this.toolbarTablePicker = new TablePicker({ document: this.document });
+        this.toolbarTablePicker.addEventListener('cell-selected', ev => {
+            this.execCommand('insertTable', {
+                rowNumber: ev.detail.rowNumber,
+                colNumber: ev.detail.colNumber,
+            });
+        });
+
         // -----------
         // Bind events
         // -----------
@@ -163,13 +169,14 @@ export class OdooEditor extends EventTarget {
             // Ensure anchors in the toolbar don't trigger a hash change.
             const toolbarAnchors = this.toolbar.querySelectorAll('a');
             toolbarAnchors.forEach(a => a.addEventListener('click', e => e.preventDefault()));
-            this.tablePicker = this.toolbar.querySelector('.tablepicker');
-            if (this.tablePicker) {
-                this.tablePickerSizeView = this.toolbar.querySelector('.tablepicker-size');
-                this.toolbar
-                    .querySelector('#tableDropdownButton')
-                    .addEventListener('click', this._initTablePicker.bind(this));
-            }
+            const tablepickerDropdown = this.toolbar.querySelector('.oe-tablepicker-dropdown');
+            tablepickerDropdown && tablepickerDropdown.append(this.toolbarTablePicker.el);
+            this.toolbarTablePicker.show();
+            const tableDropdownButton = this.toolbar.querySelector('#tableDropdownButton');
+            tableDropdownButton &&
+                tableDropdownButton.addEventListener('click', () => {
+                    this.toolbarTablePicker.reset();
+                });
             for (const colorLabel of this.toolbar.querySelectorAll('label')) {
                 colorLabel.addEventListener('mousedown', ev => {
                     // Hack to prevent loss of focus (done by preventDefault) while still opening
@@ -1502,85 +1509,6 @@ export class OdooEditor extends EventTarget {
                 ev.preventDefault();
                 this._updateToolbar();
             });
-        }
-    }
-    _initTablePicker() {
-        for (const child of [...this.tablePicker.childNodes]) {
-            child.remove();
-        }
-        this.tablePicker.dataset.rowCount = 0;
-        this.tablePicker.dataset.colCount = 0;
-        for (let rowIndex = 0; rowIndex < TABLEPICKER_ROW_COUNT; rowIndex++) {
-            this._addTablePickerRow();
-        }
-        for (let colIndex = 0; colIndex < TABLEPICKER_COL_COUNT; colIndex++) {
-            this._addTablePickerColumn();
-        }
-        this.tablePicker.querySelector('.tablepicker-cell').classList.toggle('active', true);
-        this.tablePickerSizeView.textContent = '1x1';
-    }
-    _addTablePickerRow() {
-        const row = this.document.createElement('div');
-        row.classList.add('tablepicker-row');
-        row.dataset.rowId = this.tablePicker.querySelectorAll('.tablepicker-row').length + 1;
-        this.tablePicker.appendChild(row);
-        this.tablePicker.dataset.rowCount = +this.tablePicker.dataset.rowCount + 1;
-        for (let i = 0; i < +this.tablePicker.dataset.colCount; i++) {
-            this._addTablePickerCell(row);
-        }
-        return row;
-    }
-    _addTablePickerColumn() {
-        for (const row of this.tablePicker.querySelectorAll('.tablepicker-row')) {
-            this._addTablePickerCell(row);
-        }
-        this.tablePicker.dataset.colCount = +this.tablePicker.dataset.colCount + 1;
-    }
-    _addTablePickerCell(row) {
-        const rowId = +row.dataset.rowId;
-        const colId = row.querySelectorAll('.tablepicker-cell').length + 1;
-        const cell = this.document.createElement('div');
-        cell.classList.add('tablepicker-cell', 'btn');
-        cell.dataset.rowId = rowId;
-        cell.dataset.colId = colId;
-        row.appendChild(cell);
-        cell.addEventListener('mouseover', () => this._onHoverTablePickerCell(rowId, colId));
-    }
-    _onHoverTablePickerCell(targetRowId, targetColId) {
-        // Hightlight the active cells, remove highlight of the others.
-        for (const cell of this.tablePicker.querySelectorAll('.tablepicker-cell')) {
-            const [rowId, colId] = [+cell.dataset.rowId, +cell.dataset.colId];
-            const isActive = rowId <= targetRowId && colId <= targetColId;
-            cell.classList.toggle('active', isActive);
-        }
-        this.tablePickerSizeView.textContent = `${targetColId}x${targetRowId}`;
-
-        // Add/remove rows to expand/shrink the tablepicker.
-        if (targetRowId >= +this.tablePicker.dataset.rowCount) {
-            this._addTablePickerRow();
-        } else if (+this.tablePicker.dataset.rowCount > TABLEPICKER_ROW_COUNT) {
-            for (const row of this.tablePicker.querySelectorAll('.tablepicker-row')) {
-                const rowId = +row.dataset.rowId;
-                if (rowId >= TABLEPICKER_ROW_COUNT && rowId > targetRowId + 1) {
-                    row.remove();
-                    this.tablePicker.dataset.rowCount = +this.tablePicker.dataset.rowCount - 1;
-                }
-            }
-        }
-        // Add/remove cols to expand/shrink the tablepicker.
-        const colCount = +this.tablePicker.dataset.colCount;
-        if (targetColId >= colCount) {
-            this._addTablePickerColumn();
-        } else if (colCount > TABLEPICKER_COL_COUNT) {
-            const removedColIds = new Set();
-            for (const cell of this.tablePicker.querySelectorAll('.tablepicker-cell')) {
-                const colId = +cell.dataset.colId;
-                if (colId >= TABLEPICKER_COL_COUNT && colId > targetColId + 1) {
-                    cell.remove();
-                    removedColIds.add(colId);
-                }
-            }
-            this.tablePicker.dataset.colCount = colCount - removedColIds.size;
         }
     }
     _onTabulationInTable(ev) {
