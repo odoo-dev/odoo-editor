@@ -677,7 +677,7 @@ export function getDeepestPosition(node, offset) {
         let newNode = node.childNodes[offset];
         if (newNode) {
             newNode = getNextVisibleNode(newNode);
-            if (!newNode || isEmptyBlock(newNode)) break;
+            if (!newNode || isVisibleEmpty(newNode)) break;
             found = true;
             node = newNode;
             offset = 0;
@@ -689,7 +689,7 @@ export function getDeepestPosition(node, offset) {
         while (node.hasChildNodes()) {
             let newNode = node.childNodes[offset - 1];
             newNode = getNextVisibleNode(newNode);
-            if (!newNode || isEmptyBlock(newNode)) break;
+            if (!newNode || isVisibleEmpty(newNode)) break;
             node = newNode;
             offset = nodeSize(node);
         }
