@@ -1445,8 +1445,7 @@ export class OdooEditor extends EventTarget {
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        insertText(this.document.defaultView.getSelection(), pastedText);
-        this.historyStep();
+        this.execCommand('insertText', pastedText);
     }
 
     /**
