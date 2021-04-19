@@ -100,6 +100,9 @@ export class OdooEditor extends EventTarget {
         // Set of labels that which prevent the automatic step mechanism if
         // it contains at least one element.
         this._observerTimeoutUnactive = new Set();
+        // Set of labels that which prevent the observer to be active if
+        // it contains at least one element.
+        this._observerUnactiveLabels = new Set();
 
         // The state of the dom.
         this._currentMouseState = 'mouseup';
@@ -271,7 +274,8 @@ export class OdooEditor extends EventTarget {
         this.automaticStepUnactive('skipStack');
         setTimeout(() => this.automaticStepActive('skipStack'));
     }
-    observerUnactive() {
+    observerUnactive(label) {
+        this._observerUnactiveLabels.add(label);
         clearTimeout(this.observerTimeout);
         this.observer.disconnect();
         this.observerFlush();
@@ -279,7 +283,10 @@ export class OdooEditor extends EventTarget {
     observerFlush() {
         this.observerApply(this.observer.takeRecords());
     }
-    observerActive() {
+    observerActive(label) {
+        this._observerUnactiveLabels.delete(label);
+        if (this._observerUnactiveLabels.size !== 0) return;
+
         if (!this.observer) {
             this.observer = new MutationObserver(records => {
                 records = this.filterMutationRecords(records);
