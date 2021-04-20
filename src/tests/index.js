@@ -1,0 +1,11 @@
+import './collab.test.js';
+import './align.test.js';
+import './autostep.test.js';
+import './editor.test.js';
+import './fontAwesome.test.js';
+import './fontSize.test.js';
+import './insertHTML.test.js';
+import './link.test.js';
+import './list.test.js';
+import './utils.js';
+import './utils.test.js';

@@ -12,3 +12,9 @@ node_modules
 *.log
 ehthumbs.db
 Thumbs.db
+# dev files
+dev/*
+!lib
+!dev/index.html
+# python
+venv

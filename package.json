@@ -7,8 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "dev": "live-server --cors --port=8000 --ignore='.' src",
-    "live": "live-server --cors --port=8000 src",
+    "dev": "./start.sh",
+    "live": "./start.sh --server-watch",
+    "collab": "./start.sh --collaboration",
     "build": "rollup -c"
   },
   "repository": {
@@ -22,6 +23,8 @@
   },
   "homepage": "https://github.com/odoo-dev/odoo-editor#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^18.0.0",
+    "@rollup/plugin-node-resolve": "^11.2.1",
     "eslint": "^7.17.0",
     "eslint-config-prettier": "^7.1.0",
     "eslint-plugin-prettier": "^3.3.1",
@@ -29,5 +32,8 @@
     "prettier": "^2.2.1",
     "rollup": "^2.36.1",
     "rollup-plugin-css-only": "^3.1.0"
+  },
+  "dependencies": {
+    "uuid": "^3.4.0"
   }
 }

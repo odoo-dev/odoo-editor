@@ -1,5 +1,5 @@
 // TODO: avoid empty keys when not necessary to reduce request size
-export function nodeToObject(node) {
+export function nodeToObject(node, stripFromChildren = new Set()) {
     let result = {
         nodeType: node.nodeType,
         oid: node.oid,
@@ -18,7 +18,9 @@ export function nodeToObject(node) {
         }
         let child = node.firstChild;
         while (child) {
-            result.children.push(nodeToObject(child));
+            if (!stripFromChildren.has(child.oid)) {
+                result.children.push(nodeToObject(child, stripFromChildren));
+            }
             child = child.nextSibling;
         }
     }
