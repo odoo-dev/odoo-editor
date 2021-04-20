@@ -1178,8 +1178,8 @@ export class OdooEditor extends EventTarget {
         const editorRect = this.editable.getBoundingClientRect();
         const editorLeftPos = Math.max(0, editorRect.left);
         const editorTopPos = Math.max(0, editorRect.top);
-        const scrollX = this.document.defaultView.window.scrollX;
-        const scrollY = this.document.defaultView.window.scrollY;
+        const scrollX = this.document.defaultView.scrollX;
+        const scrollY = this.document.defaultView.scrollY;
 
         // Get left position.
         let left = selRect.left + OFFSET;
