@@ -32,7 +32,7 @@ const TEXT_CLASSES_REGEX = /\btext-[^\s]*\b/g;
 const BG_CLASSES_REGEX = /\bbg-[^\s]*\b/g;
 
 function insert(editor, data, isText = true) {
-    const selection = editor.document.defaultView.getSelection();
+    const selection = editor.document.getSelection();
     const range = selection.getRangeAt(0);
     let startNode;
     let insertBefore = false;
@@ -45,7 +45,7 @@ function insert(editor, data, isText = true) {
     } else {
         editor.deleteRange(selection);
     }
-    startNode = startNode || editor.document.defaultView.getSelection().anchorNode;
+    startNode = startNode || editor.document.getSelection().anchorNode;
     if (startNode.nodeType === Node.ELEMENT_NODE) {
         if (selection.anchorOffset === 0) {
             startNode.prepend(editor.document.createTextNode(''));
@@ -82,7 +82,7 @@ function insert(editor, data, isText = true) {
     return insertedNodes;
 }
 function align(editor, mode) {
-    const sel = editor.document.defaultView.getSelection();
+    const sel = editor.document.getSelection();
     const visitedBlocks = new Set();
     const traversedNode = getTraversedNodes(editor.editable);
     for (const node of traversedNode) {
@@ -147,7 +147,7 @@ function hasColor(element, mode) {
  * which the wanted style should be applied
  */
 function applyInlineStyle(editor, applyStyle) {
-    const sel = editor.document.defaultView.getSelection();
+    const sel = editor.document.getSelection();
     const { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
     const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
     const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
@@ -311,7 +311,7 @@ export const editorCommands = {
 
     // Link
     createLink: (editor, link, content) => {
-        const sel = editor.document.defaultView.getSelection();
+        const sel = editor.document.getSelection();
         if (content && !sel.isCollapsed) {
             editor.deleteRange(sel);
         }
@@ -329,7 +329,7 @@ export const editorCommands = {
         }
     },
     unlink: editor => {
-        const sel = editor.document.defaultView.getSelection();
+        const sel = editor.document.getSelection();
         // we need to remove the contentEditable isolation of links
         // before we apply the unlink, otherwise the command is not performed
         // because the content editable root is the link
@@ -469,7 +469,7 @@ export const editorCommands = {
         const tdsHtml = new Array(colCount).fill('<td><br></td>').join('');
         const trsHtml = new Array(rowCount).fill(`<tr>${tdsHtml}</tr>`).join('');
         const tableHtml = `<table class="table table-bordered"><tbody>${trsHtml}</tbody></table>`;
-        const sel = editor.document.defaultView.getSelection();
+        const sel = editor.document.getSelection();
         if (!sel.isCollapsed) {
             editor.deleteRange(sel);
         }

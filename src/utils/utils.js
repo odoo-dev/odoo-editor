@@ -481,7 +481,7 @@ export function setCursor(
         : getNormalizedCursorPosition(focusNode, focusOffset, normalize);
 
     const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
-    const sel = document.defaultView.getSelection();
+    const sel = document.getSelection();
     const range = new Range();
     if (direction === DIRECTIONS.RIGHT) {
         range.setStart(anchorNode, anchorOffset);
@@ -563,7 +563,7 @@ export function getTraversedNodes(editable) {
  */
 export function getSelectedNodes(editable) {
     const document = editable.ownerDocument;
-    const sel = document.defaultView.getSelection();
+    const sel = document.getSelection();
     if (!sel.rangeCount) {
         return [];
     }
@@ -587,7 +587,7 @@ export function getSelectedNodes(editable) {
  * @returns {Range}
  */
 export function getDeepRange(editable, { range, sel, splitText, select, correctTripleClick } = {}) {
-    sel = sel || editable.ownerDocument.defaultView.getSelection();
+    sel = sel || editable.ownerDocument.getSelection();
     range = range ? range.cloneRange() : sel.rangeCount && sel.getRangeAt(0).cloneRange();
     if (!range) return;
     let start = range.startContainer;
@@ -706,7 +706,7 @@ export function getDeepestPosition(node, offset) {
 }
 
 export function getCursors(document) {
-    const sel = document.defaultView.getSelection();
+    const sel = document.getSelection();
     if (
         getCursorDirection(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) ===
         DIRECTIONS.LEFT
@@ -722,7 +722,7 @@ export function getCursors(document) {
 }
 
 export function preserveCursor(document) {
-    const sel = document.defaultView.getSelection();
+    const sel = document.getSelection();
     const cursorPos = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
     return replace => {
         replace = replace || new Map();
@@ -881,7 +881,7 @@ export function containsUnremovable(node) {
 }
 
 export function getInSelection(document, selector) {
-    const selection = document.defaultView.getSelection();
+    const selection = document.getSelection();
     const range = !!selection.rangeCount && selection.getRangeAt(0);
     return (
         range &&
