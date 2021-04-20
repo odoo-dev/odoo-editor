@@ -890,7 +890,7 @@ export class OdooEditor extends EventTarget {
 
         let hiliteColor = params.hiliteColor;
         if (!hiliteColor) {
-            const sel = this.document.defaultView.getSelection();
+            const sel = this.document.getSelection();
             if (sel.rangeCount) {
                 const endContainer = closestElement(sel.getRangeAt(0).endContainer);
                 const hiliteColorRgb = getComputedStyle(endContainer).backgroundColor;
@@ -921,7 +921,7 @@ export class OdooEditor extends EventTarget {
      * @returns {?}
      */
     _applyRawCommand(method, ...args) {
-        const sel = this.document.defaultView.getSelection();
+        const sel = this.document.getSelection();
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
             this.deleteRange(sel);
             if (BACKSPACE_ONLY_COMMANDS.includes(method)) {
@@ -1008,7 +1008,7 @@ export class OdooEditor extends EventTarget {
      * @returns {Object}
      */
     _computeHistoryCursor() {
-        const sel = this.document.defaultView.getSelection();
+        const sel = this.document.getSelection();
         if (!sel.anchorNode) {
             return this._latestComputedCursor;
         }
@@ -1072,7 +1072,7 @@ export class OdooEditor extends EventTarget {
             this.toolbar.style.visibility = 'visible';
         }
 
-        const sel = this.document.defaultView.getSelection();
+        const sel = this.document.getSelection();
         if (!sel.anchorNode) {
             show = false;
         }
@@ -1168,7 +1168,7 @@ export class OdooEditor extends EventTarget {
         let isBottom = false;
         this.toolbar.classList.toggle('toolbar-bottom', false);
         this.toolbar.style.maxWidth = this.editable.offsetWidth - OFFSET * 2 + 'px';
-        const sel = this.document.defaultView.getSelection();
+        const sel = this.document.getSelection();
         const range = sel.getRangeAt(0);
         const isSelForward =
             sel.anchorNode === range.startContainer && sel.anchorOffset === range.startOffset;
@@ -1255,7 +1255,7 @@ export class OdooEditor extends EventTarget {
                 }
             } else if (['insertText', 'insertCompositionText'].includes(ev.inputType)) {
                 // insertCompositionText, courtesy of Samsung keyboard.
-                const selection = this.document.defaultView.getSelection();
+                const selection = this.document.getSelection();
                 // Detect that text was selected and change behavior only if it is the case,
                 // since it is the only text insertion case that may cause problems.
                 if (anchorNode !== focusNode || anchorOffset !== focusOffset) {
@@ -1289,7 +1289,7 @@ export class OdooEditor extends EventTarget {
         // representation of the key. In this case, call `deleteRange` before
         // inserting the printed representation of the character.
         if (/^.$/u.test(ev.key) && !ev.ctrlKey && !ev.metaKey) {
-            const selection = this.document.defaultView.getSelection();
+            const selection = this.document.getSelection();
             if (selection && !selection.isCollapsed) {
                 this.deleteRange(selection);
             }
@@ -1336,7 +1336,7 @@ export class OdooEditor extends EventTarget {
         // that to the command execution or the 'input' event handler.
         this._computeHistoryCursor();
 
-        const selection = this.document.defaultView.getSelection();
+        const selection = this.document.getSelection();
         const isSelectionInEditable =
             !selection.isCollapsed &&
             this.editable.contains(selection.anchorNode) &&
@@ -1464,7 +1464,7 @@ export class OdooEditor extends EventTarget {
      */
     _onDrop(ev) {
         ev.preventDefault();
-        const sel = this.document.defaultView.getSelection();
+        const sel = this.document.getSelection();
         let isInEditor = false;
         let ancestor = sel.anchorNode;
         while (ancestor && !isInEditor) {
@@ -1488,7 +1488,7 @@ export class OdooEditor extends EventTarget {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                insertText(this.document.defaultView.getSelection(), pastedText);
+                insertText(this.document.getSelection(), pastedText);
             });
         }
         this.historyStep();
@@ -1606,7 +1606,7 @@ export class OdooEditor extends EventTarget {
      * Fix the current selection range in case the range start or end inside a fontAwesome node
      */
     _fixFontAwesomeSelection() {
-        const selection = this.document.defaultView.getSelection();
+        const selection = this.document.getSelection();
         if (
             selection.isCollapsed ||
             (selection.anchorNode &&

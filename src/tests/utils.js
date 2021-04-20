@@ -369,7 +369,7 @@ export async function createLink(editor, content) {
 }
 
 export async function insertText(editor, text) {
-    const sel = document.defaultView.getSelection();
+    const sel = document.getSelection();
     insertTextSel(sel, text);
     sel.collapseToEnd();
     editor.historyStep();
