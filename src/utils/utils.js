@@ -482,6 +482,9 @@ export function setCursor(
 
     const direction = getCursorDirection(anchorNode, anchorOffset, focusNode, focusOffset);
     const sel = document.getSelection();
+    if (!sel) {
+        return null;
+    }
     const range = new Range();
     if (direction === DIRECTIONS.RIGHT) {
         range.setStart(anchorNode, anchorOffset);
