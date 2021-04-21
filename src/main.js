@@ -17,27 +17,19 @@ function startEditor(testHTML) {
     document.getElementById('saved-html-list').remove();
 }
 
+function setContent(content) {
+    window.location = `${location.pathname.slice(0, -1)}?html=${btoa(content)}`;
+}
 /**
  * Quick UI to start editing
  */
 const submitButtonEl = document.getElementById('textarea-submit');
 submitButtonEl.addEventListener('click', () => {
-    submitButtonEl.disabled = true;
-    const testHTML = document.getElementById('textarea').value;
-    startEditor(testHTML);
-    history.replaceState(
-        {},
-        'Odoo Editor',
-        `${location.pathname.slice(0, -1)}?html=${btoa(testHTML)}`,
-    );
-    document.getElementById('control-panel').remove();
+    setContent(document.getElementById('textarea').value);
 });
 const useSampleEl = document.getElementById('use-sample');
 useSampleEl.addEventListener('click', () => {
-    useSampleEl.disabled = true;
-    const testHTML = document.getElementById('sample-dom').innerHTML;
-    startEditor(testHTML);
-    document.getElementById('control-panel').remove();
+    setContent(document.getElementById('sample-dom').innerHTML);
 });
 // url with custom text
 const customTextParam = location.search.slice(1);
