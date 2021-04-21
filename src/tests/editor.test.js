@@ -2985,7 +2985,7 @@ const startTests = () => {
         } else {
             newUrl.searchParams.append('unittests', '1');
         }
-        history.replaceState({}, 'Odoo Editor', newUrl.toString());
+        window.location = newUrl;
     }
     const mochaEl = document.createElement('div');
     mochaEl.id = 'mocha';
