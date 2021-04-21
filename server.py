@@ -3,6 +3,7 @@
 from flask import Flask, send_from_directory, request
 import flask_restful as restful
 from flask_cors import CORS
+import os.path
 
 import time
 
@@ -35,12 +36,16 @@ history_patch = {1: {
 
 @app.route('/')
 def index():
-    return open('src/index.html').read()
+    return open('src/public/index.html').read()
 
 
 @app.route('/<path:path>')
 def send_js(path):
-    return send_from_directory('src', path)
+    if os.path.isfile('src/public/'+path):
+        return send_from_directory('src/public', path)
+    else:
+        return send_from_directory('build', path)
+
 
 
 @app.route('/history-push', methods=['POST'])

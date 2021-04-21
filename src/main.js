@@ -1,4 +1,5 @@
 import { OdooEditor } from './editor.js';
+import 'tests/index.js';
 
 const localStorageKey = 'odoo-editor-localHtmlSaved';
 
