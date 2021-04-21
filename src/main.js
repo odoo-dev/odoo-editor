@@ -1,4 +1,5 @@
 import { OdooEditor } from './editor.js';
+import { qwebSample } from './qweb_sample.js';
 
 const localStorageKey = 'odoo-editor-localHtmlSaved';
 
@@ -30,6 +31,10 @@ submitButtonEl.addEventListener('click', () => {
 const useSampleEl = document.getElementById('use-sample');
 useSampleEl.addEventListener('click', () => {
     setContent(document.getElementById('sample-dom').innerHTML);
+});
+const qwebSampleButton = document.getElementById('use-qweb-sample');
+qwebSampleButton.addEventListener('click', () => {
+    setContent(qwebSample);
 });
 // url with custom text
 const customTextParam = location.search.slice(1);
