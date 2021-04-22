@@ -42,6 +42,7 @@ import {
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
 import { TablePicker } from './tablepicker.js';
+import { QWebPlugin } from './plugins/qweb.js';
 
 export * from './utils/utils.js';
 export const UNBREAKABLE_ROLLBACK_CODE = 'UNBREAKABLE';
@@ -119,6 +120,10 @@ export class OdooEditor extends EventTarget {
         // Map that from an node id to the dom node.
         this._idToNodeMap = new Map();
 
+        // Instanciate plugins.
+        this._plugins = [];
+        this._pluginAdd(QWebPlugin);
+
         // -------------------
         // Alter the editable
         // -------------------
@@ -131,6 +136,7 @@ export class OdooEditor extends EventTarget {
         editable.oid = 1;
         this._idToNodeMap.set(1, editable);
         this.editable = this.options.toSanitize ? sanitize(editable) : editable;
+        this._pluginCall('technicalElement', [editable]);
 
         // Set contenteditable before clone as FF updates the content at this point.
         this._activateContenteditable();
@@ -233,7 +239,9 @@ export class OdooEditor extends EventTarget {
         }
 
         // sanitize and mark current position as sanitized
+        console.log('commonAncestor:', commonAncestor);
         sanitize(commonAncestor);
+        this._pluginCall('technicalElement', [commonAncestor]);
     }
 
     addDomListener(element, eventName, callback) {
@@ -1557,6 +1565,7 @@ export class OdooEditor extends EventTarget {
             hint.classList.remove('oe-hint', 'oe-command-temporary-hint');
             hint.removeAttribute('placeholder');
         }
+        this._pluginCall('cleanForSave', [this.editable]);
         this.observerActive();
     }
     /**
@@ -1824,6 +1833,16 @@ export class OdooEditor extends EventTarget {
                 fixedSelection.focusOffset,
                 false,
             );
+        }
+    }
+    _pluginAdd(Plugin) {
+        this._plugins.push(new Plugin(this));
+    }
+    _pluginCall(method, args) {
+        for (const plugin of this._plugins) {
+            if (plugin[method]) {
+                plugin[method](...args);
+            }
         }
     }
 }

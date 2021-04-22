@@ -12,7 +12,7 @@ t {
     /* display: block; */
     /* height: 10px; */
     /* width: 10px; */
-    background-color: rgba(0, 0, 102, 0.679);
+    background-color: rgba(0, 0, 102, 0.1);
     border-radius: 5px;
 }
 t[t-set] {
@@ -21,12 +21,29 @@ t[t-set] {
     /* width: 100px; */
     /* background-color: rgba(0, 0, 102, .1); */
 }
+/* *[t-if], *[t-elif], *[t-else] {
+    display: none;
+} */
 /* t[t-set]:before {
     content: '|';
     visibility: hidden;
 } */
 
 /* toolbar styling */
+[data-oe-t-group] {
+    display: none;
+}
+
+[data-oe-t-group]:hover {
+    background-color: red;
+}
+
+[data-oe-t-group][data-oe-t-group-active] {
+    display: block;
+}
+.oe-qweb-select {
+    position: absolute;
+}
 
 .oe-toolbar {
     box-sizing: border-box;

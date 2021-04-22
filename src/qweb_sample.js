@@ -7,12 +7,18 @@ export const qwebSample = /* xml */ `
 
 
 <div>
-    <p><span t-esc="value">the value</span></p>
+    <p t-esc="value">the value</p>
 </div>
 
 <div>
     <t t-if="condition">
-        <p>ok</p>
+        <p>if1</p>
+    </t>
+    <t t-if="condition">
+        <p>if2</p>
+    </t>
+    <t t-elif="condition">
+        <p>elif2.1</p>
     </t>
 </div>
 
