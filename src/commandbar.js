@@ -220,9 +220,11 @@ export class CommandBar {
                 const command = this._currentFilteredCommands.find(
                     c => c === this._currentSelectedCommand,
                 );
-                this.options.preValidate && this.options.preValidate();
-                command && command.callback();
-                this.options.postValidate && this.options.postValidate();
+                if (command) {
+                    this.options.preValidate && this.options.preValidate();
+                    command.callback();
+                    this.options.postValidate && this.options.postValidate();
+                }
                 this._stop();
             };
             document.addEventListener('mousedown', this._stop);
