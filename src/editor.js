@@ -71,6 +71,9 @@ export class OdooEditor extends EventTarget {
         this.options = defaultOptions(
             {
                 controlHistoryFromDocument: false,
+                getContextFromParentRect: () => {
+                    return { top: 0, left: 0 };
+                },
                 toSanitize: true,
                 isRootEditable: true,
                 getContentEditableAreas: () => [],
@@ -1176,6 +1179,7 @@ export class OdooEditor extends EventTarget {
         const toolbarWidth = this.toolbar.offsetWidth;
         const toolbarHeight = this.toolbar.offsetHeight;
         const editorRect = this.editable.getBoundingClientRect();
+        const parentContextRect = this.options.getContextFromParentRect();
         const editorLeftPos = Math.max(0, editorRect.left);
         const editorTopPos = Math.max(0, editorRect.top);
         const scrollX = this.document.defaultView.scrollX;
@@ -1187,6 +1191,8 @@ export class OdooEditor extends EventTarget {
         left = Math.max(editorLeftPos + OFFSET, left);
         // Ensure the toolbar doesn't overflow the editor on the right.
         left = Math.min(editorLeftPos + this.editable.offsetWidth - OFFSET - toolbarWidth, left);
+        // Offset left to compensate for parent context position (eg. Iframe).
+        left += parentContextRect.left;
         this.toolbar.style.left = scrollX + left + 'px';
 
         // Get top position.
@@ -1199,6 +1205,8 @@ export class OdooEditor extends EventTarget {
         }
         // Ensure the toolbar doesn't overflow the editor on the bottom.
         top = Math.min(editorTopPos + this.editable.offsetHeight - OFFSET - toolbarHeight, top);
+        // Offset top to compensate for parent context position (eg. Iframe).
+        top += parentContextRect.top;
         this.toolbar.style.top = scrollY + top + 'px';
 
         // Position the arrow.
