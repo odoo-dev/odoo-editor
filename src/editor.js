@@ -982,7 +982,11 @@ export class OdooEditor extends EventTarget {
             }
         }
     }
-
+    _removeContenteditableLinks() {
+        for (const node of this.editable.querySelectorAll('a[contenteditable]')) {
+            node.removeAttribute('contenteditable');
+        }
+    }
     _activateContenteditable() {
         this.editable.setAttribute('contenteditable', this.options.isRootEditable);
 
@@ -1403,10 +1407,12 @@ export class OdooEditor extends EventTarget {
         this.automaticStepSkipStack();
         const link = closestElement(ev.target, 'a');
         if (link && !link.querySelector('div') && !closestElement(ev.target, '.o_not_editable')) {
+            this._removeContenteditableLinks();
             const editableChildren = link.querySelectorAll('[contenteditable=true]');
             this._stopContenteditable();
             [...editableChildren, link].forEach(node => node.setAttribute('contenteditable', true));
         } else {
+            this._removeContenteditableLinks();
             this._activateContenteditable();
         }
 
