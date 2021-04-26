@@ -795,7 +795,7 @@ const computedStyles = new WeakMap();
  * @param node
  */
 export function isBlock(node) {
-    if (!(node instanceof Element)) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
         return false;
     }
     const tagName = node.nodeName.toUpperCase();
