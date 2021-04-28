@@ -8,12 +8,18 @@
     overflow: hidden !important;
 }
 
-t {
+t, [t-esc] {
     /* display: block; */
     /* height: 10px; */
     /* width: 10px; */
     background-color: rgba(0, 0, 102, 0.1);
-    border-radius: 5px;
+    border-radius: 2px;
+}
+[t-esc]:empty::before {
+    content: attr(t-esc);
+}
+[t-raw]:empty::before {
+    content: attr(t-raw);
 }
 t[t-set] {
     display: none;
