@@ -38,6 +38,8 @@ import {
     isUnremovable,
     fillEmpty,
     isEmptyBlock,
+    getUrlsInfosInString,
+    URL_REGEX,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -1466,6 +1468,12 @@ export class OdooEditor extends EventTarget {
                     const range = selection.getRangeAt(0);
                     setCursor(range.endContainer, range.endOffset);
                 }
+                // Check for url after user insert a space so we won't transform an incomplete url.
+                if (ev.data.includes(' ') && selection && selection.anchorNode) {
+                    ev.preventDefault();
+                    this._convertUrlInElement(closestElement(selection.anchorNode));
+                    this.execCommand('insertText', ev.data);
+                }
                 this.sanitize();
                 this.historyStep();
             } else if (ev.inputType === 'insertLineBreak') {
@@ -1718,12 +1726,70 @@ export class OdooEditor extends EventTarget {
     }
 
     /**
+     * Convert valid url text into links inside the given element.
+     *
+     * @param {HTMLElement} el
+     */
+    _convertUrlInElement(el) {
+        // We will not replace url inside already existing Link element.
+        if (el.tagName === 'A') {
+            return;
+        }
+
+        for (let child of el.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE && child.length > 3) {
+                const childStr = child.nodeValue;
+                const matches = getUrlsInfosInString(childStr);
+                if (matches.length) {
+                    // We only to take care of the first match.
+                    // The method `_createLinkWithUrlInTextNode` will split the text node,
+                    // the other url matches will then be matched again in the nexts loops of el.childnodes.
+                    this._createLinkWithUrlInTextNode(
+                        child,
+                        matches[0].url,
+                        matches[0].index,
+                        matches[0].length,
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Create a Link in the node text based on the given data
+     *
+     * @param {Node} textNode
+     * @param {String} url
+     * @param {int} index
+     * @param {int} length
+     */
+    _createLinkWithUrlInTextNode(textNode, url, index, length) {
+        setCursor(textNode, index, textNode, index + length);
+        this.document.execCommand('createLink', false, url);
+        this.document.getSelection().collapseToEnd();
+    }
+
+    /**
      * Prevent the pasting of HTML and paste text only instead.
      */
     _onPaste(ev) {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        this.execCommand('insertText', pastedText);
+        const splitAroundUrl = pastedText.split(URL_REGEX);
+        for (let i = 0; i < splitAroundUrl.length; i++) {
+            // Even indexes will always be plain text, and odd indexes will always be URL.
+            if (i % 2) {
+                const url = /^https?:\/\//gi.test(splitAroundUrl[i])
+                    ? splitAroundUrl[i]
+                    : 'https://' + splitAroundUrl[i];
+                this.execCommand(
+                    'insertHTML',
+                    '<a href="' + url + '" >' + splitAroundUrl[i] + '</a>',
+                );
+            } else if (splitAroundUrl[i] !== '') {
+                this.execCommand('insertText', splitAroundUrl[i]);
+            }
+        }
     }
 
     /**

@@ -24,6 +24,9 @@ export const CTGROUPS = {
     BR: CTYPES.BR,
 };
 
+export const URL_REGEX = /((?:https?:\/\/)?(?:[a-z0-9-]{1,63}\.){1,2}[a-z]{2,15}(?:\/[^\s]*)?)/gi;
+export const URL_REGEX_WITH_INFOS = /((https?:\/\/)?([a-z0-9-]{1,63}\.){1,2}[a-z]{2,15}(\/[^\s]*)?)/gi;
+
 //------------------------------------------------------------------------------
 // Position and sizes
 //------------------------------------------------------------------------------
@@ -898,6 +901,26 @@ export function getInSelection(document, selector) {
                 ...closestElement(range.commonAncestorContainer).querySelectorAll(selector),
             ].find(node => range.intersectsNode(node)))
     );
+}
+
+/**
+ * Returns an array of url infos for url matched in the given string.
+ *
+ * @param {String} string
+ * @returns {Array}
+ */
+export function getUrlsInfosInString(string) {
+    let infos = [],
+        match;
+    while ((match = URL_REGEX_WITH_INFOS.exec(string))) {
+        infos.push({
+            url: match[2] ? match[0] : 'https://' + match[0],
+            label: match[0],
+            index: match.index,
+            length: match[0].length,
+        });
+    }
+    return infos;
 }
 
 // optimize: use the parent Oid to speed up detection
