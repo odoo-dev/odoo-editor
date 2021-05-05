@@ -637,8 +637,10 @@ export function getDeepRange(editable, { range, sel, splitText, select, correctT
     // node, like the one resulting from a triple click, are corrected so
     // that it ends at the last position of the previous node instead.
     const beforeEnd = end.previousSibling;
-    if (correctTripleClick && !endOffset && (
-        !beforeEnd || (beforeEnd.nodeType === Node.TEXT_NODE && !isVisibleStr(beforeEnd)))
+    if (
+        correctTripleClick &&
+        !endOffset &&
+        (!beforeEnd || (beforeEnd.nodeType === Node.TEXT_NODE && !isVisibleStr(beforeEnd)))
     ) {
         const previous = previousLeaf(end, editable, true);
         if (previous && closestElement(previous).isContentEditable) {
