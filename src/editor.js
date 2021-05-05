@@ -940,9 +940,10 @@ export class OdooEditor extends EventTarget {
      */
     _applyRawCommand(method, ...args) {
         const sel = this.document.getSelection();
-        if (!this.editable.contains(sel.anchorNode) || (
-                sel.anchorNode !== sel.focusNode && !this.editable.contains(sel.focusNode))
-            ) {
+        if (
+            !this.editable.contains(sel.anchorNode) ||
+            (sel.anchorNode !== sel.focusNode && !this.editable.contains(sel.focusNode))
+        ) {
             // Do not apply commands out of the editable area.
             return false;
         }
