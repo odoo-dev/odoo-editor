@@ -12,6 +12,7 @@ import {} from './commands/align.js';
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
 import {
+    childNodeIndex,
     closestBlock,
     commonParentGet,
     containsUnremovable,
@@ -880,6 +881,13 @@ export class OdooEditor extends EventTarget {
             // Restore the text we modified in order to preserve trailing space.
             joinWith.textContent = oldText;
             setCursor(joinWith, nodeSize(joinWith));
+        }
+        if (joinWith) {
+            const el = closestElement(joinWith);
+            const { zws } = fillEmpty(el);
+            if (zws) {
+                setCursor(zws, 0, zws, nodeSize(zws));
+            }
         }
     }
 
