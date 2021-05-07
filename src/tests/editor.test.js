@@ -807,6 +807,13 @@ describe('Editor', () => {
                     contentAfter: '<h1>[]<br></h1><p>def</p>',
                 });
             });
+            it('should empty an inline unremovable but remain in it', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab<b class="oe_unremovable">[cd]</b>ef</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ab<b class="oe_unremovable">[\u200B]</b>ef</p>',
+                });
+            });
         });
     });
 
@@ -1853,6 +1860,13 @@ describe('Editor', () => {
                         </tbody></table>
                         <p>kl</p>`,
                     ),
+                });
+            });
+            it('should empty an inline unremovable but remain in it', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>ab<b class="oe_unremovable">[cd]</b>ef</p>',
+                    stepFunction: deleteBackward,
+                    contentAfter: '<p>ab<b class="oe_unremovable">[\u200B]</b>ef</p>',
                 });
             });
         });
