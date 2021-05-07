@@ -1332,11 +1332,12 @@ export class OdooEditor extends EventTarget {
 
             if (closestTag === 'LI') {
                 this._applyCommand('indentList', ev.shiftKey ? 'outdent' : 'indent');
-                ev.preventDefault();
             } else if (closestTag === 'TABLE') {
                 this._onTabulationInTable(ev);
-                ev.preventDefault();
+            } else if (!ev.shiftKey) {
+                this.execCommand('insertText', '\u00A0 \u00A0\u00A0');
             }
+            ev.preventDefault();
         } else if (isUndo(ev)) {
             // Ctrl-Z
             ev.preventDefault();
