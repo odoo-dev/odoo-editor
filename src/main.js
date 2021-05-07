@@ -8,6 +8,7 @@ function startEditor(testHTML) {
     const editor = new OdooEditor(editableContainer, {
         toolbar: document.querySelector('#toolbar'),
         autohideToolbar: true,
+        defaultLinkAttributes: { target: '_blank', rel: 'ugc' },
     });
     editor.historyFetch();
 

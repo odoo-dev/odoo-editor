@@ -78,6 +78,7 @@ export class OdooEditor extends EventTarget {
                 },
                 toSanitize: true,
                 isRootEditable: true,
+                defaultLinkAttributes: {},
                 getContentEditableAreas: () => [],
                 _t: string => string,
             },
@@ -1767,7 +1768,12 @@ export class OdooEditor extends EventTarget {
     _createLinkWithUrlInTextNode(textNode, url, index, length) {
         setCursor(textNode, index, textNode, index + length);
         this.document.execCommand('createLink', false, url);
-        this.document.getSelection().collapseToEnd();
+        const sel = this.document.getSelection();
+        const link = closestElement(sel.anchorNode, 'a');
+        for (const [param, value] of Object.entries(this.options.defaultLinkAttributes)) {
+            link.setAttribute(param, `${value}`);
+        }
+        sel.collapseToEnd();
     }
 
     /**
@@ -1777,6 +1783,11 @@ export class OdooEditor extends EventTarget {
         ev.preventDefault();
         const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
         const splitAroundUrl = pastedText.split(URL_REGEX);
+        const linkAttrs =
+            Object.entries(this.options.defaultLinkAttributes)
+                .map(entry => entry.join('="'))
+                .join('" ') + '" ';
+
         for (let i = 0; i < splitAroundUrl.length; i++) {
             // Even indexes will always be plain text, and odd indexes will always be URL.
             if (i % 2) {
@@ -1785,7 +1796,7 @@ export class OdooEditor extends EventTarget {
                     : 'https://' + splitAroundUrl[i];
                 this.execCommand(
                     'insertHTML',
-                    '<a href="' + url + '" >' + splitAroundUrl[i] + '</a>',
+                    `<a href="${url}" ${linkAttrs}>${splitAroundUrl[i]}</a>`,
                 );
             } else if (splitAroundUrl[i] !== '') {
                 this.execCommand('insertText', splitAroundUrl[i]);

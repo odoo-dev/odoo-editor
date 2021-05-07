@@ -325,6 +325,9 @@ export const editorCommands = {
         if (res) {
             setCursor(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
             const node = findNode(closestPath(sel.focusNode), node => node.tagName === 'A');
+            for (const [param, value] of Object.entries(editor.options.defaultLinkAttributes)) {
+                node.setAttribute(param, `${value}`);
+            }
             const pos = [node.parentElement, childNodeIndex(node) + 1];
             setCursor(...pos, ...pos, false);
         }
