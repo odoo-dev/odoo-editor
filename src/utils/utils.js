@@ -1212,15 +1212,27 @@ export function insertText(sel, content) {
 
 /**
  * Add a BR in the given node if its closest ancestor block has nothing to make
- * it visible.
+ * it visible, and/or add a zero-width space in the given node if it's an empty
+ * inline unremovable so the cursor can stay in it.
  *
  * @param {HTMLElement} el
+ * @returns {Object} { br: the inserted <br> if any,
+ *                     zws: the inserted zero-width space if any }
  */
 export function fillEmpty(el) {
+    const fillers = {};
     const blockEl = closestBlock(el);
     if (isShrunkBlock(blockEl)) {
-        blockEl.appendChild(document.createElement('br'));
+        const br = document.createElement('br');
+        blockEl.appendChild(br);
+        fillers.br = br;
     }
+    if (!el.textContent.length && isUnremovable(el) && !isBlock(el)) {
+        const zws = document.createTextNode('\u200B');
+        el.appendChild(zws);
+        fillers.zws = zws;
+    }
+    return fillers;
 }
 /**
  * Removes the given node if invisible and all its invisible ancestors.
