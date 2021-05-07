@@ -1571,6 +1571,7 @@ export class OdooEditor extends EventTarget {
                 this.execCommand('insertText', '\u00A0 \u00A0\u00A0');
             }
             ev.preventDefault();
+            ev.stopPropagation();
         } else if (IS_KEYBOARD_EVENT_UNDO(ev)) {
             // Ctrl-Z
             ev.preventDefault();
