@@ -100,6 +100,7 @@ export class OdooEditor extends EventTarget {
         this._domListeners = [];
 
         this.resetHistory();
+        this._historyStepsActive = true;
 
         // Set of labels that which prevent the automatic step mechanism if
         // it contains at least one element.
@@ -431,6 +432,9 @@ export class OdooEditor extends EventTarget {
 
     // One step completed: apply to vDOM, setup next history step
     historyStep(skipRollback = false) {
+        if (!this._historyStepsActive) {
+            return;
+        }
         this.observerFlush();
         // check that not two unBreakables modified
         if (this._toRollback) {
@@ -741,6 +745,12 @@ export class OdooEditor extends EventTarget {
         this._toRollback =
             this._toRollback === UNBREAKABLE_ROLLBACK_CODE ? false : this._toRollback;
         this._checkStepUnbreakable = false;
+    }
+    historyPauseSteps() {
+        this._historyStepsActive = false;
+    }
+    historyUnpauseSteps() {
+        this._historyStepsActive = true;
     }
 
     /**
