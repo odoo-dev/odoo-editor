@@ -19,6 +19,7 @@ import {
     isVisible,
     isVisibleStr,
     leftDeepFirstPath,
+    nodeSize,
     preserveCursor,
     rightPos,
     setCursor,
@@ -263,6 +264,10 @@ export const editorCommands = {
                     block.nodeName,
                 )
             ) {
+                setCursor(block, 0, block, nodeSize(block));
+                editor.historyPauseSteps();
+                editor.document.execCommand('removeFormat');
+                editor.historyUnpauseSteps();
                 setTagName(block, tagName);
             } else {
                 // eg do not change a <div> into a h1: insert the h1
@@ -274,6 +279,7 @@ export const editorCommands = {
             }
         }
         restoreCursor();
+        editor.historyStep();
     },
 
     // Formats
