@@ -257,8 +257,7 @@ export const editorCommands = {
     setTag(editor, tagName) {
         const restoreCursor = preserveCursor(editor.document);
         const selectedBlocks = [...new Set(getTraversedNodes(editor.editable).map(closestBlock))];
-        for (const selectedBlock of selectedBlocks) {
-            const block = closestBlock(selectedBlock);
+        for (const block of selectedBlocks) {
             if (
                 ['P', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(
                     block.nodeName,
