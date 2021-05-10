@@ -845,8 +845,11 @@ export class OdooEditor extends EventTarget {
         fillEmpty(closestBlock(range.endContainer));
         // Ensure trailing space remains visible.
         const joinWith = range.endContainer;
+        const joinSibling = joinWith && joinWith.nextSibling;
         const oldText = joinWith.textContent;
-        if (joinWith && oldText.endsWith(' ')) {
+        const hasSpaceAfter = joinSibling && joinSibling.textContent.startsWith(' ');
+        const shouldPreserveSpace = (doJoin || hasSpaceAfter) && joinWith && oldText.endsWith(' ');
+        if (shouldPreserveSpace) {
             joinWith.textContent = oldText.replace(/ $/, '\u00A0');
             setCursor(joinWith, nodeSize(joinWith));
         }
@@ -874,8 +877,7 @@ export class OdooEditor extends EventTarget {
         }
         next = joinWith && joinWith.nextSibling;
         if (
-            joinWith &&
-            oldText.endsWith(' ') &&
+            shouldPreserveSpace &&
             !(next && next.nodeType === Node.TEXT_NODE && next.textContent.startsWith(' '))
         ) {
             // Restore the text we modified in order to preserve trailing space.
