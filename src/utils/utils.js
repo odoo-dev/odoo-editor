@@ -836,6 +836,22 @@ export function isBlock(node) {
     return blockTagNames.includes(tagName);
 }
 
+/**
+ * Return true if the given node appears bold. The node is considered to appear
+ * bold if its font weight is bigger than 500 (eg.: Heading 1), or if its font
+ * weight is bigger than that of its closest block.
+ *
+ * @param {Node} node
+ * @returns {boolean}
+ */
+export function isBold(node) {
+    const fontWeight = +getComputedStyle(closestElement(node)).fontWeight;
+    return (
+        fontWeight > 500 ||
+        fontWeight > +getComputedStyle(closestBlock(node)).fontWeight
+    );
+}
+
 export function isUnbreakable(node) {
     if (!node || node.nodeType === Node.TEXT_NODE || !node.isContentEditable) {
         return false;

@@ -12,7 +12,6 @@ import {} from './commands/align.js';
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
 import {
-    childNodeIndex,
     closestBlock,
     commonParentGet,
     containsUnremovable,
@@ -41,6 +40,7 @@ import {
     isEmptyBlock,
     getUrlsInfosInString,
     URL_REGEX,
+    isBold,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -1319,13 +1319,12 @@ export class OdooEditor extends EventTarget {
             }
         }
         if (sel.rangeCount) {
-            const closestsStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
-            const selectionStartStyle = getComputedStyle(closestsStartContainer);
+            const closestStartContainer = closestElement(sel.getRangeAt(0).startContainer, '*');
+            const selectionStartStyle = getComputedStyle(closestStartContainer);
 
             // queryCommandState('bold') does not take stylesheets into account
-            const isBold = Number.parseInt(selectionStartStyle.fontWeight) > 500;
             const button = this.toolbar.querySelector('#bold');
-            button.classList.toggle('active', isBold);
+            button.classList.toggle('active', isBold(closestStartContainer));
 
             const fontSizeValue = this.toolbar.querySelector('#fontSizeCurrentValue');
             if (fontSizeValue) {

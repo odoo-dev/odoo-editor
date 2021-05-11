@@ -15,6 +15,7 @@ import {
     getTraversedNodes,
     insertText,
     isBlock,
+    isBold,
     isContentTextNode,
     isVisible,
     isVisibleStr,
@@ -289,9 +290,14 @@ export const editorCommands = {
         getDeepRange(editor.editable, { splitText: true, select: true, correctTripleClick: true });
         const isAlreadyBold = getSelectedNodes(editor.editable)
             .filter(n => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim().length)
-            .find(n => Number.parseInt(getComputedStyle(n.parentElement).fontWeight) > 500);
+            .find(n => isBold(n.parentElement));
         applyInlineStyle(editor, el => {
-            el.style.fontWeight = isAlreadyBold ? 'normal' : 'bolder';
+            if (isAlreadyBold) {
+                const block = closestBlock(el);
+                el.style.fontWeight = isBold(block) ? 'normal' : getComputedStyle(block).fontWeight;
+            } else {
+                el.style.fontWeight = 'bolder';
+            }
         });
     },
     italic: editor => editor.document.execCommand('italic'),
