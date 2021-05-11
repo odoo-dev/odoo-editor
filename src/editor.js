@@ -54,8 +54,9 @@ export const BACKSPACE_FIRST_COMMANDS = BACKSPACE_ONLY_COMMANDS.concat(['oEnter'
 
 const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKNOWN' };
 
-const isUndo = ev => ev.key === 'z' && (ev.ctrlKey || ev.metaKey);
-const isRedo = ev => ev.key === 'y' && (ev.ctrlKey || ev.metaKey);
+const IS_KEYBOARD_EVENT_UNDO = ev => ev.key === 'z' && (ev.ctrlKey || ev.metaKey);
+const IS_KEYBOARD_EVENT_REDO = ev => ev.key === 'y' && (ev.ctrlKey || ev.metaKey);
+const IS_KEYBOARD_EVENT_BOLD = ev => ev.key === 'b' && (ev.ctrlKey || ev.metaKey);
 
 function defaultOptions(defaultObject, object) {
     const newObject = Object.assign({}, defaultObject, object);
@@ -1547,16 +1548,21 @@ export class OdooEditor extends EventTarget {
                 this.execCommand('insertText', '\u00A0 \u00A0\u00A0');
             }
             ev.preventDefault();
-        } else if (isUndo(ev)) {
+        } else if (IS_KEYBOARD_EVENT_UNDO(ev)) {
             // Ctrl-Z
             ev.preventDefault();
             ev.stopPropagation();
             this.historyUndo();
-        } else if (isRedo(ev)) {
+        } else if (IS_KEYBOARD_EVENT_REDO(ev)) {
             // Ctrl-Y
             ev.preventDefault();
             ev.stopPropagation();
             this.historyRedo();
+        } else if (IS_KEYBOARD_EVENT_BOLD(ev)) {
+            // Ctrl-B
+            ev.preventDefault();
+            ev.stopPropagation();
+            this.execCommand('bold');
         }
     }
     /**
@@ -1713,15 +1719,15 @@ export class OdooEditor extends EventTarget {
         const canUndoRedo = !['INPUT', 'TEXTAREA'].includes(this.document.activeElement.tagName);
 
         if (this.options.controlHistoryFromDocument && canUndoRedo) {
-            if (isUndo(ev) && canUndoRedo) {
+            if (IS_KEYBOARD_EVENT_UNDO(ev) && canUndoRedo) {
                 ev.preventDefault();
                 this.historyUndo();
-            } else if (isRedo(ev) && canUndoRedo) {
+            } else if (IS_KEYBOARD_EVENT_REDO(ev) && canUndoRedo) {
                 ev.preventDefault();
                 this.historyRedo();
             }
         } else {
-            if (isRedo(ev) || isUndo(ev)) {
+            if (IS_KEYBOARD_EVENT_REDO(ev) || IS_KEYBOARD_EVENT_UNDO(ev)) {
                 this._onKeyupResetContenteditableNodes.push(
                     ...this.editable.querySelectorAll('[contenteditable=true]'),
                 );
