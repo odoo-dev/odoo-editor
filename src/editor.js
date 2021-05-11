@@ -12,7 +12,6 @@ import {} from './commands/align.js';
 import { sanitize } from './utils/sanitize.js';
 import { nodeToObject, objectToNode } from './utils/serialize.js';
 import {
-    childNodeIndex,
     closestBlock,
     commonParentGet,
     containsUnremovable,
