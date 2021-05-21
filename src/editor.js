@@ -41,6 +41,7 @@ import {
     getUrlsInfosInString,
     URL_REGEX,
     isBold,
+    YOUTUBE_URL_GET_VIDEO_ID,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -1819,10 +1820,71 @@ export class OdooEditor extends EventTarget {
                 const url = /^https?:\/\//gi.test(splitAroundUrl[i])
                     ? splitAroundUrl[i]
                     : 'https://' + splitAroundUrl[i];
-                this.execCommand(
-                    'insertHTML',
-                    `<a href="${url}" ${linkAttrs}>${splitAroundUrl[i]}</a>`,
-                );
+                const youtubeUrl = YOUTUBE_URL_GET_VIDEO_ID.exec(url);
+                const urlFileExtention = url.split('.').pop();
+                const baseEmbedCommand = [
+                    {
+                        groupName: 'paste',
+                        title: 'Paste as URL',
+                        description: 'Create an URL.',
+                        fontawesome: 'fa-link',
+                        callback: () => {
+                            this.historyUndo();
+                            this.execCommand(
+                                'insertHTML',
+                                `<a href="${url}" ${linkAttrs}>${splitAroundUrl[i]}</a>`,
+                            );
+                        },
+                    },
+                    {
+                        groupName: 'paste',
+                        title: 'Paste as text',
+                        description: 'Simple text paste.',
+                        fontawesome: 'fa-font',
+                        callback: () => {},
+                    },
+                ];
+
+                this.execCommand('insertText', splitAroundUrl[i]);
+                if (['jpg', 'jpeg', 'png', 'gif'].includes(urlFileExtention)) {
+                    this.commandBar.open({
+                        commands: [
+                            {
+                                groupName: 'Embed',
+                                title: 'Embed Image',
+                                description: 'Embed the image in the document.',
+                                fontawesome: 'fa-image',
+                                callback: () => {
+                                    this.historyUndo();
+                                    this.execCommand('insertHTML', `<img src="${url}" />`);
+                                },
+                            },
+                        ].concat(baseEmbedCommand),
+                    });
+                } else if (youtubeUrl) {
+                    this.commandBar.open({
+                        commands: [
+                            {
+                                groupName: 'Embed',
+                                title: 'Embed Youtube Video',
+                                description: 'Embed the youtube video in the document.',
+                                fontawesome: 'fa-youtube-play',
+                                callback: () => {
+                                    this.historyUndo();
+                                    this.execCommand(
+                                        'insertHTML',
+                                        `<iframe width="560" height="315" src="https://www.youtube.com/embed/${youtubeUrl[1]}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`,
+                                    );
+                                },
+                            },
+                        ].concat(baseEmbedCommand),
+                    });
+                } else {
+                    this.execCommand(
+                        'insertHTML',
+                        `<a href="${url}" ${linkAttrs}>${splitAroundUrl[i]}</a>`,
+                    );
+                }
             } else if (splitAroundUrl[i] !== '') {
                 this.execCommand('insertText', splitAroundUrl[i]);
             }
