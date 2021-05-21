@@ -129,106 +129,110 @@ export class CommandBar {
         if (!selection.isCollapsed || !selection.rangeCount) return;
 
         if (event.key === '/' && !this._active) {
-            this.options.onActivate && this.options.onActivate();
+            this.open({ commands: this.options.commands, openOnKeyupTarget: event.target });
+        }
+    }
 
+    open(options) {
+        this.options.onActivate && this.options.onActivate();
+
+        if (options.openOnKeyupTarget) {
             const showOnceOnKeyup = () => {
                 this.show();
-                event.target.removeEventListener('keyup', showOnceOnKeyup, true);
-                initialTarget = event.target;
-                oldValue = event.target.innerText;
+                options.openOnKeyupTarget.removeEventListener('keyup', showOnceOnKeyup, true);
+                initialTarget = options.openOnKeyupTarget;
+                oldValue = options.openOnKeyupTarget.innerText;
             };
-            event.target.addEventListener('keyup', showOnceOnKeyup, true);
-            this._active = true;
-            this.render(this.options.commands);
+            options.openOnKeyupTarget.addEventListener('keyup', showOnceOnKeyup, true);
+        }
+        this._active = true;
+        this._currentFilteredCommands = options.commands;
+        this.render(options.commands);
+        this._resetPosition();
+
+        let initialTarget;
+        let oldValue;
+
+        const keyup = event => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                return;
+            }
+            if (!initialTarget) return;
+            const diff = patienceDiff(oldValue.split(''), initialTarget.innerText.split(''), true);
+            this._lastText = diff.bMove.join('').trim();
+
+            if (this._lastText.match(/\s/)) {
+                this._stop();
+                return;
+            }
+            const term = this._lastText;
+
+            this._currentFilteredCommands = this._filter(term, options.commands);
+            this.render(this._currentFilteredCommands);
             this._resetPosition();
+        };
+        const keydown = e => {
+            if (e.key === 'Enter') {
+                e.stopImmediatePropagation();
+                this._currentValidate();
+                e.preventDefault();
+            } else if (e.key === 'Escape') {
+                e.stopImmediatePropagation();
+                this._stop();
+                e.preventDefault();
+            } else if (e.key === 'Backspace' && !this._lastText) {
+                this._stop();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
 
-            let initialTarget;
-            let oldValue;
-
-            const keyup = event => {
-                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                    event.preventDefault();
-                    return;
-                }
-                if (!initialTarget) return;
-                const diff = patienceDiff(
-                    oldValue.split(''),
-                    initialTarget.innerText.split(''),
-                    true,
-                );
-                this._lastText = diff.bMove.join('').trim();
-
-                if (this._lastText.match(/\s/)) {
-                    this._stop();
-                    return;
-                }
-                const term = this._lastText;
-
-                this._currentFilteredCommands = this._filter(term);
-                this.render(this._currentFilteredCommands);
-                this._resetPosition();
-            };
-            const keydown = e => {
-                if (e.key === 'Enter') {
-                    e.stopImmediatePropagation();
-                    this._currentValidate();
-                    e.preventDefault();
-                } else if (e.key === 'Escape') {
-                    e.stopImmediatePropagation();
-                    this._stop();
-                    e.preventDefault();
-                } else if (e.key === 'Backspace' && !this._lastText) {
-                    this._stop();
-                } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-
-                    const index = this._currentFilteredCommands.findIndex(
-                        c => c === this._currentSelectedCommand,
-                    );
-                    if (!this._currentFilteredCommands.length || index === -1) {
-                        this._currentSelectedCommand = undefined;
-                    } else {
-                        const n = e.key === 'ArrowDown' ? 1 : -1;
-                        const newIndex = cycle(index + n, this._currentFilteredCommands.length - 1);
-                        this._currentSelectedCommand = this._currentFilteredCommands[newIndex];
-                    }
-                    e.preventDefault();
-                    this.render(this._currentFilteredCommands);
-                }
-            };
-            const mousemove = () => {
-                this._hoverActive = true;
-            };
-
-            this._stop = () => {
-                this._active = false;
-                this.hide();
-                this._currentSelectedCommand = undefined;
-
-                document.removeEventListener('mousedown', this._stop);
-                document.removeEventListener('keyup', keyup);
-                document.removeEventListener('keydown', keydown, true);
-                document.removeEventListener('mousemove', mousemove);
-
-                this.options.onStop && this.options.onStop();
-            };
-            this._currentValidate = () => {
-                const command = this._currentFilteredCommands.find(
+                const index = this._currentFilteredCommands.findIndex(
                     c => c === this._currentSelectedCommand,
                 );
-                if (command) {
-                    this.options.preValidate && this.options.preValidate();
-                    command.callback();
-                    this.options.postValidate && this.options.postValidate();
+                if (!this._currentFilteredCommands.length || index === -1) {
+                    this._currentSelectedCommand = undefined;
+                } else {
+                    const n = e.key === 'ArrowDown' ? 1 : -1;
+                    const newIndex = cycle(index + n, this._currentFilteredCommands.length - 1);
+                    this._currentSelectedCommand = this._currentFilteredCommands[newIndex];
                 }
-                this._stop();
-            };
-            document.addEventListener('mousedown', this._stop);
-            document.addEventListener('keyup', keyup);
-            document.addEventListener('keydown', keydown, true);
-            document.addEventListener('mousemove', mousemove);
-        }
+                e.preventDefault();
+                this.render(this._currentFilteredCommands);
+            }
+        };
+        const mousemove = () => {
+            this._hoverActive = true;
+        };
+
+        this._stop = () => {
+            this._active = false;
+            this.hide();
+            this._currentSelectedCommand = undefined;
+
+            document.removeEventListener('mousedown', this._stop);
+            document.removeEventListener('keyup', keyup);
+            document.removeEventListener('keydown', keydown, true);
+            document.removeEventListener('mousemove', mousemove);
+
+            this.options.onStop && this.options.onStop();
+        };
+        this._currentValidate = () => {
+            const command = this._currentFilteredCommands.find(
+                c => c === this._currentSelectedCommand,
+            );
+            if (command) {
+                this.options.preValidate && this.options.preValidate();
+                command.callback();
+                this.options.postValidate && this.options.postValidate();
+            }
+            this._stop();
+        };
+        document.addEventListener('mousedown', this._stop);
+        document.addEventListener('keyup', keyup);
+        document.addEventListener('keydown', keydown, true);
+        document.addEventListener('mousemove', mousemove);
+        if (!options.openOnKeyupTarget) this.show();
     }
 
     show() {
@@ -246,8 +250,8 @@ export class CommandBar {
     // private
     // -------------------------------------------------------------------------
 
-    _filter(term) {
-        let commands = this.options.commands;
+    _filter(term, commands) {
+        const initalCommands = commands;
         term = term.toLowerCase();
         term = term.replaceAll(/\s/g, '\\s');
         const regex = new RegExp(
@@ -257,7 +261,7 @@ export class CommandBar {
                 .join('.*'),
         );
         if (term.length) {
-            commands = this.options.commands.filter(command => {
+            commands = initalCommands.filter(command => {
                 const commandText = (command.groupName + ' ' + command.title).toLowerCase();
                 return commandText.match(regex);
             });
