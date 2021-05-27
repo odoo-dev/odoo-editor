@@ -1254,6 +1254,22 @@ export function insertText(sel, content) {
     setCursor(...boundariesOut(txt), false);
 }
 
+
+/**
+ * Remove node from the DOM while preserving their contents if any.
+ *
+ * @param {Node} node
+ * @returns {Node[]}
+ */
+export function unwrapContents (node) {
+    const contents = [...node.childNodes];
+    for (const child of contents) {
+        node.parentNode.insertBefore(child, node);
+    };
+    node.parentNode.removeChild(node);
+    return contents;
+}
+
 /**
  * Add a BR in the given node if its closest ancestor block has nothing to make
  * it visible, and/or add a zero-width space in the given node if it's an empty
