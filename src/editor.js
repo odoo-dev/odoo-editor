@@ -38,6 +38,7 @@ import {
     isUnremovable,
     fillEmpty,
     isBold,
+    unwrapContents,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 
@@ -55,6 +56,47 @@ const KEYBOARD_TYPES = { VIRTUAL: 'VIRTUAL', PHYSICAL: 'PHYSICAL', UNKNOWN: 'UKN
 const IS_KEYBOARD_EVENT_UNDO = ev => ev.key === 'z' && (ev.ctrlKey || ev.metaKey);
 const IS_KEYBOARD_EVENT_REDO = ev => ev.key === 'y' && (ev.ctrlKey || ev.metaKey);
 const IS_KEYBOARD_EVENT_BOLD = ev => ev.key === 'b' && (ev.ctrlKey || ev.metaKey);
+
+const CLIPBOARD_BLACKLISTS = {
+    unwrap: ['.Apple-interchange-newline', 'DIV'], // These elements' children will be unwrapped.
+    remove: ['META', 'STYLE', 'SCRIPT'], // These elements will be removed along with their children.
+};
+const CLIPBOARD_WHITELISTS = {
+    nodes: [
+        // Style
+        'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE',
+        // List
+        'UL', 'OL', 'LI',
+        // Inline style
+        'I', 'B', 'U', 'EM', 'STRONG',
+        // Table
+        'TABLE', 'TH', 'TBODY', 'TR', 'TD',
+        // Miscellaneous
+        'IMG', 'BR', 'A', '.fa',
+    ],
+    classes: [
+        // Media
+        /^float-/,
+        'd-block',
+        'mx-auto',
+        'img-fluid',
+        'img-thumbnail',
+        'rounded',
+        'rounded-circle',
+        /^padding-/,
+        /^shadow/,
+        // Odoo colors
+        /^text-o-/,
+        /^bg-o-/,
+        // Odoo checklists
+        'o_checked',
+        'o_checklist',
+        // Miscellaneous
+        /^btn/,
+        /^fa/,
+    ],
+    attributes: ['class', 'href', 'src'],
+}
 
 function defaultOptions(defaultObject, object) {
     const newObject = Object.assign({}, defaultObject, object);
@@ -1257,6 +1299,119 @@ export class OdooEditor extends EventTarget {
         }
     }
 
+    // PASTING / DROPPING
+
+    /**
+     * Prepare clipboard data (text/html) for safe pasting into the editor.
+     *
+     * @private
+     * @param {string} clipboardData
+     * @returns {string}
+     */
+     _prepareClipboardData(clipboardData) {
+        const container = document.createElement('fake-container');
+        container.innerHTML = clipboardData;
+        for (const child of [...container.childNodes]) {
+            this._cleanForPaste(child)
+        }
+        return container.innerHTML;
+    }
+    /**
+     * Prepare clipboard data (text/plain) for safe pasting into the editor.
+     *
+     * @private
+     * @param {string} clipboardData
+     * @returns {string}
+     */
+    _prepareTextClipboardData(clipboardData) {
+        const isXML = !!clipboardData.match(/<[a-z]+[a-z0-9-]*( [^>]*)*>[\s\S\n\r]*<\/[a-z]+[a-z0-9-]*>/i);
+        const isJS = !isXML && !!clipboardData.match(/\(\);|this\.|self\.|function\s?\(|super\.|[a-z0-9]\.[a-z].*;/i);
+
+        const container = document.createElement('fake-container');
+        const pre = document.createElement('pre');
+        pre.innerHTML = clipboardData.trim()
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            // Get that text as an array of text nodes separated by <br> where
+            // needed.
+            .replace(/(\n+)/g, '<br>');
+
+        if (isJS || isXML) {
+            container.appendChild(pre);
+        } else {
+            for (const node of pre.childNodes) {
+                container.appendChild(node);
+            };
+        }
+        return container.innerHTML;
+    }
+    /**
+     * Clean a node for safely pasting. Cleaning an element involves unwrapping
+     * its contents if it's an illegal (blacklisted or not whitelisted) element,
+     * or removing its illegal attributes and classes.
+     *
+     * @param {Node} node
+     */
+    _cleanForPaste(node) {
+        if (!this._isWhitelisted(node) || this._isBlacklisted(node)) {
+            if (node.matches(CLIPBOARD_BLACKLISTS.remove.join(','))) {
+                node.remove();
+            } else {
+                // Unwrap the illegal node's contents.
+                for (const unwrappedNode of unwrapContents(node)) {
+                    this._cleanForPaste(unwrappedNode);
+                }
+            }
+        } else if (node.nodeType !== Node.TEXT_NODE) {
+            // Remove all illegal attributes and classes from the node, then
+            // clean its children.
+            for (const attribute of [...node.attributes]) {
+                if (!this._isWhitelisted(attribute)) {
+                    node.removeAttribute(attribute.name);
+                }
+            }
+            for (const klass of [...node.classList]) {
+                if (!this._isWhitelisted(klass)) {
+                    node.classList.remove(klass);
+                }
+            }
+            for (const child of [...node.childNodes]) {
+                this._cleanForPaste(child);
+            }
+        }
+    }
+    /**
+     * Return true if the given attribute, class or node is whitelisted for
+     * pasting, false otherwise.
+     *
+     * @private
+     * @param {Attr | string | Node} item
+     * @returns {boolean}
+     */
+    _isWhitelisted(item) {
+        if (item instanceof Attr) {
+            return CLIPBOARD_WHITELISTS.attributes.includes(item.name);
+        } else if (typeof item === 'string') {
+            return CLIPBOARD_WHITELISTS.classes.some(okClass => (
+                okClass instanceof RegExp ? okClass.test(item) : okClass === item
+            ));
+        } else {
+            return item.nodeType === Node.TEXT_NODE ||
+                item.matches(CLIPBOARD_WHITELISTS.nodes.join(','));
+        }
+    }
+    /**
+     * Return true if the given node is blacklisted for pasting, false
+     * otherwise.
+     *
+     * @private
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    _isBlacklisted(node) {
+        return node.nodeType !== Node.TEXT_NODE &&
+            node.matches([].concat(...Object.values(CLIPBOARD_BLACKLISTS)).join(','));
+    }
+
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
@@ -1500,14 +1655,18 @@ export class OdooEditor extends EventTarget {
     }
 
     /**
-     * Prevent the pasting of HTML and paste text only instead.
+     * Handle safe pasting of html or plain text into the editor.
      */
     _onPaste(ev) {
         ev.preventDefault();
-        const pastedText = (ev.originalEvent || ev).clipboardData.getData('text/plain');
-        this.execCommand('insertText', pastedText);
+        const clipboardData = ev.clipboardData.getData('text/html');
+        if (clipboardData) {
+            this.execCommand('insertHTML', this._prepareClipboardData(clipboardData));
+        } else {
+            const text = ev.clipboardData.getData('text/plain');
+            this.execCommand('insertHTML', this._prepareTextClipboardData(text));
+        }
     }
-
     /**
      * Prevent the dropping of HTML and paste text only instead.
      */
