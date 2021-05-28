@@ -19,6 +19,7 @@ import {
     isVisible,
     isVisibleStr,
     leftDeepFirstPath,
+    nodeSize,
     preserveCursor,
     rightPos,
     setCursor,
@@ -65,6 +66,22 @@ function insert(editor, data, isText = true) {
     let nodeToInsert;
     const insertedNodes = [...fakeEl.childNodes];
     while ((nodeToInsert = fakeEl.childNodes[0])) {
+        if (isBlock(nodeToInsert) && !isBlock(startNode)) {
+            // Split blocks at the edges if inserting new blocks (preventing
+            // <p><p>text</p></p> scenarios).
+            while (startNode.parentElement !== editor.editable && !isBlock(startNode)) {
+                let offset = childNodeIndex(startNode);
+                if (!insertBefore) {
+                    offset += 1;
+                }
+                if (offset) {
+                    const [left, right] = splitElement(startNode.parentElement, offset);
+                    startNode = insertBefore ? right : left;
+                } else {
+                    startNode = startNode.parentElement;
+                }
+            }
+        }
         if (insertBefore) {
             startNode.before(nodeToInsert);
             insertBefore = false;
