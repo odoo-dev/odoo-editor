@@ -1999,7 +1999,7 @@ export class OdooEditor extends EventTarget {
         }
     }
     /**
-     * Prevent the dropping of HTML and paste text only instead.
+     * Handle safe dropping of html into the editor.
      */
     _onDrop(ev) {
         ev.preventDefault();
@@ -2013,21 +2013,21 @@ export class OdooEditor extends EventTarget {
             ancestor = ancestor.parentNode;
         }
         const transferItem = [...(ev.originalEvent || ev).dataTransfer.items].find(
-            item => item.type === 'text/plain',
+            item => item.type === 'text/html',
         );
         if (transferItem) {
             transferItem.getAsString(pastedText => {
                 if (isInEditor && !sel.isCollapsed) {
                     this.deleteRange(sel);
                 }
-                if (document.caretPositionFromPoint) {
+                if (this.document.caretPositionFromPoint) {
                     const range = this.document.caretPositionFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.offsetNode, range.offset);
-                } else if (document.caretRangeFromPoint) {
+                } else if (this.document.caretRangeFromPoint) {
                     const range = this.document.caretRangeFromPoint(ev.clientX, ev.clientY);
                     setCursor(range.startContainer, range.startOffset);
                 }
-                insertText(this.document.getSelection(), pastedText);
+                this.execCommand('insertHTML', this._prepareClipboardData(pastedText));
             });
         }
         this.historyStep();
