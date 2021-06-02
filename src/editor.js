@@ -1029,9 +1029,17 @@ export class OdooEditor extends EventTarget {
             }
         }
     }
-    _removeContenteditableLinks() {
-        for (const node of this.editable.querySelectorAll('a[contenteditable]')) {
-            node.removeAttribute('contenteditable');
+    _resetContenteditableLinks() {
+        if (this._fixLinkMutatedElements) {
+            for (const element of this._fixLinkMutatedElements.wasContenteditableTrue) {
+                element.setAttribute('contenteditable', 'true');
+            }
+            for (const element of this._fixLinkMutatedElements.wasContenteditableFalse) {
+                element.setAttribute('contenteditable', 'false');
+            }
+            for (const element of this._fixLinkMutatedElements.wasContenteditableNull) {
+                element.removeAttribute('contenteditable');
+            }
         }
     }
     _activateContenteditable() {
@@ -1695,13 +1703,32 @@ export class OdooEditor extends EventTarget {
         // editable zones.
         this.automaticStepSkipStack();
         const link = closestElement(ev.target, 'a');
-        if (link && !link.querySelector('div') && !closestElement(ev.target, '.o_not_editable')) {
-            this._removeContenteditableLinks();
+        this._resetContenteditableLinks();
+        if (
+            link &&
+            !link.querySelector('div') &&
+            !closestElement(ev.target, '.o_not_editable') &&
+            link.getAttribute('contenteditable') !== 'false'
+        ) {
             const editableChildren = link.querySelectorAll('[contenteditable=true]');
             this._stopContenteditable();
+
+            this._fixLinkMutatedElements = {
+                wasContenteditableTrue: [...editableChildren],
+                wasContenteditableFalse: [],
+                wasContenteditableNull: [],
+            };
+            const contentEditableAttribute = link.getAttribute('contenteditable');
+            if (contentEditableAttribute === 'true') {
+                this._fixLinkMutatedElements.wasContenteditableTrue.push(link);
+            } else if (contentEditableAttribute === 'false') {
+                this._fixLinkMutatedElements.wasContenteditableFalse.push(link);
+            } else {
+                this._fixLinkMutatedElements.wasContenteditableNull.push(link);
+            }
+
             [...editableChildren, link].forEach(node => node.setAttribute('contenteditable', true));
         } else {
-            this._removeContenteditableLinks();
             this._activateContenteditable();
         }
 
