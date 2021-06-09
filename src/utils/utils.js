@@ -1779,7 +1779,7 @@ export function rgbToHex(rgb = '') {
     );
 }
 
-export function getRangePosition(el, options = {}) {
+export function getRangePosition(el, document, options = {}) {
     const selection = document.getSelection();
     if (!selection.isCollapsed || !selection.rangeCount) return;
     const range = selection.getRangeAt(0);

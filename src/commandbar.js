@@ -270,7 +270,7 @@ export class CommandBar {
     }
 
     _resetPosition() {
-        const position = getRangePosition(this.el);
+        const position = getRangePosition(this.el, this.options.document);
         if (!position) {
             this.hide();
             return;
