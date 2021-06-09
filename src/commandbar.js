@@ -21,7 +21,7 @@ export class CommandBar {
         this.el.style.width = `${this.options.width}px`;
         document.body.append(this.el);
 
-        this.options.editable.addEventListener('keydown', this.onKeydown.bind(this), true);
+        this.addKeydownTrigger('/', { commands: this.options.commands });
 
         this._mainWrapperElement = document.createElement('div');
         this._mainWrapperElement.className = 'oe-commandbar-mainWrapper';
@@ -77,8 +77,17 @@ export class CommandBar {
                         });
                     });
                 }
-
-                commandElWrapper.innerHTML = `
+                let commandImgEl, commandTitleEl, commandDescriptionEl;
+                switch (command.style) {
+                    case 'small':
+                        commandTitleEl = document.createElement('div');
+                        commandTitleEl.setAttribute('class', 'oe-commandbar-commandSmall');
+                        commandTitleEl.setAttribute('title', command.description);
+                        commandTitleEl.innerText = command.title;
+                        commandElWrapper.append(commandTitleEl);
+                        break;
+                    default:
+                        commandElWrapper.innerHTML = `
                     <div class="oe-commandbar-commandLeftCol">
                         <i class="oe-commandbar-commandImg fa"></i>
                     </div>
@@ -87,18 +96,19 @@ export class CommandBar {
                         </div>
                         <div class="oe-commandbar-commandDescription">
                         </div>
-                    </div>
-                `;
-                const commandImgEl = commandElWrapper.querySelector('.oe-commandbar-commandImg');
-                const commandTitleEl = commandElWrapper.querySelector(
-                    '.oe-commandbar-commandTitle',
-                );
-                const commandDescriptionEl = commandElWrapper.querySelector(
-                    '.oe-commandbar-commandDescription',
-                );
-                commandTitleEl.innerText = command.title;
-                commandDescriptionEl.innerText = command.description;
-                commandImgEl.classList.add(command.fontawesome);
+                    </div>`;
+                        commandImgEl = commandElWrapper.querySelector('.oe-commandbar-commandImg');
+                        commandTitleEl = commandElWrapper.querySelector(
+                            '.oe-commandbar-commandTitle',
+                        );
+                        commandDescriptionEl = commandElWrapper.querySelector(
+                            '.oe-commandbar-commandDescription',
+                        );
+                        commandTitleEl.innerText = command.title;
+                        commandDescriptionEl.innerText = command.description;
+                        commandImgEl.classList.add(command.fontawesome);
+                }
+
                 groupWrapperEl.append(commandElWrapper);
 
                 const commandElWrapperMouseMove = () => {
@@ -114,78 +124,92 @@ export class CommandBar {
                 commandElWrapper.addEventListener('mousemove', commandElWrapperMouseMove);
                 commandElWrapper.addEventListener(
                     'mousedown',
-                    event => {
+                    ev => {
+                        ev.preventDefault();
+                        ev.stopImmediatePropagation();
                         this._currentValidate();
-                        event.preventDefault();
                     },
                     true,
                 );
             }
         }
-    }
-
-    onKeydown(event) {
-        const selection = document.getSelection();
-        if (!selection.isCollapsed || !selection.rangeCount) return;
-
-        if (event.key === '/' && !this._active) {
-            this.open({ commands: this.options.commands, openOnKeyupTarget: event.target });
-        }
-    }
-
-    open(options) {
-        this.options.onActivate && this.options.onActivate();
-
-        if (options.openOnKeyupTarget) {
-            const showOnceOnKeyup = () => {
-                this.show();
-                options.openOnKeyupTarget.removeEventListener('keyup', showOnceOnKeyup, true);
-                initialTarget = options.openOnKeyupTarget;
-                oldValue = options.openOnKeyupTarget.innerText;
-            };
-            options.openOnKeyupTarget.addEventListener('keyup', showOnceOnKeyup, true);
-        }
-        this._active = true;
-        this._currentFilteredCommands = options.commands;
-        this.render(options.commands);
         this._resetPosition();
+    }
+
+    addKeydownTrigger(triggerKey, options) {
+        this.options.editable.addEventListener(
+            'keydown',
+            ev => {
+                const selection = this.options.document.getSelection();
+                if (!selection.isCollapsed || !selection.rangeCount) return;
+                if (ev.key === triggerKey && !this._active) {
+                    this.open({ ...options, openOnKeyupTarget: ev.target });
+                }
+            },
+            true,
+        );
+    }
+
+    open(openOptions) {
+        this.options.onActivate && this.options.onActivate();
+        this._currentOpenOptions = openOptions;
+
+        const openOnKeyupTarget = this._currentOpenOptions.openOnKeyupTarget;
+        const onValueChangeFunction = term =>
+            this._currentOpenOptions.valueChangeFunction
+                ? this._currentOpenOptions.valueChangeFunction(term)
+                : this._filter(term, this._currentOpenOptions.commands);
+
+        const showOnceOnKeyup = () => {
+            this.show();
+            openOnKeyupTarget.removeEventListener('keyup', showOnceOnKeyup, true);
+            initialTarget = openOnKeyupTarget;
+            this._initialValue = openOnKeyupTarget.innerText;
+        };
+        openOnKeyupTarget.addEventListener('keyup', showOnceOnKeyup, true);
+
+        this._active = true;
+        this._currentFilteredCommands = this._currentOpenOptions.commands;
+        this.render(this._currentOpenOptions.commands);
 
         let initialTarget;
-        let oldValue;
 
-        const keyup = event => {
-            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                event.preventDefault();
+        const keyup = async ev => {
+            if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+                ev.preventDefault();
                 return;
             }
             if (!initialTarget) return;
-            const diff = patienceDiff(oldValue.split(''), initialTarget.innerText.split(''), true);
-            this._lastText = diff.bMove.join('').trim();
-
-            if (this._lastText.match(/\s/)) {
+            const diff = patienceDiff(
+                this._initialValue.split(''),
+                initialTarget.innerText.split(''),
+                true,
+            );
+            this._lastText = diff.bMove.join('');
+            if (this._lastText.match(/\s/) && this._currentOpenOptions.closeOnSpace !== false) {
                 this._stop();
                 return;
             }
             const term = this._lastText;
 
-            this._currentFilteredCommands = this._filter(term, options.commands);
+            this._currentFilteredCommands =
+                term === '' ? this._currentOpenOptions.commands : await onValueChangeFunction(term);
             this.render(this._currentFilteredCommands);
-            this._resetPosition();
         };
-        const keydown = e => {
-            if (e.key === 'Enter') {
-                e.stopImmediatePropagation();
+        const keydown = ev => {
+            if (ev.key === 'Enter') {
+                ev.stopImmediatePropagation();
                 this._currentValidate();
-                e.preventDefault();
-            } else if (e.key === 'Escape') {
-                e.stopImmediatePropagation();
+                ev.preventDefault();
+            } else if (ev.key === 'Escape') {
+                ev.stopImmediatePropagation();
                 this._stop();
-                e.preventDefault();
-            } else if (e.key === 'Backspace' && !this._lastText) {
+                ev.preventDefault();
+            } else if (ev.key === 'Backspace' && !this._lastText) {
                 this._stop();
-            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
+            } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
 
                 const index = this._currentFilteredCommands.findIndex(
                     c => c === this._currentSelectedCommand,
@@ -193,11 +217,11 @@ export class CommandBar {
                 if (!this._currentFilteredCommands.length || index === -1) {
                     this._currentSelectedCommand = undefined;
                 } else {
-                    const n = e.key === 'ArrowDown' ? 1 : -1;
+                    const n = ev.key === 'ArrowDown' ? 1 : -1;
                     const newIndex = cycle(index + n, this._currentFilteredCommands.length - 1);
                     this._currentSelectedCommand = this._currentFilteredCommands[newIndex];
                 }
-                e.preventDefault();
+                ev.preventDefault();
                 this.render(this._currentFilteredCommands);
             }
         };
@@ -210,10 +234,14 @@ export class CommandBar {
             this.hide();
             this._currentSelectedCommand = undefined;
 
-            document.removeEventListener('mousedown', this._stop);
-            document.removeEventListener('keyup', keyup);
-            document.removeEventListener('keydown', keydown, true);
-            document.removeEventListener('mousemove', mousemove);
+            this.options.document.removeEventListener('keyup', keyup);
+            this.options.document.removeEventListener('keydown', keydown, true);
+            this.options.document.removeEventListener('mousemove', mousemove);
+            this.options.document.removeEventListener('mousedown', this._stop);
+            if (document !== this.options.document) {
+                document.removeEventListener('mousemove', mousemove);
+                document.removeEventListener('mousedown', this._stop);
+            }
 
             this.options.onStop && this.options.onStop();
         };
@@ -222,17 +250,37 @@ export class CommandBar {
                 c => c === this._currentSelectedCommand,
             );
             if (command) {
-                this.options.preValidate && this.options.preValidate();
+                !command.isIntermediateStep &&
+                    this.options.preValidate &&
+                    this.options.preValidate();
                 command.callback();
-                this.options.postValidate && this.options.postValidate();
+                !command.isIntermediateStep &&
+                    this.options.postValidate &&
+                    this.options.postValidate();
             }
-            this._stop();
+            !command.isIntermediateStep && this._stop();
         };
-        document.addEventListener('mousedown', this._stop);
-        document.addEventListener('keyup', keyup);
-        document.addEventListener('keydown', keydown, true);
-        document.addEventListener('mousemove', mousemove);
-        if (!options.openOnKeyupTarget) this.show();
+        this.options.document.addEventListener('keyup', keyup);
+        this.options.document.addEventListener('keydown', keydown, true);
+        this.options.document.addEventListener('mousemove', mousemove);
+        this.options.document.addEventListener('mousedown', this._stop);
+        // If the Golbal document is diferent than the provided options.document,
+        // which happend when the editor is inside an Iframe.
+        // We need to listen to the mouse event on both document
+        // to be sure the command bar will always close when clicking outside of it.
+        if (document !== this.options.document) {
+            document.addEventListener('mousemove', mousemove);
+            document.addEventListener('mousedown', this._stop);
+        }
+    }
+
+    nextOpenOptions(openOptions) {
+        this._currentOpenOptions = openOptions;
+        this._initialValue = (
+            this._currentOpenOptions.openOnKeyupTarget || this.options.editable
+        ).innerText;
+        this._currentFilteredCommands = this._currentOpenOptions.commands;
+        this.render(this._currentOpenOptions.commands);
     }
 
     show() {
@@ -275,7 +323,12 @@ export class CommandBar {
             this.hide();
             return;
         }
-        const { left, top } = position;
+        let { left, top } = position;
+        if (this.options.getContextFromParentRect) {
+            const parentContextRect = this.options.getContextFromParentRect();
+            left += parentContextRect.left;
+            top += parentContextRect.top;
+        }
 
         this.el.style.left = `${left}px`;
         this.el.style.top = `${top}px`;

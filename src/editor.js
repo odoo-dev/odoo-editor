@@ -1251,6 +1251,7 @@ export class OdooEditor extends EventTarget {
         this.commandBar = new CommandBar({
             editable: this.editable,
             document: this.document,
+            getContextFromParentRect: this.options.getContextFromParentRect,
             _t: this.options._t,
             onShow: () => {
                 this.commandbarTablePicker.hide();
