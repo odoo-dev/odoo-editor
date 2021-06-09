@@ -133,7 +133,7 @@ export class TablePicker extends EventTarget {
             }
         };
 
-        const offset = getRangePosition(this.el);
+        const offset = getRangePosition(this.el, this.options.document);
         this.el.style.left = `${offset.left}px`;
         this.el.style.top = `${offset.top}px`;
 
