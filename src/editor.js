@@ -1705,10 +1705,13 @@ export class OdooEditor extends EventTarget {
     _bindToolbar() {
         for (const buttonEl of this.toolbar.querySelectorAll('[data-call]')) {
             buttonEl.addEventListener('mousedown', ev => {
-                this.execCommand(buttonEl.dataset.call, buttonEl.dataset.arg1);
+                const sel = this.document.getSelection()
+                if (sel.anchorNode && ancestors(sel.anchorNode).includes(this.editable)) {
+                    this.execCommand(buttonEl.dataset.call, buttonEl.dataset.arg1);
 
-                ev.preventDefault();
-                this._updateToolbar();
+                    ev.preventDefault();
+                    this._updateToolbar();
+                }
             });
         }
     }
