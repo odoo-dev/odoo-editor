@@ -257,6 +257,7 @@ export function closestElement(node, selector) {
  * Returns a list of all the ancestors nodes of the provided node.
  *
  * @param {Node} node
+ * @param {Node} [editable] include to prevent bubbling up further than the editable.
  * @returns {HTMLElement[]}
  */
 export function ancestors(node, editable) {
