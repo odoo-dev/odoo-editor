@@ -1209,15 +1209,15 @@ export class OdooEditor extends EventTarget {
                 groupName: 'Basic blocks',
                 title: 'Checklist',
                 description: 'Track tasks with a checklist.',
-                fontawesome: 'fa-tasks',
+                fontawesome: 'fa-check-square-o',
                 callback: () => {
                     this.execCommand('toggleList', 'CL');
                 },
             },
             {
                 groupName: 'Basic blocks',
-                title: 'Horizontal rule',
-                description: 'Insert an horizantal rule.',
+                title: 'Separator',
+                description: 'Insert an horizontal rule separator.',
                 fontawesome: 'fa-minus',
                 callback: () => {
                     this.execCommand('insertHorizontalRule');
