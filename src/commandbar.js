@@ -26,6 +26,9 @@ export class CommandBar {
         this._mainWrapperElement = document.createElement('div');
         this._mainWrapperElement.className = 'oe-commandbar-mainWrapper';
         this.el.append(this._mainWrapperElement);
+        this.el.addEventListener('mousedown', event => {
+            event.stopPropagation();
+        });
     }
 
     destroy() {
