@@ -1252,6 +1252,11 @@ export class OdooEditor extends EventTarget {
                 for (const element of document.querySelectorAll(this.options.noScrollSelector)) {
                     element.classList.add('oe-noscroll');
                 }
+                for (const element of this.document.querySelectorAll(
+                    this.options.noScrollSelector,
+                )) {
+                    element.classList.add('oe-noscroll');
+                }
                 this.observerActive();
             },
             preValidate: () => {
@@ -1263,6 +1268,9 @@ export class OdooEditor extends EventTarget {
             onStop: () => {
                 this.observerUnactive();
                 for (const element of document.querySelectorAll('.oe-noscroll')) {
+                    element.classList.remove('oe-noscroll');
+                }
+                for (const element of this.document.querySelectorAll('.oe-noscroll')) {
                     element.classList.remove('oe-noscroll');
                 }
                 this.observerActive();
