@@ -297,3 +297,9 @@ i.oe-commandbar-commandImg {
     display: block;
     color: rgba(55, 53, 47, 0.4);
 }
+
+/* Stars widget */
+
+.o_stars .fa.fa-star {
+    color: gold;
+}
