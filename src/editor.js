@@ -41,12 +41,8 @@ import {
     getUrlsInfosInString,
     URL_REGEX,
     isBold,
-<<<<<<< HEAD
     YOUTUBE_URL_GET_VIDEO_ID,
-||||||| parent of 4901eb8... [FIX] properly paste escaped text and filtered html
-=======
     unwrapContents,
->>>>>>> 4901eb8... [FIX] properly paste escaped text and filtered html
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
