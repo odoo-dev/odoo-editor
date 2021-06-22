@@ -256,6 +256,7 @@ export function closestElement(node, selector) {
  * Returns a list of all the ancestors nodes of the provided node.
  *
  * @param {Node} node
+ * @param {Node} [editable] include to prevent bubbling up further than the editable.
  * @returns {HTMLElement[]}
  */
 export function ancestors(node, editable) {
@@ -1252,6 +1253,22 @@ export function insertText(sel, content) {
     sel.getRangeAt(0).insertNode(txt);
     restore();
     setCursor(...boundariesOut(txt), false);
+}
+
+
+/**
+ * Remove node from the DOM while preserving their contents if any.
+ *
+ * @param {Node} node
+ * @returns {Node[]}
+ */
+export function unwrapContents (node) {
+    const contents = [...node.childNodes];
+    for (const child of contents) {
+        node.parentNode.insertBefore(child, node);
+    };
+    node.parentNode.removeChild(node);
+    return contents;
 }
 
 /**

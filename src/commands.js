@@ -67,6 +67,22 @@ function insert(editor, data, isText = true) {
     let nodeToInsert;
     const insertedNodes = [...fakeEl.childNodes];
     while ((nodeToInsert = fakeEl.childNodes[0])) {
+        if (isBlock(nodeToInsert) && !isBlock(startNode)) {
+            // Split blocks at the edges if inserting new blocks (preventing
+            // <p><p>text</p></p> scenarios).
+            while (startNode.parentElement !== editor.editable && !isBlock(startNode)) {
+                let offset = childNodeIndex(startNode);
+                if (!insertBefore) {
+                    offset += 1;
+                }
+                if (offset) {
+                    const [left, right] = splitElement(startNode.parentElement, offset);
+                    startNode = insertBefore ? right : left;
+                } else {
+                    startNode = startNode.parentElement;
+                }
+            }
+        }
         if (insertBefore) {
             startNode.before(nodeToInsert);
             insertBefore = false;
@@ -395,10 +411,14 @@ export const editorCommands = {
         const blocks = new Set();
 
         for (const node of getTraversedNodes(editor.editable)) {
-            const block = closestBlock(node);
-            if (!['OL', 'UL'].includes(block.tagName)) {
-                const ublock = block.closest('ol, ul');
-                ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
+            if (node.nodeType === Node.TEXT_NODE && !isVisibleStr(node)) {
+                node.remove();
+            } else {
+                const block = closestBlock(node);
+                if (!['OL', 'UL'].includes(block.tagName)) {
+                    const ublock = block.closest('ol, ul');
+                    ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
+                }
             }
         }
 
