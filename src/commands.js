@@ -16,6 +16,7 @@ import {
     isBlock,
     isBold,
     isContentTextNode,
+    isShrunkBlock,
     isVisible,
     isVisibleStr,
     leftDeepFirstPath,
@@ -87,6 +88,9 @@ function insert(editor, data, isText = true) {
             insertBefore = false;
         } else {
             startNode.after(nodeToInsert);
+        }
+        if (isShrunkBlock(startNode)) {
+            startNode.remove();
         }
         startNode = nodeToInsert;
     }
