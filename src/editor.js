@@ -238,7 +238,7 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.document, 'selectionchange', this._handleCommandHint);
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
         this.addDomListener(this.document, 'keyup', this._onDocumentKeyup);
-        this.addDomListener(this.document, 'mousedown', this._onDoumentMousemove);
+        this.addDomListener(this.document, 'mousedown', this._onDoumentMousedown);
         this.addDomListener(this.document, 'mouseup', this._onDoumentMouseup);
 
         // -------
@@ -2009,12 +2009,14 @@ export class OdooEditor extends EventTarget {
         this._fixSelectionOnContenteditableFalse();
     }
 
-    _onDoumentMousemove() {
-        this.toolbar.style.pointerEvents = 'none';
+    _onDoumentMousedown(event) {
+        if (!ancestors(event.target, this.editable).includes(this.toolbar)) {
+            this.toolbar.style.pointerEvents = 'none';
+        }
     }
 
     _onDoumentMouseup() {
-        this.toolbar.style.pointerEvents = 'auto';
+        this.toolbar.style.pointerEvents = null;
     }
 
     /**
