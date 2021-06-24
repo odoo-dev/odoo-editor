@@ -43,6 +43,7 @@ import {
     isBold,
     YOUTUBE_URL_GET_VIDEO_ID,
     unwrapContents,
+    getClosestNotEditable,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -1793,36 +1794,6 @@ export class OdooEditor extends EventTarget {
         if (this._currentMouseState === 'mouseup') {
             this._fixFontAwesomeSelection();
         }
-
-        // When the browser set the selection inside a node that is
-        // contenteditable=false, it breaks the edition upon keystroke. Move the
-        // selection so that it remain in an editable area. An example of this
-        // case happend when the selection goes into a fontawesome node.
-        const startContainer =
-            selection.rangeCount && closestElement(selection.getRangeAt(0).startContainer);
-        const contenteditableFalseNode =
-            startContainer &&
-            !startContainer.isContentEditable &&
-            ancestors(startContainer, this.editable).includes(this.editable) &&
-            startContainer.closest('[contenteditable=false]');
-        if (contenteditableFalseNode) {
-            selection.removeAllRanges();
-            const range = new Range();
-            if (contenteditableFalseNode.previousSibling) {
-                range.setStart(
-                    contenteditableFalseNode.previousSibling,
-                    contenteditableFalseNode.previousSibling.length,
-                );
-                range.setEnd(
-                    contenteditableFalseNode.previousSibling,
-                    contenteditableFalseNode.previousSibling.length,
-                );
-            } else {
-                range.setStart(contenteditableFalseNode.parentElement, 0);
-                range.setEnd(contenteditableFalseNode.parentElement, 0);
-            }
-            selection.addRange(range);
-        }
     }
 
     clean() {
@@ -1889,10 +1860,63 @@ export class OdooEditor extends EventTarget {
         }
     }
 
+    _fixSelectionOnContenteditableFalse() {
+        // When the browser set the selection inside a node that is
+        // contenteditable=false, it breaks the edition upon keystroke. Move the
+        // selection so that it remain in an editable area. An example of this
+        // case happend when the selection goes into a fontawesome node.
+
+        const selection = this.document.getSelection();
+        if (!selection.rangeCount) {
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        const newRange = range.cloneRange();
+        const startContainer = closestElement(range.startContainer);
+        const endContainer = closestElement(range.endContainer);
+
+        const startContainerNotEditable = getClosestNotEditable(startContainer, this.editable);
+        const endContainerNotEditable = getClosestNotEditable(endContainer, this.editable);
+        const bothNotEditable = startContainerNotEditable && endContainerNotEditable;
+
+        if (startContainerNotEditable) {
+            if (startContainerNotEditable.previousSibling) {
+                newRange.setStart(
+                    startContainerNotEditable.previousSibling,
+                    startContainerNotEditable.previousSibling.length,
+                );
+                if (bothNotEditable) {
+                    newRange.setEnd(
+                        startContainerNotEditable.previousSibling,
+                        startContainerNotEditable.previousSibling.length,
+                    );
+                }
+            } else {
+                newRange.setStart(startContainerNotEditable.parentElement, 0);
+                if (bothNotEditable) {
+                    newRange.setEnd(startContainerNotEditable.parentElement, 0);
+                }
+            }
+        }
+        if (!bothNotEditable && endContainerNotEditable) {
+            if (endContainerNotEditable.nextSibling) {
+                newRange.setEnd(endContainerNotEditable.nextSibling, 0);
+            } else {
+                newRange.setEnd(...endPos(endContainerNotEditable.parentElement));
+            }
+        }
+        if (startContainerNotEditable || endContainerNotEditable) {
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+        }
+    }
+
     _onMouseup(ev) {
         this._currentMouseState = ev.type;
 
         this._fixFontAwesomeSelection();
+
+        this._fixSelectionOnContenteditableFalse();
     }
 
     _onMouseDown(ev) {
@@ -1980,6 +2004,7 @@ export class OdooEditor extends EventTarget {
             }
             this._onKeyupResetContenteditableNodes = [];
         }
+        this._fixSelectionOnContenteditableFalse();
     }
 
     /**
