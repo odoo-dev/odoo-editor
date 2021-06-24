@@ -5454,9 +5454,9 @@ describe('List', () => {
                                     await insertParagraphBreak(editor);
                                 },
                                 contentAfter:
-                                '<ol><li><custom-block class="a" style="display: block;">abc</custom-block></li>' +
-                                '<li><custom-block class="a" style="display: block;">b</custom-block></li>' +
-                                '<li><custom-block class="a" style="display: block;">[]<br></custom-block></li></ol>',
+                                    '<ol><li><custom-block class="a" style="display: block;">abc</custom-block></li>' +
+                                    '<li><custom-block class="a" style="display: block;">b</custom-block></li>' +
+                                    '<li><custom-block class="a" style="display: block;">[]<br></custom-block></li></ol>',
                             });
                         });
                         it('should add two list items with a font at the end of a list within a list', async () => {
