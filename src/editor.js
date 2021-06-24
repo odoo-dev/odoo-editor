@@ -237,6 +237,8 @@ export class OdooEditor extends EventTarget {
         this.addDomListener(this.document, 'selectionchange', this._handleCommandHint);
         this.addDomListener(this.document, 'keydown', this._onDocumentKeydown);
         this.addDomListener(this.document, 'keyup', this._onDocumentKeyup);
+        this.addDomListener(this.document, 'mousedown', this._onDoumentMousemove);
+        this.addDomListener(this.document, 'mouseup', this._onDoumentMouseup);
 
         // -------
         // Toolbar
@@ -1980,6 +1982,14 @@ export class OdooEditor extends EventTarget {
             }
             this._onKeyupResetContenteditableNodes = [];
         }
+    }
+
+    _onDoumentMousemove() {
+        this.toolbar.style.pointerEvents = 'none';
+    }
+
+    _onDoumentMouseup() {
+        this.toolbar.style.pointerEvents = 'auto';
     }
 
     /**
