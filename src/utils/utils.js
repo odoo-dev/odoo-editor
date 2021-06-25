@@ -791,6 +791,7 @@ const blockTagNames = [
     'UL',
     // The following elements are not in the W3C list, for some reason.
     'SELECT',
+    'OPTION',
     'TR',
     'TD',
     'TBODY',
