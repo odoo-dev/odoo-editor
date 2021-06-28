@@ -2010,11 +2010,15 @@ export class OdooEditor extends EventTarget {
     }
 
     _onDoumentMousemove() {
-        this.toolbar.style.pointerEvents = 'none';
+        if (this.toolbar) {
+            this.toolbar.style.pointerEvents = 'none';
+        }
     }
 
     _onDoumentMouseup() {
-        this.toolbar.style.pointerEvents = 'auto';
+        if (this.toolbar) {
+            this.toolbar.style.pointerEvents = 'auto';
+        }
     }
 
     /**
