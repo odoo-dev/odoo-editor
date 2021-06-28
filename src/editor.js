@@ -1510,34 +1510,6 @@ export class OdooEditor extends EventTarget {
         return container.innerHTML;
     }
     /**
-     * Prepare clipboard data (text/plain) for safe pasting into the editor.
-     *
-     * @private
-     * @param {string} clipboardData
-     * @returns {string}
-     */
-    _prepareTextClipboardData(clipboardData) {
-        const isXML = !!clipboardData.match(/<[a-z]+[a-z0-9-]*( [^>]*)*>[\s\S\n\r]*<\/[a-z]+[a-z0-9-]*>/i);
-        const isJS = !isXML && !!clipboardData.match(/\(\);|this\.|self\.|function\s?\(|super\.|[a-z0-9]\.[a-z].*;/i);
-
-        const container = document.createElement('fake-container');
-        const pre = document.createElement('pre');
-        pre.innerHTML = clipboardData.trim()
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            // Get that text as an array of text nodes separated by <br> where
-            // needed.
-            .replace(/(\n+)/g, '<br>');
-
-        if (isJS || isXML) {
-            container.appendChild(pre);
-        } else {
-            for (const node of pre.childNodes) {
-                container.appendChild(node);
-            };
-        }
-        return container.innerHTML;
-    }
-    /**
      * Clean a node for safely pasting. Cleaning an element involves unwrapping
      * its contents if it's an illegal (blacklisted or not whitelisted) element,
      * or removing its illegal attributes and classes.
@@ -2005,7 +1977,15 @@ export class OdooEditor extends EventTarget {
                         `<a href="${url}" ${linkAttrs}>${splitAroundUrl[i]}</a>`,
                     );
                 } else if (splitAroundUrl[i] !== '') {
-                    this.execCommand('insertHTML', this._prepareTextClipboardData(splitAroundUrl[i]));
+                    const textFragments = splitAroundUrl[i].split('\n');
+                    let textIndex = 1;
+                    for (const textFragment of textFragments) {
+                        this.execCommand('insertText', textFragment);
+                        if (textIndex < textFragments.length) {
+                            this._applyCommand('oShiftEnter');
+                        }
+                        textIndex++
+                    }
                 }
             }
         }
