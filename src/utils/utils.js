@@ -810,7 +810,11 @@ export function isBlock(node) {
     }
     const tagName = node.nodeName.toUpperCase();
     // Every custom jw-* node will be considered as blocks.
-    if (tagName.startsWith('JW-') || tagName === 'T') {
+    if (
+        tagName.startsWith('JW-') ||
+        (node.getAttribute && node.getAttribute('contenteditable') === 'false') ||
+        tagName === 'T'
+    ) {
         return true;
     }
     if (tagName === 'BR') {
