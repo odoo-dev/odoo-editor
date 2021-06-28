@@ -192,6 +192,7 @@ export class OdooEditor extends EventTarget {
 
         this.addDomListener(this.editable, 'keydown', this._onKeyDown);
         this.addDomListener(this.editable, 'input', this._onInput);
+        this.addDomListener(this.editable, 'beforeinput', this._onBeforeInput);
         this.addDomListener(this.editable, 'mousedown', this._onMouseDown);
         this.addDomListener(this.editable, 'mouseup', this._onMouseup);
         this.addDomListener(this.editable, 'paste', this._onPaste);
@@ -1416,6 +1417,10 @@ export class OdooEditor extends EventTarget {
     // Handlers
     //--------------------------------------------------------------------------
 
+    _onBeforeInput(ev) {
+        this._lastBeforeInputType = ev.inputType;
+    }
+
     /**
      * If backspace/delete input, rollback the operation and handle the
      * operation ourself. Needed for mobile, used for desktop for consistency.
@@ -1429,21 +1434,28 @@ export class OdooEditor extends EventTarget {
         const cursor = this._historySteps[this._historySteps.length - 1].cursor;
         const { focusOffset, focusNode, anchorNode, anchorOffset } = cursor || {};
         const wasCollapsed = !cursor || (focusNode === anchorNode && focusOffset === anchorOffset);
+
+        // Sometimes google chrome wrongly triggers an input event with `data`
+        // being `null` on `deleteContentForward` `insertParagraph`. Luckily,
+        // chrome provide the proper signal with the event `beforeinput`.
+        const isChromeDeleteforward =
+            ev.inputType === 'insertText' &&
+            ev.data === null &&
+            this._lastBeforeInputType === 'deleteContentForward';
+        const isChromeInsertParagraph =
+            ev.inputType === 'insertText' &&
+            ev.data === null &&
+            this._lastBeforeInputType === 'insertParagraph';
         if (this.keyboardType === KEYBOARD_TYPES.PHYSICAL || !wasCollapsed) {
             if (ev.inputType === 'deleteContentBackward') {
                 this.historyRollback();
                 ev.preventDefault();
                 this._applyCommand('oDeleteBackward');
-            } else if (ev.inputType === 'deleteContentForward') {
+            } else if (ev.inputType === 'deleteContentForward' || isChromeDeleteforward) {
                 this.historyRollback();
                 ev.preventDefault();
                 this._applyCommand('oDeleteForward');
-            } else if (
-                ev.inputType === 'insertParagraph' ||
-                (ev.inputType === 'insertText' && ev.data === null)
-            ) {
-                // Sometimes the browser wrongly triggers an insertText
-                // input event with null data on enter.
+            } else if (ev.inputType === 'insertParagraph' || isChromeInsertParagraph) {
                 this.historyRollback();
                 ev.preventDefault();
                 if (this._applyCommand('oEnter') === UNBREAKABLE_ROLLBACK_CODE) {
