@@ -123,6 +123,13 @@ export const leftDeepOnlyInlineInScopePath = createDOMPathGenerator(
     true,
     true,
 );
+export const leftDeepOnlyInlineInScopeNoEditable = createDOMPathGenerator(
+    DIRECTIONS.LEFT,
+    true,
+    true,
+    true,
+    node => node.getAttribute && node.getAttribute('contenteditable') === 'false',
+);
 
 export const rightDeepFirstPath = createDOMPathGenerator(DIRECTIONS.RIGHT, false, false);
 export const rightDeepOnlyPath = createDOMPathGenerator(DIRECTIONS.RIGHT, true, false);
@@ -143,6 +150,7 @@ const PATH_END_REASONS = {
     BLOCK_OUT: 1,
     BLOCK_HIT: 2,
     OUT_OF_SCOPE: 3,
+    CUSTOM_STOP: 4,
 };
 /**
  * Creates a generator function according to the given parameters. Pre-made
@@ -161,17 +169,19 @@ const PATH_END_REASONS = {
  * @param {number} direction
  * @param {boolean} deepOnly
  * @param {boolean} inline
+ * @param {boolean} inScope
+ * @param {Function} stopFunction
  */
-export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false) {
+export function createDOMPathGenerator(direction, deepOnly, inline, inScope = false, stopFunction) {
     const nextDeepest =
         direction === DIRECTIONS.LEFT
-            ? node => lastLeaf(node.previousSibling, inline)
-            : node => firstLeaf(node.nextSibling, inline);
+            ? node => lastLeaf(node.previousSibling, inline, stopFunction)
+            : node => firstLeaf(node.nextSibling, inline, stopFunction);
 
     const firstNode =
         direction === DIRECTIONS.LEFT
-            ? (node, offset) => lastLeaf(node.childNodes[offset - 1], inline)
-            : (node, offset) => firstLeaf(node.childNodes[offset], inline);
+            ? (node, offset) => lastLeaf(node.childNodes[offset - 1], inline, stopFunction)
+            : (node, offset) => firstLeaf(node.childNodes[offset], inline, stopFunction);
 
     // Note "reasons" is a way for the caller to be able to know why the
     // generator ended yielding values.
@@ -185,6 +195,10 @@ export function createDOMPathGenerator(direction, deepOnly, inline, inScope = fa
         }
 
         while (currentNode) {
+            if (stopFunction && stopFunction(currentNode)) {
+                reasons.push(PATH_END_REASONS.CUSTOM_STOP);
+                break;
+            }
             if (inline && isBlock(currentNode)) {
                 reasons.push(movedUp ? PATH_END_REASONS.BLOCK_OUT : PATH_END_REASONS.BLOCK_HIT);
                 break;
@@ -273,10 +287,16 @@ export function closestBlock(node) {
  *
  * @param {Node} node
  * @param {boolean} [stopAtBlock=false]
+ * @param {Function} stopFunction
  * @returns {Node}
  */
-export function lastLeaf(node, stopAtBlock = false) {
-    while (node && node.lastChild && !(stopAtBlock && isBlock(node))) {
+export function lastLeaf(node, stopAtBlock = false, stopFunction) {
+    while (
+        node &&
+        node.lastChild &&
+        !(stopAtBlock && isBlock(node)) &&
+        !(stopFunction && stopFunction(node))
+    ) {
         node = node.lastChild;
     }
     return node;
@@ -286,10 +306,16 @@ export function lastLeaf(node, stopAtBlock = false) {
  *
  * @param {Node} node
  * @param {boolean} [stopAtBlock=false]
+ * @param {Function} stopFunction
  * @returns {Node}
  */
-export function firstLeaf(node, stopAtBlock = false) {
-    while (node && node.firstChild && !(stopAtBlock && isBlock(node))) {
+export function firstLeaf(node, stopAtBlock = false, stopFunction) {
+    while (
+        node &&
+        node.firstChild &&
+        !(stopAtBlock && isBlock(node)) &&
+        !(stopFunction && stopFunction(node))
+    ) {
         node = node.firstChild;
     }
     return node;
@@ -417,7 +443,7 @@ export function getNormalizedCursorPosition(node, offset, full = true) {
             }
         }
         if (el) {
-            const leftInlineNode = leftDeepOnlyInlineInScopePath(el, elOffset).next().value;
+            const leftInlineNode = leftDeepOnlyInlineInScopeNoEditable(el, elOffset).next().value;
             let leftVisibleEmpty = false;
             if (leftInlineNode) {
                 leftVisibleEmpty =
