@@ -43,7 +43,6 @@ import {
     isBold,
     YOUTUBE_URL_GET_VIDEO_ID,
     unwrapContents,
-    getClosestNotEditable,
 } from './utils/utils.js';
 import { editorCommands } from './commands.js';
 import { CommandBar } from './commandbar.js';
@@ -1855,8 +1854,58 @@ export class OdooEditor extends EventTarget {
         const startContainer = closestElement(range.startContainer);
         const endContainer = closestElement(range.endContainer);
 
-        const startContainerNotEditable = getClosestNotEditable(startContainer, this.editable);
-        const endContainerNotEditable = getClosestNotEditable(endContainer, this.editable);
+        /**
+         * Get last not editable node if the `node` is within `root` and is a
+         * non editable node.
+         *
+         * Otherwise return `undefined`.
+         *
+         * Example:
+         *
+         * ```html
+         * <div class="root" contenteditable="true">
+         *     <div class="A">
+         *         <div class="B" contenteditable="false">
+         *             <div class="C">
+         *             </div>
+         *         </div>
+         *     </div>
+         * </div>
+         * ```
+         *
+         * ```js
+         * _getLastNotEditableAncestorOfNotEditable(document.querySelector(".C")) // return "B"
+         * ```
+         */
+        function _getLastNotEditableAncestorOfNotEditable(node, root) {
+            let currentNode = node;
+            let lastEditable;
+            if (!ancestors(node, root).includes(root)) {
+                return;
+            }
+            while (currentNode && currentNode !== root) {
+                if (currentNode.isContentEditable) {
+                    return lastEditable;
+                } else if (currentNode.isContentEditable === false) {
+                    // By checking that the node is contentEditable === false,
+                    // we ensure at the same time that the currentNode is a
+                    // HTMLElement.
+                    lastEditable = currentNode;
+                }
+                currentNode = currentNode.parentElement;
+            }
+            return lastEditable;
+        }
+
+
+        const startContainerNotEditable = _getLastNotEditableAncestorOfNotEditable(
+            startContainer,
+            this.editable,
+        );
+        const endContainerNotEditable = _getLastNotEditableAncestorOfNotEditable(
+            endContainer,
+            this.editable,
+        );
         const bothNotEditable = startContainerNotEditable && endContainerNotEditable;
 
         if (startContainerNotEditable) {

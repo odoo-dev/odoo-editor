@@ -1850,6 +1850,3 @@ export function getRangePosition(el, document, options = {}) {
 
     return offset;
 }
-export function getClosestNotEditable(node, root) {
-    return node && ancestors(node, root).includes(root) && node.closest('[contenteditable=false]');
-}
