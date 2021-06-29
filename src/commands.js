@@ -70,7 +70,7 @@ function insert(editor, data, isText = true) {
         if (isBlock(nodeToInsert) && !isBlock(startNode)) {
             // Split blocks at the edges if inserting new blocks (preventing
             // <p><p>text</p></p> scenarios).
-            while (startNode.parentElement !== editor.editable && !isBlock(startNode)) {
+            while (startNode.parentElement !== editor.editable && !isBlock(startNode.parentElement)) {
                 let offset = childNodeIndex(startNode);
                 if (!insertBefore) {
                     offset += 1;
