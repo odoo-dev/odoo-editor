@@ -50,6 +50,7 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
         isSpace &&
         getState(parentNode, firstSplitOffset, DIRECTIONS.LEFT).cType !== CTYPES.CONTENT
     ) {
+        cmd(parnet,'oDeleteBackward',)
         parentNode.oDeleteBackward(firstSplitOffset, alreadyMoved);
         return;
     }
