@@ -64,15 +64,36 @@ const CLIPBOARD_BLACKLISTS = {
 const CLIPBOARD_WHITELISTS = {
     nodes: [
         // Style
-        'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE',
+        'P',
+        'H1',
+        'H2',
+        'H3',
+        'H4',
+        'H5',
+        'H6',
+        'BLOCKQUOTE',
+        'PRE',
         // List
-        'UL', 'OL', 'LI',
+        'UL',
+        'OL',
+        'LI',
         // Inline style
-        'I', 'B', 'U', 'EM', 'STRONG',
+        'I',
+        'B',
+        'U',
+        'EM',
+        'STRONG',
         // Table
-        'TABLE', 'TH', 'TBODY', 'TR', 'TD',
+        'TABLE',
+        'TH',
+        'TBODY',
+        'TR',
+        'TD',
         // Miscellaneous
-        'IMG', 'BR', 'A', '.fa',
+        'IMG',
+        'BR',
+        'A',
+        '.fa',
     ],
     classes: [
         // Media
@@ -96,7 +117,7 @@ const CLIPBOARD_WHITELISTS = {
         /^fa/,
     ],
     attributes: ['class', 'href', 'src'],
-}
+};
 
 function defaultOptions(defaultObject, object) {
     const newObject = Object.assign({}, defaultObject, object);
@@ -987,6 +1008,7 @@ export class OdooEditor extends EventTarget {
      * @returns {?}
      */
     _applyRawCommand(method, ...args) {
+        console.log('        _applyRawCommand', method, editorCommands[method]);
         const sel = this.document.getSelection();
         if (!sel.isCollapsed && BACKSPACE_FIRST_COMMANDS.includes(method)) {
             this.deleteRange(sel);
@@ -1013,8 +1035,10 @@ export class OdooEditor extends EventTarget {
      * @returns {?}
      */
     _applyCommand(...args) {
+        console.warn('_applyCommand', args);
         this._recordHistoryCursor(true);
         const result = this._protect(() => this._applyRawCommand(...args));
+        console.log('     result :', result);
         this.sanitize();
         this.historyStep();
         return result;
@@ -1027,9 +1051,12 @@ export class OdooEditor extends EventTarget {
      */
     _protect(callback, rollbackCounter) {
         try {
+            console.log('    _protect 1 ');
             const result = callback.call(this);
+            console.log('    _protect 2 ');
             this.observerFlush();
             if (this._toRollback) {
+                console.log('    _protect got a ' + this._toRollback);
                 const torollbackCode = this._toRollback;
                 this.historyRollback(rollbackCounter);
                 return torollbackCode; // UNBREAKABLE_ROLLBACK_CODE || UNREMOVABLE_ROLLBACK_CODE
@@ -1037,6 +1064,7 @@ export class OdooEditor extends EventTarget {
                 return result;
             }
         } catch (error) {
+            console.warn('catched in _protect');
             if (error === UNBREAKABLE_ROLLBACK_CODE || error === UNREMOVABLE_ROLLBACK_CODE) {
                 this.historyRollback(rollbackCounter);
                 return error;
@@ -1308,11 +1336,11 @@ export class OdooEditor extends EventTarget {
      * @param {string} clipboardData
      * @returns {string}
      */
-     _prepareClipboardData(clipboardData) {
+    _prepareClipboardData(clipboardData) {
         const container = document.createElement('fake-container');
         container.innerHTML = clipboardData;
         for (const child of [...container.childNodes]) {
-            this._cleanForPaste(child)
+            this._cleanForPaste(child);
         }
         return container.innerHTML;
     }
@@ -1324,13 +1352,19 @@ export class OdooEditor extends EventTarget {
      * @returns {string}
      */
     _prepareTextClipboardData(clipboardData) {
-        const isXML = !!clipboardData.match(/<[a-z]+[a-z0-9-]*( [^>]*)*>[\s\S\n\r]*<\/[a-z]+[a-z0-9-]*>/i);
-        const isJS = !isXML && !!clipboardData.match(/\(\);|this\.|self\.|function\s?\(|super\.|[a-z0-9]\.[a-z].*;/i);
+        const isXML = !!clipboardData.match(
+            /<[a-z]+[a-z0-9-]*( [^>]*)*>[\s\S\n\r]*<\/[a-z]+[a-z0-9-]*>/i,
+        );
+        const isJS =
+            !isXML &&
+            !!clipboardData.match(/\(\);|this\.|self\.|function\s?\(|super\.|[a-z0-9]\.[a-z].*;/i);
 
         const container = document.createElement('fake-container');
         const pre = document.createElement('pre');
-        pre.innerHTML = clipboardData.trim()
-            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        pre.innerHTML = clipboardData
+            .trim()
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
             // Get that text as an array of text nodes separated by <br> where
             // needed.
             .replace(/(\n+)/g, '<br>');
@@ -1340,7 +1374,7 @@ export class OdooEditor extends EventTarget {
         } else {
             for (const node of pre.childNodes) {
                 container.appendChild(node);
-            };
+            }
         }
         return container.innerHTML;
     }
@@ -1391,12 +1425,14 @@ export class OdooEditor extends EventTarget {
         if (item instanceof Attr) {
             return CLIPBOARD_WHITELISTS.attributes.includes(item.name);
         } else if (typeof item === 'string') {
-            return CLIPBOARD_WHITELISTS.classes.some(okClass => (
-                okClass instanceof RegExp ? okClass.test(item) : okClass === item
-            ));
+            return CLIPBOARD_WHITELISTS.classes.some(okClass =>
+                okClass instanceof RegExp ? okClass.test(item) : okClass === item,
+            );
         } else {
-            return item.nodeType === Node.TEXT_NODE ||
-                item.matches(CLIPBOARD_WHITELISTS.nodes.join(','));
+            return (
+                item.nodeType === Node.TEXT_NODE ||
+                item.matches(CLIPBOARD_WHITELISTS.nodes.join(','))
+            );
         }
     }
     /**
@@ -1408,8 +1444,10 @@ export class OdooEditor extends EventTarget {
      * @returns {boolean}
      */
     _isBlacklisted(node) {
-        return node.nodeType !== Node.TEXT_NODE &&
-            node.matches([].concat(...Object.values(CLIPBOARD_BLACKLISTS)).join(','));
+        return (
+            node.nodeType !== Node.TEXT_NODE &&
+            node.matches([].concat(...Object.values(CLIPBOARD_BLACKLISTS)).join(','))
+        );
     }
 
     //--------------------------------------------------------------------------
@@ -1706,7 +1744,7 @@ export class OdooEditor extends EventTarget {
     _bindToolbar() {
         for (const buttonEl of this.toolbar.querySelectorAll('[data-call]')) {
             buttonEl.addEventListener('mousedown', ev => {
-                const sel = this.document.getSelection()
+                const sel = this.document.getSelection();
                 if (sel.anchorNode && ancestors(sel.anchorNode).includes(this.editable)) {
                     this.execCommand(buttonEl.dataset.call, buttonEl.dataset.arg1);
 

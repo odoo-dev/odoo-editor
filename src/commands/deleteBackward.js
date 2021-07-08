@@ -1,4 +1,4 @@
-import { UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE } from '../editor.js';
+import { isEmptyBlock, UNBREAKABLE_ROLLBACK_CODE, UNREMOVABLE_ROLLBACK_CODE } from '../editor.js';
 import {
     boundariesOut,
     childNodeIndex,
@@ -25,6 +25,7 @@ import {
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
+    console.log('        text oDeleteBackward', offset, this);
     const parentNode = this.parentNode;
 
     if (!offset) {
@@ -59,20 +60,27 @@ Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
 };
 
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
+    console.log('        element oDeleteBackward', offset);
+    console.log(this, this?.tagName);
     let moveDest;
     if (offset) {
+        console.log('           #00X');
         const leftNode = this.childNodes[offset - 1];
         if (isUnremovable(leftNode)) {
+            console.log('           #00X - 001');
             throw UNREMOVABLE_ROLLBACK_CODE;
         }
-        if (isUnbreakable(leftNode)) {
-            throw UNBREAKABLE_ROLLBACK_CODE;
-        }
+        // if (isUnbreakable(leftNode)) {
+        //     console.log('           #00X - 002');
+        //     throw UNBREAKABLE_ROLLBACK_CODE;
+        // }
         if (isMediaElement(leftNode)) {
+            console.log('           #00X - 003');
             leftNode.remove();
             return;
         }
         if (!isBlock(leftNode) || isVisibleEmpty(leftNode)) {
+            console.log('           #00X - 004');
             /**
              * Backspace just after an inline node, convert to backspace at the
              * end of that inline node.
@@ -92,15 +100,18 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
          * E.g. <p>abc</p>[]de<i>f</i><p>ghi</p> + BACKSPACE
          * <=>  <p>abcde<i>f</i></p><p>ghi</p>
          */
+        console.log('#00X - 005');
         alreadyMoved = true;
         moveDest = endPos(leftNode);
     } else {
+        console.log('#00Y');
         if (isUnremovable(this)) {
             throw UNREMOVABLE_ROLLBACK_CODE;
         }
         const parentEl = this.parentNode;
 
         if (!isBlock(this) || isVisibleEmpty(this)) {
+            console.log('---> inside isblock isvisiblemepty check');
             /**
              * Backspace at the beginning of an inline node, nothing has to be
              * done: propagate the backspace. If the node was empty, we remove
@@ -131,6 +142,16 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
             parentEl.oDeleteBackward(parentOffset, alreadyMoved);
             return;
         }
+        // else if (isEmptyBlock(this)) {
+        //     console.log('---> new remove');
+        //     // const previousSibling = this.previousSibling;
+        //     // console.log('previousSibling', previousSibling);
+        //     // console.log('childlist', parentEl.childNodes);
+        //     // const parentOffset = childNodeIndex(this);
+        //     this.remove();
+        //     // setCursor(parentEl, parentOffset - 1, undefined, undefined, false);
+        //     return;
+        // }
 
         /**
          * Backspace at the beginning of a block node, we have to move the
@@ -147,10 +168,12 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
          */
         moveDest = leftPos(this);
     }
-
+    console.log('#1');
     let node = this.childNodes[offset];
+    console.log('#1', node);
     let firstBlockIndex = offset;
     while (node && !isBlock(node)) {
+        console.log('#1.1');
         node = node.nextSibling;
         firstBlockIndex++;
     }
@@ -159,16 +182,20 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false) 
 
     // Propagate if this is still a block on the left of where the nodes were
     // moved.
+    console.log('#2', node);
     if (
         cursorNode.nodeType === Node.TEXT_NODE &&
         (cursorOffset === 0 || cursorOffset === cursorNode.length)
     ) {
+        console.log('#2.1');
         cursorOffset = childNodeIndex(cursorNode) + (cursorOffset === 0 ? 0 : 1);
         cursorNode = cursorNode.parentNode;
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
+        console.log('#2.2');
         const { cType } = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
         if (cType & CTGROUPS.BLOCK && (!alreadyMoved || cType === CTYPES.BLOCK_OUTSIDE)) {
+            console.log('#2.2.1');
             cursorNode.oDeleteBackward(cursorOffset, alreadyMoved);
         }
     }
