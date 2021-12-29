@@ -12,6 +12,7 @@ import {
     CTYPES,
     leftPos,
     isFontAwesome,
+    setCursor,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteForward = function (offset) {
@@ -36,6 +37,19 @@ HTMLElement.prototype.oDeleteForward = function (offset) {
             getState(...rightPos(firstInlineNode), DIRECTIONS.RIGHT).cType !== CTYPES.BLOCK_INSIDE)
     ) {
         firstInlineNode.oDeleteBackward(Math.min(1, nodeSize(firstInlineNode)));
+        return;
+    }
+    if (
+        this.childNodes.length === offset &&
+        this.nextSibling &&
+        this.nextSibling.tagName === 'TABLE'
+    ) {
+        // Replace the table with a <p>.
+        const p = document.createElement('p');
+        p.appendChild(document.createElement('br'));
+        this.nextSibling.after(p);
+        this.nextSibling.remove();
+        setCursor(p, 0);
         return;
     }
     const firstOutNode = findNode(
